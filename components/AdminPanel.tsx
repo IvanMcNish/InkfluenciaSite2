@@ -154,37 +154,40 @@ export const AdminPanel: React.FC = () => {
                                     </div>
                                 </td>
                                 <td className="p-4">
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-2">
                                         {/* Snapshot Thumbnail */}
                                         {order.config.snapshotUrl ? (
-                                            <div className="relative group w-16 h-16 shrink-0">
+                                            <div className="relative group w-12 h-12 shrink-0">
                                                 <img 
                                                     src={order.config.snapshotUrl} 
                                                     alt="3D Snapshot" 
-                                                    className="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700 bg-white"
+                                                    className="w-12 h-12 object-cover rounded-lg border border-gray-200 dark:border-gray-700 bg-white"
                                                 />
                                                 <button 
                                                     onClick={() => setSelectedImage(order.config.snapshotUrl!)}
                                                     className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center cursor-zoom-in text-white"
                                                     title="Ver Modelo 3D"
                                                 >
-                                                    <Eye className="w-5 h-5" />
+                                                    <Eye className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         ) : (
                                             <span className="text-xs text-gray-400 italic">Sin vista</span>
                                         )}
 
-                                        {/* Original File Button */}
-                                        {order.config.textureUrl && (
-                                            <button
-                                                onClick={() => setSelectedImage(order.config.textureUrl!)}
-                                                className="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-pink-100 dark:hover:bg-pink-900/30 text-gray-500 hover:text-pink-600 transition-colors border border-gray-200 dark:border-gray-700"
-                                                title="Ver Archivo Original"
-                                            >
-                                                <FileImage className="w-5 h-5" />
-                                            </button>
-                                        )}
+                                        {/* Original Files Buttons */}
+                                        <div className="flex gap-1">
+                                            {order.config.layers.map((layer, index) => (
+                                                <button
+                                                    key={layer.id}
+                                                    onClick={() => setSelectedImage(layer.textureUrl)}
+                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-pink-100 dark:hover:bg-pink-900/30 text-gray-500 hover:text-pink-600 transition-colors border border-gray-200 dark:border-gray-700 text-[10px] font-bold"
+                                                    title={`Ver Diseño ${index + 1}`}
+                                                >
+                                                    {index + 1}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 </td>
                                 <td className="p-4 text-right font-bold text-gray-900 dark:text-white">

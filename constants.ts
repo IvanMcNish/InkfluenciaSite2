@@ -2,13 +2,8 @@ export const TSHIRT_OBJ_URL = "https://raw.githubusercontent.com/IvanMcNish/cami
 
 export const DEFAULT_CONFIG = {
   color: 'white' as const,
-  textureUrl: null,
-  snapshotUrl: null,
-  position: {
-    x: 0,
-    y: 0.2, // Slightly up on the chest (normalized coordinates)
-    scale: 1.0 // Normalized scale (approx 1 unit wide)
-  }
+  layers: [], // Empty array for layers
+  snapshotUrl: null
 };
 
 export const PRICES = {

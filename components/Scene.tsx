@@ -36,8 +36,29 @@ const SnapshotHandler = ({
         
         // Ensure camera matrix is updated
         camera.updateMatrixWorld();
-
+        
+        // Force a render to ensure the scene is ready for capture
         gl.render(scene, camera);
+
+        // Optimize: Create a smaller canvas for the snapshot to avoid huge Base64 strings
+        try {
+            const screenshotCanvas = document.createElement('canvas');
+            const targetWidth = 800;
+            const aspect = gl.domElement.width / gl.domElement.height;
+            const targetHeight = targetWidth / aspect;
+
+            screenshotCanvas.width = targetWidth;
+            screenshotCanvas.height = targetHeight;
+            
+            const ctx = screenshotCanvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(gl.domElement, 0, 0, targetWidth, targetHeight);
+                return screenshotCanvas.toDataURL('image/png');
+            }
+        } catch (e) {
+            console.warn("Snapshot optimization failed, falling back to full resolution", e);
+        }
+
         return gl.domElement.toDataURL('image/png');
       };
     }
@@ -50,28 +71,24 @@ const SnapshotHandler = ({
 const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: number }> = ({ textureUrl, position, zPos }) => {
   const texture = useTexture(textureUrl);
   
-  // Calculate aspect ratio to prevent distortion
-  // Cast to any or HTMLImageElement because texture.image might be typed as unknown in some three versions
+  // Cast to any or HTMLImageElement
   const img = texture.image as HTMLImageElement;
   const ratio = img ? img.width / img.height : 1;
   
-  // Determine scale based on aspect ratio while respecting the user's scale setting as the max dimension
   let scaleX = position.scale;
   let scaleY = position.scale;
 
   if (ratio > 1) {
-    // Landscape image: Width is max (scale), Height is reduced
     scaleY = position.scale / ratio;
   } else {
-    // Portrait image: Height is max (scale), Width is reduced
     scaleX = position.scale * ratio;
   }
   
   return (
     <Decal 
       position={[position.x, position.y, zPos]} 
-      rotation={[0, 0, 0]} // Rotated 180 degrees to fix inverted image
-      scale={[scaleX, scaleY, 1]} 
+      rotation={[0, 0, 0]} 
+      scale={[scaleX, scaleY, 5]} // Deep Z projection to avoid clipping
       debug={false}
     >
       <meshBasicMaterial 
@@ -80,6 +97,7 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
         polygonOffset 
         polygonOffsetFactor={-4}
         depthTest={true}
+        depthWrite={false}
       />
     </Decal>
   );
@@ -88,7 +106,6 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
 const TShirtMesh: React.FC<{ config: ConfigType }> = ({ config }) => {
   const obj = useLoader(OBJLoader, TSHIRT_OBJ_URL);
   
-  // Process geometry: clone, center, normalize size
   const { geometry, zFront } = useMemo(() => {
     let foundGeom: THREE.BufferGeometry | null = null;
     obj.traverse((child) => {
@@ -101,7 +118,6 @@ const TShirtMesh: React.FC<{ config: ConfigType }> = ({ config }) => {
 
     const geo = foundGeom.clone();
     geo.center(); 
-    
     geo.computeBoundingBox();
     const box = geo.boundingBox!;
     const size = new THREE.Vector3();
@@ -127,14 +143,15 @@ const TShirtMesh: React.FC<{ config: ConfigType }> = ({ config }) => {
         roughness={0.8}
         metalness={0.1}
       />
-      {config.textureUrl && (
+      {config.layers.map((layer, index) => (
         <DecalImage 
-            key={config.textureUrl} 
-            textureUrl={config.textureUrl} 
-            position={config.position} 
-            zPos={zFront}
+            key={layer.id} 
+            textureUrl={layer.textureUrl} 
+            position={layer.position} 
+            // Add a tiny Z offset based on index to handle overlapping properly
+            zPos={zFront + (index * 0.001)}
         />
-      )}
+      ))}
     </mesh>
   );
 };
@@ -147,7 +164,7 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef }) => {
       <Canvas 
         shadows 
         camera={{ position: [0, 0, 5], fov: 45 }}
-        gl={{ preserveDrawingBuffer: true }} // Important for taking snapshots
+        gl={{ preserveDrawingBuffer: true }} 
       >
         <ambientLight intensity={0.5} />
         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} shadow-mapSize={2048} castShadow />

@@ -4,11 +4,16 @@ export interface Position {
   scale: number;
 }
 
+export interface DesignLayer {
+  id: string;
+  textureUrl: string;
+  position: Position;
+}
+
 export interface TShirtConfig {
   color: 'white' | 'black';
-  textureUrl: string | null;
+  layers: DesignLayer[];
   snapshotUrl?: string | null;
-  position: Position;
 }
 
 export type OrderStatus = 'pending' | 'processing' | 'shipped';

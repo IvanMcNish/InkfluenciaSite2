@@ -55,8 +55,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
   const basePrice = PRICES[formData.grammage];
   const total = basePrice + SHIPPING;
 
-  // Use snapshot if available, otherwise fall back to texture or color placeholder
-  const displayImage = config.snapshotUrl || config.textureUrl;
+  // Use snapshot if available, otherwise fall back to first layer or placeholder
+  const displayImage = config.snapshotUrl || (config.layers.length > 0 ? config.layers[0].textureUrl : null);
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl mt-4 border border-gray-100 dark:border-gray-800 flex flex-col md:flex-row gap-8">
@@ -81,6 +81,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
             
             <div className="space-y-2">
                 <h3 className="font-bold text-lg">Camiseta Inkfluencia</h3>
+                <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                    <span>Diseños:</span>
+                    <span className="font-medium text-gray-900 dark:text-white capitalize">{config.layers.length} imagen(es)</span>
+                </div>
                 <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                     <span>Color Base:</span>
                     <span className="font-medium text-gray-900 dark:text-white capitalize">{config.color === 'white' ? 'Blanca' : 'Negra'}</span>

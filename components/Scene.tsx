@@ -6,19 +6,6 @@ import * as THREE from 'three';
 import { TSHIRT_OBJ_URL } from '../constants';
 import { TShirtConfig as ConfigType, Position } from '../types';
 
-// Add type definitions for Three.js elements in JSX to fix TypeScript errors
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      mesh: any;
-      meshBasicMaterial: any;
-      meshStandardMaterial: any;
-      ambientLight: any;
-      spotLight: any;
-    }
-  }
-}
-
 interface SceneProps {
   config: ConfigType;
   captureRef?: React.MutableRefObject<(() => string) | null>;
@@ -29,7 +16,7 @@ function Loader() {
   return <Html center><div className="text-gray-500 font-mono text-sm">{progress.toFixed(0)}%</div></Html>;
 }
 
-// Component to handle canvas snapshot
+// Component to handle canvas snapshot and context cleanup
 const SnapshotHandler = ({ 
   captureRef, 
   controlsRef 
@@ -40,8 +27,36 @@ const SnapshotHandler = ({
   const { gl, scene, camera } = useThree();
 
   useEffect(() => {
+    // Context Lost Handling
+    const handleContextLost = (event: Event) => {
+        event.preventDefault();
+        console.warn('WebGL Context Lost');
+    };
+
+    const handleContextRestored = () => {
+        console.log('WebGL Context Restored');
+        gl.render(scene, camera);
+    };
+
+    const canvasElement = gl.domElement;
+    canvasElement.addEventListener('webglcontextlost', handleContextLost, false);
+    canvasElement.addEventListener('webglcontextrestored', handleContextRestored, false);
+
+    return () => {
+        canvasElement.removeEventListener('webglcontextlost', handleContextLost);
+        canvasElement.removeEventListener('webglcontextrestored', handleContextRestored);
+    };
+  }, [gl, scene, camera]);
+
+  useEffect(() => {
     if (captureRef) {
       captureRef.current = () => {
+        const context = gl.getContext();
+        if (context && context.isContextLost()) {
+            console.error("Cannot take snapshot: WebGL Context Lost");
+            return "";
+        }
+
         // Reset controls to initial position (Front view)
         if (controlsRef.current) {
           controlsRef.current.reset();
@@ -56,7 +71,9 @@ const SnapshotHandler = ({
         // Optimize: Create a smaller canvas for the snapshot to avoid huge Base64 strings
         try {
             const screenshotCanvas = document.createElement('canvas');
-            const targetWidth = 800;
+            // Reduce resolution for snapshots to save memory/storage
+            // 500px is enough for gallery cards
+            const targetWidth = 500; 
             const aspect = gl.domElement.width / gl.domElement.height;
             const targetHeight = targetWidth / aspect;
 
@@ -66,16 +83,37 @@ const SnapshotHandler = ({
             const ctx = screenshotCanvas.getContext('2d');
             if (ctx) {
                 ctx.drawImage(gl.domElement, 0, 0, targetWidth, targetHeight);
-                return screenshotCanvas.toDataURL('image/png');
+                // Use WebP with moderate compression for thumbnails
+                return screenshotCanvas.toDataURL('image/webp', 0.7);
             }
         } catch (e) {
-            console.warn("Snapshot optimization failed, falling back to full resolution", e);
+            console.warn("Snapshot optimization failed", e);
         }
 
-        return gl.domElement.toDataURL('image/png');
+        // Fallback
+        return gl.domElement.toDataURL('image/jpeg', 0.5);
       };
     }
   }, [gl, scene, camera, captureRef, controlsRef]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Force cleanup of textures and geometries when component unmounts
+      scene.traverse((object) => {
+        if (object instanceof THREE.Mesh) {
+          if (object.geometry) object.geometry.dispose();
+          if (object.material) {
+             if (Array.isArray(object.material)) {
+                object.material.forEach(m => m.dispose());
+             } else {
+                object.material.dispose();
+             }
+          }
+        }
+      });
+    };
+  }, [gl, scene]);
 
   return null;
 };
@@ -83,6 +121,12 @@ const SnapshotHandler = ({
 // Separate component for the decal
 const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: number }> = ({ textureUrl, position, zPos }) => {
   const texture = useTexture(textureUrl);
+  
+  useEffect(() => {
+    return () => {
+        texture.dispose();
+    };
+  }, [texture]);
   
   // Cast to any or HTMLImageElement
   const img = texture.image as HTMLImageElement;
@@ -177,7 +221,11 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef }) => {
       <Canvas 
         shadows 
         camera={{ position: [0, 0, 5], fov: 45 }}
-        gl={{ preserveDrawingBuffer: true }} 
+        gl={{ 
+            preserveDrawingBuffer: true,
+            powerPreference: "high-performance",
+            antialias: true
+        }} 
       >
         <ambientLight intensity={0.5} />
         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} shadow-mapSize={2048} castShadow />

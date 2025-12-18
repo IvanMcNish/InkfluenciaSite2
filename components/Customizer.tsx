@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, ImageIcon, Trash2, Layers, Save, ShoppingBag } from 'lucide-react';
+import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, ImageIcon, Trash2, Layers, Save, ShoppingBag, AlertTriangle } from 'lucide-react';
 import { TShirtConfig } from '../types';
 import { Scene } from './Scene';
 import { PRICES, formatCurrency } from '../constants';
@@ -26,12 +26,19 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, slotIndex: number) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Basic validation
+      if (file.size > 5 * 1024 * 1024) {
+        alert("La imagen es demasiado grande. Por favor usa una imagen menor a 5MB.");
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (event) => {
         const img = new Image();
         img.onload = () => {
            const canvas = document.createElement('canvas');
-           const MAX_WIDTH = 1024;
+           // Reduced max width to save LocalStorage space
+           const MAX_WIDTH = 600; 
            let width = img.width;
            let height = img.height;
 
@@ -45,26 +52,29 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
            
            const ctx = canvas.getContext('2d');
            if (ctx) {
-             // Clear context just in case, though new canvas is empty
              ctx.clearRect(0, 0, width, height);
              ctx.drawImage(img, 0, 0, width, height);
              
-             // CHANGED: Use image/png to preserve transparency (alpha channel)
-             const url = canvas.toDataURL('image/png');
+             // Use WebP with compression to drastically reduce string size
+             // Fallback to PNG if browser doesn't support WebP, but most do.
+             let url = canvas.toDataURL('image/webp', 0.8);
+             
+             // Fallback check: if data url starts with image/png, webp wasn't supported
+             if (url.indexOf('image/webp') === -1) {
+                 url = canvas.toDataURL('image/png');
+             }
              
              setConfig(prev => {
                 const newLayers = [...prev.layers];
                 const newLayer = {
                     id: `layer-${Date.now()}`,
                     textureUrl: url,
-                    position: { x: 0, y: 0.2, scale: 1.0 } // Default new image position
+                    position: { x: 0, y: 0.2, scale: 1.0 }
                 };
                 
-                // If slot exists, replace it, otherwise add it
                 if (newLayers[slotIndex]) {
                     newLayers[slotIndex] = { ...newLayers[slotIndex], textureUrl: url };
                 } else {
-                    // Ensure we don't have holes if filling slot 2 before 1 (though UI prevents this mostly)
                     if (slotIndex === 1 && !newLayers[0]) return prev; 
                     newLayers[slotIndex] = newLayer;
                 }
@@ -157,7 +167,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
     setIsProcessing(true);
     setSaveError('');
 
-    // Wait a brief moment to allow UI to update (like showing spinner)
+    // Wait a brief moment to allow UI to update
     await new Promise(resolve => setTimeout(resolve, 50));
 
     try {
@@ -167,13 +177,11 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 snapshot = captureRef.current();
             } catch (e) {
                 console.error("Failed to capture snapshot:", e);
+                // Continue without snapshot if it fails (avoids blocking the user)
             }
         }
 
-        // Create the updated config object immediately
         const configWithSnapshot = { ...config, snapshotUrl: snapshot };
-        
-        // Update state for consistency
         setConfig(configWithSnapshot);
         
         if (isDesignerMode && onSaveToGallery) {
@@ -182,14 +190,24 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                  setIsProcessing(false);
                  return;
              }
-             // Pass the explicit config object with the snapshot
-             onSaveToGallery(designName, configWithSnapshot);
+             try {
+                onSaveToGallery(designName, configWithSnapshot);
+             } catch (e: any) {
+                 console.error("Gallery save error:", e);
+                 if (e.name === 'QuotaExceededError' || e.message?.includes('exceeded the quota')) {
+                     setSaveError('¡Espacio lleno! Por favor ve a la galería y elimina diseños antiguos para liberar espacio.');
+                 } else {
+                     setSaveError('No se pudo guardar el diseño. Intenta nuevamente.');
+                 }
+                 setIsProcessing(false);
+                 return;
+             }
         } else if (onCheckout) {
              onCheckout();
         }
     } catch (error) {
         console.error("Error processing action:", error);
-        setSaveError("Ocurrió un error al procesar. Intenta nuevamente.");
+        setSaveError("Ocurrió un error inesperado.");
     } finally {
         setIsProcessing(false);
     }
@@ -391,7 +409,12 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                     className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-purple-500 outline-none transition-all"
                     disabled={isProcessing}
                   />
-                  {saveError && <p className="text-red-500 text-xs mt-1">{saveError}</p>}
+                  {saveError && (
+                    <div className="flex items-start gap-2 mt-2 text-red-500 text-xs bg-red-50 dark:bg-red-900/20 p-2 rounded">
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        <p>{saveError}</p>
+                    </div>
+                  )}
                </div>
                <button 
                 onClick={handleAction}

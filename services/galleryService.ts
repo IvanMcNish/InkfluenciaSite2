@@ -22,7 +22,13 @@ export const saveDesignToCollection = (name: string, config: TShirtConfig): Coll
   };
 
   const updatedCollection = [newItem, ...currentCollection];
-  localStorage.setItem(GALLERY_KEY, JSON.stringify(updatedCollection));
+  
+  try {
+      localStorage.setItem(GALLERY_KEY, JSON.stringify(updatedCollection));
+  } catch (e) {
+      console.error("LocalStorage Save Error:", e);
+      throw e; // Re-throw to be caught by the UI
+  }
   
   return newItem;
 };
@@ -30,6 +36,10 @@ export const saveDesignToCollection = (name: string, config: TShirtConfig): Coll
 export const deleteDesignFromCollection = (id: string): CollectionItem[] => {
     const currentCollection = getCollection();
     const updatedCollection = currentCollection.filter(item => item.id !== id);
-    localStorage.setItem(GALLERY_KEY, JSON.stringify(updatedCollection));
+    try {
+        localStorage.setItem(GALLERY_KEY, JSON.stringify(updatedCollection));
+    } catch (e) {
+        console.error("Failed to update gallery after deletion:", e);
+    }
     return updatedCollection;
 };

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, ImageIcon, Trash2, Layers, Save, ShoppingBag, AlertTriangle } from 'lucide-react';
+import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, ImageIcon, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Users } from 'lucide-react';
 import { TShirtConfig } from '../types';
 import { Scene } from './Scene';
 import { PRICES, formatCurrency } from '../constants';
@@ -416,6 +416,15 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                     </div>
                   )}
                </div>
+
+               <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800 flex items-start gap-2">
+                 <Users className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+                 <p className="text-xs text-indigo-700 dark:text-indigo-300">
+                    Estás creando un diseño para la comunidad de <strong>Inkfluencia</strong>. 
+                    Ten en cuenta que las imágenes que cargues serán visibles para todo el público en la galería.
+                 </p>
+               </div>
+
                <button 
                 onClick={handleAction}
                 disabled={config.layers.length === 0 || isProcessing}

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { CollectionItem, TShirtConfig } from '../types';
 import { getCollection, deleteDesignFromCollection } from '../services/galleryService';
-import { Palette, Trash2, ArrowRight, Grid } from 'lucide-react';
+import { Palette, Trash2, Eye, Grid, X, ShoppingBag, Calendar, CheckCircle2 } from 'lucide-react';
+import { formatCurrency, PRICES } from '../constants';
 
 interface GalleryPageProps {
   onUseDesign: (config: TShirtConfig) => void;
@@ -10,6 +11,7 @@ interface GalleryPageProps {
 
 export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigateToCreator }) => {
   const [collection, setCollection] = useState<CollectionItem[]>([]);
+  const [selectedItem, setSelectedItem] = useState<CollectionItem | null>(null);
 
   useEffect(() => {
     setCollection(getCollection());
@@ -20,11 +22,109 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
     if (window.confirm('¿Estás seguro de que deseas eliminar este diseño de la colección?')) {
         const updated = deleteDesignFromCollection(id);
         setCollection(updated);
+        if (selectedItem?.id === id) {
+            setSelectedItem(null);
+        }
     }
+  };
+
+  const handleBuy = () => {
+    if (selectedItem) {
+        onUseDesign(selectedItem.config);
+    }
+  };
+
+  // Preview Modal
+  const DesignModal = () => {
+    if (!selectedItem) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col md:flex-row relative border border-gray-200 dark:border-gray-800">
+                <button 
+                    onClick={() => setSelectedItem(null)}
+                    className="absolute top-4 right-4 z-10 p-2 bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 rounded-full transition-colors"
+                >
+                    <X className="w-6 h-6 text-gray-800 dark:text-gray-200" />
+                </button>
+
+                {/* Left: Image */}
+                <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-800 flex items-center justify-center p-8 relative">
+                    {selectedItem.config.snapshotUrl ? (
+                        <img 
+                            src={selectedItem.config.snapshotUrl} 
+                            alt={selectedItem.name} 
+                            className="w-full h-auto object-contain drop-shadow-2xl transform hover:scale-105 transition-transform duration-500"
+                        />
+                    ) : (
+                         <div className="flex flex-col items-center text-gray-400">
+                            <Palette className="w-16 h-16 mb-2" />
+                            <span>Sin vista previa</span>
+                         </div>
+                    )}
+                    <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-black/90 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">
+                        Vista Previa
+                    </div>
+                </div>
+
+                {/* Right: Details */}
+                <div className="w-full md:w-1/2 p-8 flex flex-col">
+                    <div className="mb-6">
+                        <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2 leading-tight">
+                            {selectedItem.name}
+                        </h2>
+                        <div className="flex items-center gap-2 text-gray-500 text-sm">
+                            <Calendar className="w-4 h-4" />
+                            Creado el {new Date(selectedItem.createdAt).toLocaleDateString()}
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 mb-8 flex-1">
+                        <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800">
+                            <h3 className="text-sm font-bold uppercase text-gray-400 mb-3">Especificaciones del Diseño</h3>
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600 dark:text-gray-300">Color Base</span>
+                                    <span className="font-medium capitalize px-2 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-sm">
+                                        {selectedItem.config.color === 'white' ? 'Blanca' : 'Negra'}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600 dark:text-gray-300">Capas de imagen</span>
+                                    <span className="font-medium">{selectedItem.config.layers.length}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl text-sm text-blue-800 dark:text-blue-300">
+                            <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+                            <p>Este diseño está listo para producción. Al comprarlo, podrás seleccionar tu talla y el tipo de tela en el siguiente paso.</p>
+                        </div>
+                    </div>
+
+                    <div className="pt-6 border-t border-gray-100 dark:border-gray-800 mt-auto">
+                        <div className="flex justify-between items-end mb-4">
+                            <span className="text-gray-500 font-medium">Precio desde</span>
+                            <span className="text-3xl font-black text-pink-600">{formatCurrency(PRICES['150g'])}</span>
+                        </div>
+                        <button 
+                            onClick={handleBuy}
+                            className="w-full py-4 bg-gradient-to-r from-pink-600 to-orange-500 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-orange-500/25 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                        >
+                            <ShoppingBag className="w-5 h-5" />
+                            COMPRAR AHORA
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
   };
 
   return (
     <div className="max-w-7xl mx-auto p-6 min-h-screen">
+      {selectedItem && <DesignModal />}
+
       <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
         <div>
            <div className="flex items-center gap-2 mb-2">
@@ -32,7 +132,7 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
                 <h1 className="text-3xl font-black text-gray-900 dark:text-white">Nuestra Colección</h1>
            </div>
            <p className="text-gray-500 dark:text-gray-400 max-w-xl">
-             Explora los diseños exclusivos creados por la comunidad y el equipo de Inkfluencia. Elige tu favorito y hazlo realidad.
+             Explora los diseños exclusivos creados por la comunidad. Haz clic en un diseño para ver detalles y comprarlo.
            </p>
         </div>
         <button 
@@ -62,14 +162,14 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
              <div 
                 key={item.id} 
                 className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer relative"
-                onClick={() => onUseDesign(item.config)}
+                onClick={() => setSelectedItem(item)}
              >
                 <div className="aspect-square bg-gray-100 dark:bg-gray-800 relative overflow-hidden">
                     {item.config.snapshotUrl ? (
                         <img 
                             src={item.config.snapshotUrl} 
                             alt={item.name} 
-                            className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal" 
+                            className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal transition-transform duration-700 group-hover:scale-110" 
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-300">
@@ -79,14 +179,14 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
                     
                     {/* Hover Overlay */}
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                        <span className="bg-white text-black px-6 py-2 rounded-full font-bold flex items-center gap-2 transform scale-90 group-hover:scale-100 transition-transform">
-                            Comprar Este <ArrowRight className="w-4 h-4" />
+                        <span className="bg-white text-black px-6 py-2 rounded-full font-bold flex items-center gap-2 transform scale-90 group-hover:scale-100 transition-transform shadow-lg">
+                            <Eye className="w-4 h-4" /> Ver Diseño
                         </span>
                     </div>
 
                     <button 
                         onClick={(e) => handleDelete(item.id, e)}
-                        className="absolute top-2 right-2 p-2 bg-white/80 dark:bg-black/80 rounded-full text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 dark:hover:bg-red-900/50"
+                        className="absolute top-2 right-2 p-2 bg-white/80 dark:bg-black/80 rounded-full text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 dark:hover:bg-red-900/50 z-20"
                         title="Eliminar diseño"
                     >
                         <Trash2 className="w-4 h-4" />
@@ -94,7 +194,7 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
                 </div>
                 
                 <div className="p-4">
-                    <h3 className="font-bold text-lg mb-1 truncate">{item.name}</h3>
+                    <h3 className="font-bold text-lg mb-1 truncate group-hover:text-pink-500 transition-colors">{item.name}</h3>
                     <div className="flex justify-between items-center text-sm text-gray-500">
                         <span>{new Date(item.createdAt).toLocaleDateString()}</span>
                         <span className="capitalize px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs font-medium">

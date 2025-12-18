@@ -51,9 +51,10 @@ const App: React.FC = () => {
     setView('gallery');
   };
 
-  const handleUseGalleryDesign = (designConfig: TShirtConfig) => {
+  const handleBuyGalleryDesign = (designConfig: TShirtConfig) => {
     setConfig(designConfig);
-    setView('customizer'); // Go to standard buying flow
+    // Directly go to checkout, skipping the customizer
+    setView('checkout'); 
   };
 
   const renderContent = () => {
@@ -83,7 +84,7 @@ const App: React.FC = () => {
       case 'gallery':
         return (
           <GalleryPage 
-             onUseDesign={handleUseGalleryDesign} 
+             onUseDesign={handleBuyGalleryDesign} 
              onNavigateToCreator={() => {
                 setConfig(DEFAULT_CONFIG);
                 setView('designer');
@@ -95,7 +96,7 @@ const App: React.FC = () => {
           <OrderForm 
             config={config} 
             onSuccess={handleOrderSuccess} 
-            onBack={() => setView('customizer')}
+            onBack={() => setView('gallery')} // Modified to allow going back to gallery if came from there
           />
         );
       case 'success':

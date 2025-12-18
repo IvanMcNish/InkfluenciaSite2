@@ -44,10 +44,9 @@ const App: React.FC = () => {
     setView('success');
   };
 
-  const handleSaveDesign = (name: string) => {
-    // Determine snapshot outside or inside Customizer, but here we assume config has it
-    // because Customizer updates config just before calling this.
-    saveDesignToCollection(name, config);
+  const handleSaveDesign = (name: string, designConfig: TShirtConfig) => {
+    // Save to local storage with the provided config (which includes the snapshot)
+    saveDesignToCollection(name, designConfig);
     setConfig(DEFAULT_CONFIG);
     setView('gallery');
   };
@@ -64,6 +63,7 @@ const App: React.FC = () => {
       case 'customizer':
         return (
           <Customizer 
+            key="customizer-view"
             config={config} 
             setConfig={setConfig} 
             onCheckout={() => setView('checkout')} 
@@ -73,6 +73,7 @@ const App: React.FC = () => {
       case 'designer':
         return (
           <Customizer 
+            key="designer-view"
             config={config} 
             setConfig={setConfig} 
             onSaveToGallery={handleSaveDesign}

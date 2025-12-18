@@ -8,7 +8,7 @@ interface CustomizerProps {
   config: TShirtConfig;
   setConfig: React.Dispatch<React.SetStateAction<TShirtConfig>>;
   onCheckout?: () => void;
-  onSaveToGallery?: (name: string) => void;
+  onSaveToGallery?: (name: string, config: TShirtConfig) => void;
   isDesignerMode?: boolean;
 }
 
@@ -21,6 +21,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const [activeLayerIndex, setActiveLayerIndex] = useState<number>(0);
   const [designName, setDesignName] = useState('');
   const [saveError, setSaveError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, slotIndex: number) => {
     const file = e.target.files?.[0];
@@ -152,30 +153,45 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
     });
   };
 
-  const handleAction = () => {
-    // Capture snapshot first
-    if (captureRef.current) {
-        const snapshot = captureRef.current();
-        setConfig(prev => ({ ...prev, snapshotUrl: snapshot }));
+  const handleAction = async () => {
+    setIsProcessing(true);
+    setSaveError('');
+
+    // Wait a brief moment to allow UI to update (like showing spinner)
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    try {
+        let snapshot = '';
+        if (captureRef.current) {
+            try {
+                snapshot = captureRef.current();
+            } catch (e) {
+                console.error("Failed to capture snapshot:", e);
+            }
+        }
+
+        // Create the updated config object immediately
+        const configWithSnapshot = { ...config, snapshotUrl: snapshot };
         
-        // Wait a tick for state to update (in a real app better managed via useEffect or async logic, 
-        // but for this structure we pass the snapshot implicitly via config reference or updating it)
-        
-        // Since setConfig is async, we can't trust config.snapshotUrl immediately here. 
-        // However, we can handle the logic based on mode.
+        // Update state for consistency
+        setConfig(configWithSnapshot);
         
         if (isDesignerMode && onSaveToGallery) {
              if (!designName.trim()) {
                  setSaveError('Por favor, ingresa un nombre para tu diseño.');
+                 setIsProcessing(false);
                  return;
              }
-             // For the collection, we might want to manually attach the snapshot we just took
-             // effectively modifying the config being passed
-             const configWithSnapshot = { ...config, snapshotUrl: snapshot };
-             onSaveToGallery(designName);
+             // Pass the explicit config object with the snapshot
+             onSaveToGallery(designName, configWithSnapshot);
         } else if (onCheckout) {
              onCheckout();
         }
+    } catch (error) {
+        console.error("Error processing action:", error);
+        setSaveError("Ocurrió un error al procesar. Intenta nuevamente.");
+    } finally {
+        setIsProcessing(false);
     }
   };
 
@@ -373,27 +389,28 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                     }}
                     placeholder="Ej. Mi Obra Maestra"
                     className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                    disabled={isProcessing}
                   />
                   {saveError && <p className="text-red-500 text-xs mt-1">{saveError}</p>}
                </div>
                <button 
                 onClick={handleAction}
-                disabled={config.layers.length === 0}
-                className={`w-full bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 ${config.layers.length === 0 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                disabled={config.layers.length === 0 || isProcessing}
+                className={`w-full bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 ${config.layers.length === 0 || isProcessing ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
               >
                 <Save className="w-5 h-5" />
-                GUARDAR EN GALERÍA
+                {isProcessing ? 'Guardando...' : 'GUARDAR EN GALERÍA'}
               </button>
             </div>
           ) : (
              <button 
                 onClick={handleAction}
-                disabled={config.layers.length === 0}
-                className={`w-full bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-500 hover:to-orange-400 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 ${config.layers.length === 0 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                disabled={config.layers.length === 0 || isProcessing}
+                className={`w-full bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-500 hover:to-orange-400 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 ${config.layers.length === 0 || isProcessing ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
               >
                 <ShoppingBag className="w-5 h-5" />
-                COMPRAR AHORA
-                <span className="bg-white/20 px-2 py-0.5 rounded text-sm backdrop-blur-sm">Desde {formatCurrency(PRICES['150g'])}</span>
+                {isProcessing ? 'Procesando...' : 'COMPRAR AHORA'}
+                {!isProcessing && <span className="bg-white/20 px-2 py-0.5 rounded text-sm backdrop-blur-sm">Desde {formatCurrency(PRICES['150g'])}</span>}
               </button>
           )}
         </div>

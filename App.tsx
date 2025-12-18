@@ -6,6 +6,7 @@ import { OrderForm } from './components/OrderForm';
 import { OrderSuccess } from './components/OrderSuccess';
 import { AdminPanel } from './components/AdminPanel';
 import { GalleryPage } from './components/GalleryPage';
+import { TrackOrderPage } from './components/TrackOrderPage';
 import { saveDesignToCollection } from './services/galleryService';
 import { DEFAULT_CONFIG } from './constants';
 import { TShirtConfig, ViewState, Order } from './types';
@@ -110,6 +111,8 @@ const App: React.FC = () => {
             }}
           />
         );
+      case 'track-order':
+        return <TrackOrderPage />;
       case 'admin':
         return <AdminPanel />;
       default:

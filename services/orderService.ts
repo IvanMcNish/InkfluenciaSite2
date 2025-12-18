@@ -28,6 +28,33 @@ export const getOrders = async (): Promise<Order[]> => {
   }));
 };
 
+export const getOrderById = async (id: string): Promise<Order | null> => {
+    const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+    if (error || !data) {
+        console.error('Error fetching order by ID:', error);
+        return null;
+    }
+
+    return {
+        id: data.id,
+        customerName: data.customer_name,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        size: data.size,
+        grammage: data.grammage,
+        config: data.config,
+        total: data.total,
+        status: data.status,
+        date: data.created_at
+    };
+};
+
 export const updateOrderStatus = async (orderId: string, newStatus: OrderStatus): Promise<boolean> => {
   const { error } = await supabase
     .from('orders')
@@ -45,16 +72,16 @@ export const submitOrder = async (orderData: Omit<Order, 'id' | 'date' | 'status
     // 1. Process images if they are still base64 (e.g. direct purchase without saving to gallery)
     const processedConfig = { ...orderData.config };
     
-    // Upload Snapshot
+    // Upload Snapshot (The 3D Render)
     if (processedConfig.snapshotUrl && processedConfig.snapshotUrl.startsWith('data:')) {
-      const snapshotUrl = await uploadBase64Image(processedConfig.snapshotUrl, 'snapshots');
+      const snapshotUrl = await uploadBase64Image(processedConfig.snapshotUrl, 'renders'); // Folder: renders
       if (snapshotUrl) processedConfig.snapshotUrl = snapshotUrl;
     }
 
-    // Upload Layers
+    // Upload Layers (User uploaded images)
     const processedLayers = await Promise.all(processedConfig.layers.map(async (layer) => {
       if (layer.textureUrl.startsWith('data:')) {
-        const textureUrl = await uploadBase64Image(layer.textureUrl, 'layers');
+        const textureUrl = await uploadBase64Image(layer.textureUrl, 'uploads'); // Folder: uploads
         return { ...layer, textureUrl: textureUrl || layer.textureUrl };
       }
       return layer;

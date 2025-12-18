@@ -49,4 +49,4 @@ export interface CollectionItem {
   createdAt: string;
 }
 
-export type ViewState = 'landing' | 'customizer' | 'checkout' | 'success' | 'admin' | 'designer' | 'gallery';
+export type ViewState = 'landing' | 'customizer' | 'checkout' | 'success' | 'admin' | 'designer' | 'gallery' | 'track-order';

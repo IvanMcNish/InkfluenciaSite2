@@ -26,16 +26,16 @@ export const saveDesignToCollection = async (name: string, config: TShirtConfig)
     // 1. Prepare Config: Upload all base64 images to Supabase and replace with URLs
     const processedConfig = { ...config };
     
-    // Upload Snapshot
+    // Upload Snapshot (The 3D Render)
     if (processedConfig.snapshotUrl && processedConfig.snapshotUrl.startsWith('data:')) {
-      const snapshotUrl = await uploadBase64Image(processedConfig.snapshotUrl, 'snapshots');
+      const snapshotUrl = await uploadBase64Image(processedConfig.snapshotUrl, 'renders'); // Folder: renders
       if (snapshotUrl) processedConfig.snapshotUrl = snapshotUrl;
     }
 
-    // Upload Layers
+    // Upload Layers (User uploaded images)
     const processedLayers = await Promise.all(processedConfig.layers.map(async (layer) => {
       if (layer.textureUrl.startsWith('data:')) {
-        const textureUrl = await uploadBase64Image(layer.textureUrl, 'layers');
+        const textureUrl = await uploadBase64Image(layer.textureUrl, 'uploads'); // Folder: uploads
         return { ...layer, textureUrl: textureUrl || layer.textureUrl };
       }
       return layer;

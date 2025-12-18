@@ -9,35 +9,53 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // Helper to upload Base64 images to Supabase Storage
 export const uploadBase64Image = async (base64Data: string, folder: string): Promise<string | null> => {
   try {
+    // 0. Check if it's already a URL (not base64)
+    if (!base64Data.startsWith('data:')) {
+        return base64Data;
+    }
+
     // 1. Convert Base64 to Blob
     const base64Response = await fetch(base64Data);
     const blob = await base64Response.blob();
     
-    // 2. Generate unique filename
+    // 2. Determine extension
+    let extension = 'png'; // default
+    if (blob.type) {
+        const typeParts = blob.type.split('/');
+        if (typeParts.length > 1) {
+            extension = typeParts[1];
+        }
+    }
+    
+    // 3. Generate unique filename
     // Clean up the folder name to avoid double slashes
     const cleanFolder = folder.replace(/\/$/, '').replace(/^\//, '');
-    const fileName = `${cleanFolder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${blob.type.split('/')[1]}`;
+    const fileName = `${cleanFolder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${extension}`;
     
-    // 3. Upload to Supabase Storage
+    console.log(`📤 Subiendo imagen a ${cleanFolder}...`);
+
+    // 4. Upload to Supabase Storage
     const { data, error } = await supabase.storage
       .from('inkfluencia-images')
       .upload(fileName, blob, {
         cacheControl: '3600',
-        upsert: false
+        upsert: false,
+        contentType: blob.type || 'image/png'
       });
 
     if (error) {
       if (error.message.includes('row-level security')) {
-        console.error("🚨 ERROR DE PERMISOS EN STORAGE: Debes ejecutar el SQL para crear las políticas en 'storage.objects'.");
+        console.error("🚨 ERROR DE PERMISOS EN STORAGE: Debes ejecutar el SQL para crear las políticas en 'storage.objects'. Ve al Panel Admin > Configuración.");
       }
       throw error;
     }
 
-    // 4. Get Public URL
+    // 5. Get Public URL
     const { data: { publicUrl } } = supabase.storage
       .from('inkfluencia-images')
       .getPublicUrl(fileName);
 
+    console.log('✅ Imagen subida exitosamente:', publicUrl);
     return publicUrl;
   } catch (error) {
     console.error('Error uploading image:', error);

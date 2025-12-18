@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Moon, ShoppingBag, ArrowLeft, LayoutDashboard, Grid } from 'lucide-react';
+import { Sun, Moon, ShoppingBag, ArrowLeft, LayoutDashboard, Grid, Truck } from 'lucide-react';
 import { ViewState } from '../types';
 
 interface NavbarProps {
@@ -32,6 +32,19 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, curren
       </div>
 
       <div className="flex items-center gap-4">
+        <button
+          onClick={() => navigate('track-order')}
+          className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
+            currentView === 'track-order' 
+              ? 'bg-orange-100 dark:bg-orange-900/20 text-orange-600' 
+              : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500'
+          }`}
+          title="Rastrear Pedido"
+        >
+          <Truck className="w-5 h-5" />
+          <span className="hidden sm:inline">Rastrear</span>
+        </button>
+
         <button
           onClick={() => navigate('gallery')}
           className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${

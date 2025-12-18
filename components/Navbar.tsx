@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Moon, ShoppingBag, ArrowLeft, LayoutDashboard } from 'lucide-react';
+import { Sun, Moon, ShoppingBag, ArrowLeft, LayoutDashboard, Grid } from 'lucide-react';
 import { ViewState } from '../types';
 
 interface NavbarProps {
@@ -33,6 +33,19 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, curren
 
       <div className="flex items-center gap-4">
         <button
+          onClick={() => navigate('gallery')}
+          className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
+            currentView === 'gallery' 
+              ? 'bg-purple-100 dark:bg-purple-900/20 text-purple-600' 
+              : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500'
+          }`}
+          title="Ver Galería"
+        >
+          <Grid className="w-5 h-5" />
+          <span className="hidden sm:inline">Galería</span>
+        </button>
+
+        <button
           onClick={() => navigate('admin')}
           className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
             currentView === 'admin' 
@@ -53,7 +66,7 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, curren
           {darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-gray-600" />}
         </button>
         
-        {currentView !== 'customizer' && currentView !== 'checkout' && currentView !== 'admin' && (
+        {currentView !== 'customizer' && currentView !== 'checkout' && currentView !== 'admin' && currentView !== 'designer' && (
           <button
             onClick={() => navigate('customizer')}
             className="hidden md:flex items-center gap-2 bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 text-white px-5 py-2.5 rounded-full transition-all font-bold shadow-md hover:shadow-lg"

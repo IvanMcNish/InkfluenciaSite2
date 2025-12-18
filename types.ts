@@ -32,4 +32,11 @@ export interface Order {
   status: OrderStatus;
 }
 
-export type ViewState = 'landing' | 'customizer' | 'checkout' | 'success' | 'admin';
+export interface CollectionItem {
+  id: string;
+  name: string;
+  config: TShirtConfig;
+  createdAt: string;
+}
+
+export type ViewState = 'landing' | 'customizer' | 'checkout' | 'success' | 'admin' | 'designer' | 'gallery';

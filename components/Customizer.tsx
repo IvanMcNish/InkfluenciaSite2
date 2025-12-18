@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, ImageIcon, Trash2, Layers } from 'lucide-react';
+import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, ImageIcon, Trash2, Layers, Save, ShoppingBag } from 'lucide-react';
 import { TShirtConfig } from '../types';
 import { Scene } from './Scene';
 import { PRICES, formatCurrency } from '../constants';
@@ -7,16 +7,20 @@ import { PRICES, formatCurrency } from '../constants';
 interface CustomizerProps {
   config: TShirtConfig;
   setConfig: React.Dispatch<React.SetStateAction<TShirtConfig>>;
-  onCheckout: () => void;
+  onCheckout?: () => void;
+  onSaveToGallery?: (name: string) => void;
+  isDesignerMode?: boolean;
 }
 
-export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onCheckout }) => {
+export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onCheckout, onSaveToGallery, isDesignerMode = false }) => {
   const fileInputRef1 = useRef<HTMLInputElement>(null);
   const fileInputRef2 = useRef<HTMLInputElement>(null);
   const captureRef = useRef<(() => string) | null>(null);
   
   // Track which layer index is currently selected for editing (0 or 1)
   const [activeLayerIndex, setActiveLayerIndex] = useState<number>(0);
+  const [designName, setDesignName] = useState('');
+  const [saveError, setSaveError] = useState('');
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, slotIndex: number) => {
     const file = e.target.files?.[0];
@@ -148,12 +152,31 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
     });
   };
 
-  const handleCheckout = () => {
+  const handleAction = () => {
+    // Capture snapshot first
     if (captureRef.current) {
         const snapshot = captureRef.current();
         setConfig(prev => ({ ...prev, snapshotUrl: snapshot }));
+        
+        // Wait a tick for state to update (in a real app better managed via useEffect or async logic, 
+        // but for this structure we pass the snapshot implicitly via config reference or updating it)
+        
+        // Since setConfig is async, we can't trust config.snapshotUrl immediately here. 
+        // However, we can handle the logic based on mode.
+        
+        if (isDesignerMode && onSaveToGallery) {
+             if (!designName.trim()) {
+                 setSaveError('Por favor, ingresa un nombre para tu diseño.');
+                 return;
+             }
+             // For the collection, we might want to manually attach the snapshot we just took
+             // effectively modifying the config being passed
+             const configWithSnapshot = { ...config, snapshotUrl: snapshot };
+             onSaveToGallery(designName);
+        } else if (onCheckout) {
+             onCheckout();
+        }
     }
-    onCheckout();
   };
 
   const activeLayer = config.layers[activeLayerIndex];
@@ -168,8 +191,8 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
       {/* Controls Panel */}
       <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 flex flex-col gap-6 overflow-y-auto">
         <div className="flex items-center gap-2 mb-2">
-            <div className="h-8 w-1 bg-gradient-to-b from-pink-500 to-orange-500 rounded-full"></div>
-            <h2 className="text-2xl font-bold">Personalización</h2>
+            <div className={`h-8 w-1 bg-gradient-to-b rounded-full ${isDesignerMode ? 'from-purple-500 to-indigo-500' : 'from-pink-500 to-orange-500'}`}></div>
+            <h2 className="text-2xl font-bold">{isDesignerMode ? 'Estudio de Diseño' : 'Personalización'}</h2>
         </div>
         
         {/* Color Selection */}
@@ -337,14 +360,42 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         )}
 
         <div className="mt-auto pt-6 border-t border-gray-100 dark:border-gray-800">
-          <button 
-            onClick={handleCheckout}
-            disabled={config.layers.length === 0}
-            className={`w-full bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-500 hover:to-orange-400 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 ${config.layers.length === 0 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-          >
-            COMPRAR AHORA
-            <span className="bg-white/20 px-2 py-0.5 rounded text-sm backdrop-blur-sm">Desde {formatCurrency(PRICES['150g'])}</span>
-          </button>
+          {isDesignerMode ? (
+            <div className="space-y-4">
+               <div>
+                  <label className="block text-sm font-medium mb-1">Nombre del Diseño</label>
+                  <input 
+                    type="text" 
+                    value={designName}
+                    onChange={(e) => {
+                        setDesignName(e.target.value);
+                        setSaveError('');
+                    }}
+                    placeholder="Ej. Mi Obra Maestra"
+                    className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                  />
+                  {saveError && <p className="text-red-500 text-xs mt-1">{saveError}</p>}
+               </div>
+               <button 
+                onClick={handleAction}
+                disabled={config.layers.length === 0}
+                className={`w-full bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 ${config.layers.length === 0 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+              >
+                <Save className="w-5 h-5" />
+                GUARDAR EN GALERÍA
+              </button>
+            </div>
+          ) : (
+             <button 
+                onClick={handleAction}
+                disabled={config.layers.length === 0}
+                className={`w-full bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-500 hover:to-orange-400 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 ${config.layers.length === 0 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+              >
+                <ShoppingBag className="w-5 h-5" />
+                COMPRAR AHORA
+                <span className="bg-white/20 px-2 py-0.5 rounded text-sm backdrop-blur-sm">Desde {formatCurrency(PRICES['150g'])}</span>
+              </button>
+          )}
         </div>
       </div>
     </div>

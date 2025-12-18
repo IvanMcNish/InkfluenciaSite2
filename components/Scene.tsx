@@ -6,6 +6,19 @@ import * as THREE from 'three';
 import { TSHIRT_OBJ_URL } from '../constants';
 import { TShirtConfig as ConfigType, Position } from '../types';
 
+// Add type definitions for Three.js elements in JSX to fix TypeScript errors
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      mesh: any;
+      meshBasicMaterial: any;
+      meshStandardMaterial: any;
+      ambientLight: any;
+      spotLight: any;
+    }
+  }
+}
+
 interface SceneProps {
   config: ConfigType;
   captureRef?: React.MutableRefObject<(() => string) | null>;

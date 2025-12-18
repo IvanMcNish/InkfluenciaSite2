@@ -1,11 +1,12 @@
 import React from 'react';
-import { Palette, Box, Sparkles } from 'lucide-react';
+import { Palette, Box, Sparkles, Grid } from 'lucide-react';
 
 interface LandingPageProps {
   onStart: () => void;
+  onViewGallery: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewGallery }) => {
   return (
     <div className="flex flex-col min-h-[calc(100vh-80px)]">
       {/* Hero Section */}
@@ -21,12 +22,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
         <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl mb-12 leading-relaxed">
           Diseños únicos, colores vibrantes y tecnología 3D. Personaliza tu estilo con Inkfluencia y deja huella donde vayas.
         </p>
-        <button
-          onClick={onStart}
-          className="bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-500 hover:to-orange-400 text-white text-xl font-bold px-12 py-5 rounded-full shadow-lg hover:shadow-orange-500/25 hover:scale-105 transition-all duration-300"
-        >
-          Empezar a Crear
-        </button>
+        <div className="flex flex-col sm:flex-row gap-4">
+            <button
+            onClick={onStart}
+            className="bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-500 hover:to-orange-400 text-white text-xl font-bold px-12 py-5 rounded-full shadow-lg hover:shadow-orange-500/25 hover:scale-105 transition-all duration-300"
+            >
+            Empezar a Crear
+            </button>
+            <button
+            onClick={onViewGallery}
+            className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 text-xl font-bold px-12 py-5 rounded-full shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 flex items-center gap-2 justify-center"
+            >
+            <Grid className="w-5 h-5" />
+            Ver Colección
+            </button>
+        </div>
       </div>
 
       {/* Features Grid */}

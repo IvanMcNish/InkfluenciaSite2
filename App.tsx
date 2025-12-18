@@ -5,6 +5,8 @@ import { Customizer } from './components/Customizer';
 import { OrderForm } from './components/OrderForm';
 import { OrderSuccess } from './components/OrderSuccess';
 import { AdminPanel } from './components/AdminPanel';
+import { GalleryPage } from './components/GalleryPage';
+import { saveDesignToCollection } from './services/galleryService';
 import { DEFAULT_CONFIG } from './constants';
 import { TShirtConfig, ViewState, Order } from './types';
 
@@ -42,16 +44,49 @@ const App: React.FC = () => {
     setView('success');
   };
 
+  const handleSaveDesign = (name: string) => {
+    // Determine snapshot outside or inside Customizer, but here we assume config has it
+    // because Customizer updates config just before calling this.
+    saveDesignToCollection(name, config);
+    setConfig(DEFAULT_CONFIG);
+    setView('gallery');
+  };
+
+  const handleUseGalleryDesign = (designConfig: TShirtConfig) => {
+    setConfig(designConfig);
+    setView('customizer'); // Go to standard buying flow
+  };
+
   const renderContent = () => {
     switch (view) {
       case 'landing':
-        return <LandingPage onStart={() => setView('customizer')} />;
+        return <LandingPage onStart={() => setView('customizer')} onViewGallery={() => setView('gallery')} />;
       case 'customizer':
         return (
           <Customizer 
             config={config} 
             setConfig={setConfig} 
             onCheckout={() => setView('checkout')} 
+            isDesignerMode={false}
+          />
+        );
+      case 'designer':
+        return (
+          <Customizer 
+            config={config} 
+            setConfig={setConfig} 
+            onSaveToGallery={handleSaveDesign}
+            isDesignerMode={true}
+          />
+        );
+      case 'gallery':
+        return (
+          <GalleryPage 
+             onUseDesign={handleUseGalleryDesign} 
+             onNavigateToCreator={() => {
+                setConfig(DEFAULT_CONFIG);
+                setView('designer');
+             }} 
           />
         );
       case 'checkout':
@@ -76,7 +111,7 @@ const App: React.FC = () => {
       case 'admin':
         return <AdminPanel />;
       default:
-        return <LandingPage onStart={() => setView('customizer')} />;
+        return <LandingPage onStart={() => setView('customizer')} onViewGallery={() => setView('gallery')} />;
     }
   };
 

@@ -40,8 +40,12 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
            
            const ctx = canvas.getContext('2d');
            if (ctx) {
+             // Clear context just in case, though new canvas is empty
+             ctx.clearRect(0, 0, width, height);
              ctx.drawImage(img, 0, 0, width, height);
-             const url = canvas.toDataURL('image/jpeg', 0.8);
+             
+             // CHANGED: Use image/png to preserve transparency (alpha channel)
+             const url = canvas.toDataURL('image/png');
              
              setConfig(prev => {
                 const newLayers = [...prev.layers];

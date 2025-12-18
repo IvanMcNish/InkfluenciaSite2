@@ -3,10 +3,10 @@ import { Navbar } from './components/Navbar';
 import { LandingPage } from './components/LandingPage';
 import { Customizer } from './components/Customizer';
 import { OrderForm } from './components/OrderForm';
+import { OrderSuccess } from './components/OrderSuccess';
 import { AdminPanel } from './components/AdminPanel';
 import { DEFAULT_CONFIG } from './constants';
-import { TShirtConfig, ViewState } from './types';
-import { CheckCircle } from 'lucide-react';
+import { TShirtConfig, ViewState, Order } from './types';
 
 const App: React.FC = () => {
   // Theme State
@@ -23,6 +23,9 @@ const App: React.FC = () => {
   
   // Customization State
   const [config, setConfig] = useState<TShirtConfig>(DEFAULT_CONFIG);
+  
+  // Last successfully created order
+  const [lastOrder, setLastOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     if (darkMode) {
@@ -33,6 +36,11 @@ const App: React.FC = () => {
       localStorage.setItem('theme', 'light');
     }
   }, [darkMode]);
+
+  const handleOrderSuccess = (order: Order) => {
+    setLastOrder(order);
+    setView('success');
+  };
 
   const renderContent = () => {
     switch (view) {
@@ -50,30 +58,20 @@ const App: React.FC = () => {
         return (
           <OrderForm 
             config={config} 
-            onSuccess={() => setView('success')} 
+            onSuccess={handleOrderSuccess} 
             onBack={() => setView('customizer')}
           />
         );
       case 'success':
         return (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 animate-fade-in">
-            <div className="w-24 h-24 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-6 text-green-600 dark:text-green-300">
-              <CheckCircle className="w-12 h-12" />
-            </div>
-            <h2 className="text-3xl font-black mb-4">¡Pedido Recibido!</h2>
-            <p className="text-gray-600 dark:text-gray-400 max-w-md mb-8">
-              Gracias por elegir Inkfluencia. Tu estilo está en camino.
-            </p>
-            <button 
-              onClick={() => {
+          <OrderSuccess 
+            order={lastOrder} 
+            onReset={() => {
                 setConfig(DEFAULT_CONFIG);
+                setLastOrder(null);
                 setView('landing');
-              }}
-              className="bg-gradient-to-r from-pink-600 to-orange-500 text-white px-8 py-3 rounded-full font-bold hover:shadow-lg transition-all"
-            >
-              Volver al Inicio
-            </button>
-          </div>
+            }}
+          />
         );
       case 'admin':
         return <AdminPanel />;

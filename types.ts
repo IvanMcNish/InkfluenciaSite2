@@ -22,6 +22,7 @@ export interface Order {
   id: string;
   customerName: string;
   email: string;
+  phone: string;
   address: string;
   size: string;
   grammage: '150g' | '200g';

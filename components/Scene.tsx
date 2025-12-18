@@ -88,7 +88,7 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
     <Decal 
       position={[position.x, position.y, zPos]} 
       rotation={[0, 0, 0]} 
-      scale={[scaleX, scaleY, 5]} // Deep Z projection to avoid clipping
+      scale={[scaleX, scaleY, 2]} // Deep Z projection to avoid clipping
       debug={false}
     >
       <meshBasicMaterial 

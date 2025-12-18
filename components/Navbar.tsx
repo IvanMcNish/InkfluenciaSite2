@@ -11,7 +11,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, currentView, navigate }) => {
   return (
-    <nav className="w-full py-4 px-6 flex justify-between items-center sticky top-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+    <nav className="w-full py-4 px-6 flex justify-between items-center sticky top-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 print:hidden">
       <div className="flex items-center gap-4">
         {currentView !== 'landing' && (
           <button 

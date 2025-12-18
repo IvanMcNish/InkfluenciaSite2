@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { SIZES, PRICES, SHIPPING, formatCurrency } from '../constants';
-import { TShirtConfig } from '../types';
+import { TShirtConfig, Order } from '../types';
 import { submitOrder } from '../services/orderService';
-import { CheckCircle2, Loader2, AlertCircle, Weight, Truck } from 'lucide-react';
+import { CheckCircle2, Loader2, AlertCircle, Weight, Truck, Phone, Tag } from 'lucide-react';
 
 interface OrderFormProps {
   config: TShirtConfig;
-  onSuccess: () => void;
+  onSuccess: (order: Order) => void;
   onBack: () => void;
 }
 
@@ -16,6 +16,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     address: '',
     size: 'M',
     grammage: '200g' as '150g' | '200g'
@@ -29,31 +30,35 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
     setFormData(prev => ({ ...prev, grammage: g }));
   };
 
+  const basePrice = PRICES[formData.grammage];
+  // Promotion: Free Shipping
+  const shippingCost = SHIPPING;
+  const shippingDiscount = SHIPPING; 
+  const total = basePrice + shippingCost - shippingDiscount;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      await submitOrder({
+      const newOrder = await submitOrder({
         customerName: formData.name,
         email: formData.email,
+        phone: formData.phone,
         address: formData.address,
         size: formData.size,
         grammage: formData.grammage,
         config: config,
         total: total
       });
-      onSuccess();
+      onSuccess(newOrder);
     } catch (err) {
       setError('Hubo un error al procesar el pedido. Intenta nuevamente.');
     } finally {
       setLoading(false);
     }
   };
-
-  const basePrice = PRICES[formData.grammage];
-  const total = basePrice + SHIPPING;
 
   // Use snapshot if available, otherwise fall back to first layer or placeholder
   const displayImage = config.snapshotUrl || (config.layers.length > 0 ? config.layers[0].textureUrl : null);
@@ -104,9 +109,13 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                     <span>Subtotal</span>
                     <span>{formatCurrency(basePrice)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm text-gray-500">
                     <span className="flex items-center gap-1"><Truck className="w-3 h-3" /> Envío</span>
-                    <span>{formatCurrency(SHIPPING)}</span>
+                    <span className="line-through">{formatCurrency(shippingCost)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-green-600 font-medium">
+                    <span className="flex items-center gap-1"><Tag className="w-3 h-3" /> Promoción Envío</span>
+                    <span>-{formatCurrency(shippingDiscount)}</span>
                 </div>
                 <div className="flex justify-between text-xl font-black text-pink-600 pt-2 border-t border-dashed border-gray-200 dark:border-gray-700 mt-2">
                     <span>Total</span>
@@ -204,6 +213,24 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                         className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all"
                         placeholder="juan@ejemplo.com"
                         />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium mb-1">Teléfono</label>
+                        <div className="relative">
+                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input 
+                                required
+                                name="phone"
+                                type="tel" 
+                                value={formData.phone}
+                                onChange={handleChange}
+                                className="w-full pl-10 pr-3 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all"
+                                placeholder="300 123 4567"
+                            />
+                        </div>
                     </div>
                 </div>
 

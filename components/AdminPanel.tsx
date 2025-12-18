@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { getOrders, updateOrderStatus } from '../services/orderService';
 import { getCustomers } from '../services/customerService';
 import { Order, OrderStatus, Customer } from '../types';
-import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag } from 'lucide-react';
+import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '../constants';
 import { Scene } from './Scene';
 
 export const AdminPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'orders' | 'customers'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'customers' | 'settings'>('orders');
   
   // Orders State
   const [orders, setOrders] = useState<Order[]>([]);
@@ -20,14 +20,19 @@ export const AdminPanel: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
+  // Settings State
+  const [copied, setCopied] = useState(false);
+
   const loadData = async () => {
       setIsLoading(true);
       if (activeTab === 'orders') {
           const loadedOrders = await getOrders();
           setOrders(loadedOrders);
-      } else {
+      } else if (activeTab === 'customers') {
           const loadedCustomers = await getCustomers();
           setCustomers(loadedCustomers);
+      } else {
+          // No data fetch needed for settings
       }
       setIsLoading(false);
   };
@@ -51,6 +56,12 @@ export const AdminPanel: React.FC = () => {
     }
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-CO', {
       day: '2-digit',
@@ -70,18 +81,25 @@ export const AdminPanel: React.FC = () => {
     }
   };
 
-  // --- FILTERS ---
-  const filteredOrders = orders.filter(order => 
-    order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const storageSQL = `-- Copia y pega esto en el SQL Editor de Supabase para arreglar las imágenes
 
-  const filteredCustomers = customers.filter(customer =>
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.phone.includes(searchTerm)
-  );
+-- 1. Asegurar que el bucket existe y es público
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('inkfluencia-images', 'inkfluencia-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- 2. Limpiar políticas antiguas para evitar conflictos
+DROP POLICY IF EXISTS "Public Access" ON storage.objects;
+DROP POLICY IF EXISTS "Permitir Subida Publica" ON storage.objects;
+DROP POLICY IF EXISTS "Permitir Lectura Publica" ON storage.objects;
+DROP POLICY IF EXISTS "Public Access Inkfluencia" ON storage.objects;
+
+-- 3. Crear política maestra: Permitir TODO (Leer/Escribir) a TODOS (Público) en este bucket
+CREATE POLICY "Public Access Inkfluencia"
+ON storage.objects FOR ALL
+TO public
+USING ( bucket_id = 'inkfluencia-images' )
+WITH CHECK ( bucket_id = 'inkfluencia-images' );`;
 
   // --- MODAL ---
   const OrderDetailModal = () => {
@@ -251,30 +269,38 @@ export const AdminPanel: React.FC = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input 
                     type="text" 
-                    placeholder={activeTab === 'orders' ? "Buscar pedido..." : "Buscar cliente..."}
+                    placeholder={activeTab === 'customers' ? "Buscar cliente..." : "Buscar..."}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 w-full md:w-64 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all"
+                    disabled={activeTab === 'settings'}
+                    className={`pl-10 pr-4 py-2 w-full md:w-64 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all ${activeTab === 'settings' ? 'opacity-50' : ''}`}
                 />
             </div>
         </div>
       </div>
 
       {/* TABS */}
-      <div className="flex gap-4 mb-6 border-b border-gray-200 dark:border-gray-800">
+      <div className="flex gap-4 mb-6 border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
           <button
             onClick={() => { setActiveTab('orders'); setSearchTerm(''); }}
-            className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 ${activeTab === 'orders' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
+            className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === 'orders' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
           >
               <ShoppingBag className="w-4 h-4" />
               Pedidos Activos
           </button>
           <button
             onClick={() => { setActiveTab('customers'); setSearchTerm(''); }}
-            className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 ${activeTab === 'customers' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
+            className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === 'customers' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
           >
               <Users className="w-4 h-4" />
               Base de Clientes
+          </button>
+          <button
+            onClick={() => { setActiveTab('settings'); setSearchTerm(''); }}
+            className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === 'settings' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
+          >
+              <Settings className="w-4 h-4" />
+              Configuración
           </button>
       </div>
 
@@ -305,7 +331,11 @@ export const AdminPanel: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                                    {filteredOrders.map((order) => (
+                                    {orders.filter(order => 
+                                        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        order.email.toLowerCase().includes(searchTerm.toLowerCase())
+                                    ).map((order) => (
                                         <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                                             <td className="p-4">
                                                 <div className="font-mono text-sm font-bold text-pink-600">#{order.id}</div>
@@ -366,7 +396,11 @@ export const AdminPanel: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                                    {filteredCustomers.map((customer) => (
+                                    {customers.filter(customer =>
+                                        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        customer.phone.includes(searchTerm)
+                                    ).map((customer) => (
                                         <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                                             <td className="p-4">
                                                 <div className="flex items-center gap-3">
@@ -409,6 +443,49 @@ export const AdminPanel: React.FC = () => {
                         </div>
                     </div>
                 )
+            )}
+
+            {/* SETTINGS VIEW */}
+            {activeTab === 'settings' && (
+               <div className="max-w-4xl mx-auto animate-fade-in">
+                   <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+                       <div className="flex items-center gap-3 mb-6">
+                           <div className="p-3 bg-pink-100 dark:bg-pink-900/20 rounded-lg text-pink-600">
+                               <Database className="w-6 h-6" />
+                           </div>
+                           <div>
+                               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Configuración de Base de Datos</h2>
+                               <p className="text-gray-500 dark:text-gray-400 text-sm">Utilidades para solucionar problemas de conexión y permisos.</p>
+                           </div>
+                       </div>
+
+                       <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/30 rounded-lg p-4 mb-6 flex gap-3">
+                           <AlertTriangle className="w-6 h-6 text-yellow-600 dark:text-yellow-500 shrink-0" />
+                           <div>
+                               <h3 className="font-bold text-yellow-800 dark:text-yellow-400 text-sm">¿Problemas con las imágenes?</h3>
+                               <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-1">
+                                   Si ves el error "row-level security policy" en la consola, es porque Supabase bloquea la subida de archivos por defecto.
+                                   Ejecuta el siguiente código SQL en tu panel de Supabase para solucionarlo.
+                               </p>
+                           </div>
+                       </div>
+
+                       <div className="relative">
+                           <div className="absolute top-3 right-3">
+                               <button 
+                                   onClick={() => copyToClipboard(storageSQL)}
+                                   className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-xs font-bold shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                               >
+                                   {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                                   {copied ? 'Copiado' : 'Copiar SQL'}
+                               </button>
+                           </div>
+                           <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl overflow-x-auto text-sm font-mono leading-relaxed border border-gray-800">
+                               {storageSQL}
+                           </pre>
+                       </div>
+                   </div>
+               </div>
             )}
           </>
       )}

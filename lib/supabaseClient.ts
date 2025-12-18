@@ -14,7 +14,9 @@ export const uploadBase64Image = async (base64Data: string, folder: string): Pro
     const blob = await base64Response.blob();
     
     // 2. Generate unique filename
-    const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${blob.type.split('/')[1]}`;
+    // Clean up the folder name to avoid double slashes
+    const cleanFolder = folder.replace(/\/$/, '').replace(/^\//, '');
+    const fileName = `${cleanFolder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${blob.type.split('/')[1]}`;
     
     // 3. Upload to Supabase Storage
     const { data, error } = await supabase.storage
@@ -24,7 +26,12 @@ export const uploadBase64Image = async (base64Data: string, folder: string): Pro
         upsert: false
       });
 
-    if (error) throw error;
+    if (error) {
+      if (error.message.includes('row-level security')) {
+        console.error("🚨 ERROR DE PERMISOS EN STORAGE: Debes ejecutar el SQL para crear las políticas en 'storage.objects'.");
+      }
+      throw error;
+    }
 
     // 4. Get Public URL
     const { data: { publicUrl } } = supabase.storage
@@ -34,6 +41,7 @@ export const uploadBase64Image = async (base64Data: string, folder: string): Pro
     return publicUrl;
   } catch (error) {
     console.error('Error uploading image:', error);
+    // Return null to allow fallback to base64 storage (so the order isn't lost)
     return null;
   }
 };

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Order } from '../types';
-import { CheckCircle, Printer, Download, MapPin, Mail, Phone, Calendar, ArrowRight } from 'lucide-react';
+import { CheckCircle, Printer, Download, MapPin, Mail, Phone, Calendar, ArrowRight, Info } from 'lucide-react';
 import { formatCurrency } from '../constants';
 
 interface OrderSuccessProps {
@@ -23,11 +23,18 @@ export const OrderSuccess: React.FC<OrderSuccessProps> = ({ order, onReset }) =>
           <CheckCircle className="w-10 h-10" />
         </div>
         <h2 className="text-4xl font-black mb-4 text-gray-900 dark:text-white">¡Pedido Confirmado!</h2>
-        <p className="text-gray-600 dark:text-gray-400 max-w-lg mx-auto">
+        <p className="text-gray-600 dark:text-gray-400 max-w-lg mx-auto mb-6">
           Gracias por tu compra. Hemos enviado un correo de confirmación a <span className="font-bold text-gray-900 dark:text-gray-200">{order.email}</span>.
         </p>
         
-        <div className="flex justify-center gap-4 mt-8">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-4 rounded-xl max-w-xl mx-auto flex gap-3 text-left mb-8">
+            <Info className="w-6 h-6 text-blue-500 shrink-0" />
+            <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
+                El equipo de Inkfluencia se pondrá en contacto contigo al número <strong>{order.phone}</strong> para confirmar el pedido, verificar los archivos de diseño y ultimar detalles de entrega.
+            </p>
+        </div>
+        
+        <div className="flex justify-center gap-4">
             <button 
                 onClick={handlePrint}
                 className="flex items-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-full font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"

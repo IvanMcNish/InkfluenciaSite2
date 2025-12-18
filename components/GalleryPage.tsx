@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CollectionItem, TShirtConfig } from '../types';
 import { getCollection, deleteDesignFromCollection } from '../services/galleryService';
-import { Palette, Trash2, Eye, Grid, X, ShoppingBag, Calendar, CheckCircle2 } from 'lucide-react';
+import { Palette, Trash2, Eye, Grid, X, ShoppingBag, Calendar, CheckCircle2, Loader2 } from 'lucide-react';
 import { formatCurrency, PRICES } from '../constants';
 
 interface GalleryPageProps {
@@ -12,18 +12,30 @@ interface GalleryPageProps {
 export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigateToCreator }) => {
   const [collection, setCollection] = useState<CollectionItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<CollectionItem | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchGallery = async () => {
+      setIsLoading(true);
+      const items = await getCollection();
+      setCollection(items);
+      setIsLoading(false);
+  };
 
   useEffect(() => {
-    setCollection(getCollection());
+    fetchGallery();
   }, []);
 
-  const handleDelete = (id: string, e: React.MouseEvent) => {
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (window.confirm('¿Estás seguro de que deseas eliminar este diseño de la colección?')) {
-        const updated = deleteDesignFromCollection(id);
-        setCollection(updated);
-        if (selectedItem?.id === id) {
-            setSelectedItem(null);
+        const success = await deleteDesignFromCollection(id);
+        if (success) {
+            setCollection(prev => prev.filter(item => item.id !== id));
+            if (selectedItem?.id === id) {
+                setSelectedItem(null);
+            }
+        } else {
+            alert('No se pudo eliminar el diseño. Intenta nuevamente.');
         }
     }
   };
@@ -144,7 +156,11 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
         </button>
       </div>
 
-      {collection.length === 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+            <Loader2 className="w-10 h-10 text-pink-500 animate-spin" />
+        </div>
+      ) : collection.length === 0 ? (
         <div className="text-center py-20 bg-gray-50 dark:bg-gray-900 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-800">
            <Palette className="w-16 h-16 text-gray-300 mx-auto mb-4" />
            <h3 className="text-xl font-bold text-gray-600 dark:text-gray-400">Aún no hay diseños en la galería</h3>

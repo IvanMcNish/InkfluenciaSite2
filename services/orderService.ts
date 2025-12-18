@@ -1,47 +1,110 @@
+import { supabase, uploadBase64Image } from '../lib/supabaseClient';
 import { Order, OrderStatus } from '../types';
+import { saveOrUpdateCustomer } from './customerService';
 
-const STORAGE_KEY = 'inkfluencia_orders';
+export const getOrders = async (): Promise<Order[]> => {
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-// Fetch orders from local storage
-export const getOrders = (): Order[] => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (e) {
+  if (error) {
+    console.error('Error fetching orders:', error);
     return [];
   }
+
+  return data.map((item: any) => ({
+    id: item.id,
+    customerName: item.customer_name,
+    email: item.email,
+    phone: item.phone,
+    address: item.address,
+    size: item.size,
+    grammage: item.grammage,
+    config: item.config,
+    total: item.total,
+    status: item.status,
+    date: item.created_at
+  }));
 };
 
-// Update an order's status
-export const updateOrderStatus = (orderId: string, newStatus: OrderStatus): Order[] => {
-  const currentOrders = getOrders();
-  const updatedOrders = currentOrders.map(order => 
-    order.id === orderId ? { ...order, status: newStatus } : order
-  );
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedOrders));
-  return updatedOrders;
+export const updateOrderStatus = async (orderId: string, newStatus: OrderStatus): Promise<boolean> => {
+  const { error } = await supabase
+    .from('orders')
+    .update({ status: newStatus })
+    .eq('id', orderId);
+
+  if (error) {
+      console.error('Error updating order:', error);
+      return false;
+  }
+  return true;
 };
 
-// Mock backend service with LocalStorage persistence
 export const submitOrder = async (orderData: Omit<Order, 'id' | 'date' | 'status'>): Promise<Order> => {
-  return new Promise((resolve) => {
-    // Simulate network delay
-    setTimeout(() => {
-      const newOrder: Order = {
-        ...orderData,
-        id: Math.random().toString(36).substr(2, 9).toUpperCase(),
-        date: new Date().toISOString(),
+    // 1. Process images if they are still base64 (e.g. direct purchase without saving to gallery)
+    const processedConfig = { ...orderData.config };
+    
+    // Upload Snapshot
+    if (processedConfig.snapshotUrl && processedConfig.snapshotUrl.startsWith('data:')) {
+      const snapshotUrl = await uploadBase64Image(processedConfig.snapshotUrl, 'snapshots');
+      if (snapshotUrl) processedConfig.snapshotUrl = snapshotUrl;
+    }
+
+    // Upload Layers
+    const processedLayers = await Promise.all(processedConfig.layers.map(async (layer) => {
+      if (layer.textureUrl.startsWith('data:')) {
+        const textureUrl = await uploadBase64Image(layer.textureUrl, 'layers');
+        return { ...layer, textureUrl: textureUrl || layer.textureUrl };
+      }
+      return layer;
+    }));
+    processedConfig.layers = processedLayers;
+
+    // 2. Save or Update Customer Data independently
+    await saveOrUpdateCustomer(
+        orderData.customerName,
+        orderData.email,
+        orderData.phone,
+        orderData.address
+    );
+
+    const newOrderId = Math.random().toString(36).substr(2, 9).toUpperCase();
+
+    // 3. Insert into Supabase Orders Table
+    const { data, error } = await supabase
+      .from('orders')
+      .insert([{
+        id: newOrderId,
+        customer_name: orderData.customerName,
+        email: orderData.email,
+        phone: orderData.phone,
+        address: orderData.address,
+        size: orderData.size,
+        grammage: orderData.grammage,
+        config: processedConfig,
+        total: orderData.total,
         status: 'pending'
-      };
-      
-      // Save to local storage for the admin panel
-      const currentOrders = getOrders();
-      const updatedOrders = [newOrder, ...currentOrders];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedOrders));
-      
-      console.log('Order processed and saved:', newOrder);
-      
-      resolve(newOrder);
-    }, 1500);
-  });
+      }])
+      .select()
+      .single();
+
+    if (error) {
+        console.error('Error submitting order:', error);
+        throw error;
+    }
+
+    return {
+        id: data.id,
+        customerName: data.customer_name,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        size: data.size,
+        grammage: data.grammage,
+        config: data.config,
+        total: data.total,
+        date: data.created_at,
+        status: data.status
+    };
 };

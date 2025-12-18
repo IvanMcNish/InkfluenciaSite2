@@ -44,9 +44,9 @@ const App: React.FC = () => {
     setView('success');
   };
 
-  const handleSaveDesign = (name: string, designConfig: TShirtConfig) => {
-    // Save to local storage with the provided config (which includes the snapshot)
-    saveDesignToCollection(name, designConfig);
+  const handleSaveDesign = async (name: string, designConfig: TShirtConfig) => {
+    // Save to Supabase (async operation now)
+    await saveDesignToCollection(name, designConfig);
     setConfig(DEFAULT_CONFIG);
     setView('gallery');
   };

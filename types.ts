@@ -32,6 +32,16 @@ export interface Order {
   status: OrderStatus;
 }
 
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  lastOrderAt: string;
+  createdAt: string;
+}
+
 export interface CollectionItem {
   id: string;
   name: string;

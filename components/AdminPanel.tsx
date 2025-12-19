@@ -2,9 +2,9 @@ import React, { useEffect, useState, useRef } from 'react';
 import { getOrders, updateOrderStatus } from '../services/orderService';
 import { getCustomers } from '../services/customerService';
 import { getCollection, deleteDesignFromCollection } from '../services/galleryService';
-import { uploadAppLogo, APP_LOGO_URL } from '../lib/supabaseClient';
+import { uploadAppLogo, APP_LOGO_URL, supabase } from '../lib/supabaseClient';
 import { Order, OrderStatus, Customer, CollectionItem } from '../types';
-import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon } from 'lucide-react';
+import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut } from 'lucide-react';
 import { formatCurrency } from '../constants';
 import { Scene } from './Scene';
 
@@ -20,10 +20,8 @@ export const AdminPanel: React.FC = () => {
 
   // Gallery State
   const [galleryItems, setGalleryItems] = useState<CollectionItem[]>([]);
-  // Changed from Set to string | null for simpler, more reliable React updates
   const [deletingId, setDeletingId] = useState<string | null>(null);
   
-  // NEW: State for Custom Confirmation Modal (Bypasses window.confirm sandbox issues)
   const [itemToDelete, setItemToDelete] = useState<{id: string, name: string} | null>(null);
 
   // Shared State
@@ -55,8 +53,12 @@ export const AdminPanel: React.FC = () => {
     loadData();
   }, [activeTab]);
 
+  const handleLogout = async () => {
+      await supabase.auth.signOut();
+      // App.tsx auth listener will redirect to Login
+  };
+
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
-    // Optimistic update
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
     
     if (selectedOrder && selectedOrder.id === orderId) {
@@ -65,34 +67,26 @@ export const AdminPanel: React.FC = () => {
 
     const success = await updateOrderStatus(orderId, newStatus);
     if (!success) {
-        loadData(); // Revert on failure
+        loadData();
         alert("Error al actualizar el estado");
     }
   };
 
-  // 1. Opens the Modal
   const requestDeleteGalleryItem = (id: string, name: string) => {
       setItemToDelete({ id, name });
   };
 
-  // 2. Executes the delete (Called by the Modal)
   const confirmDeleteGalleryItem = async () => {
       if (!itemToDelete) return;
       
       const { id } = itemToDelete;
-      setItemToDelete(null); // Close modal
-      setDeletingId(id); // Start loading spinner on button
+      setItemToDelete(null); 
+      setDeletingId(id); 
       
-      console.log('Executing delete for:', id); 
-
       try {
         const result = await deleteDesignFromCollection(id);
-        console.log('Delete result:', result);
-
         if (result.success) {
-            // Optimistic update
             setGalleryItems(prev => prev.filter(item => item.id !== id));
-            // Force reload to be safe
             await loadData();
         } else {
             console.error("Delete failed:", result.error);
@@ -121,7 +115,6 @@ export const AdminPanel: React.FC = () => {
 
       if (newLogoUrl) {
           alert('¡Logo actualizado con éxito! Recarga la página para ver los cambios.');
-          // Optional: Force reload to show new logo across the app
           window.location.reload();
       }
   };
@@ -263,7 +256,6 @@ WITH CHECK (true);`;
 
                 {/* Right: Details & Data */}
                 <div className="w-full md:w-1/2 h-1/2 md:h-full overflow-y-auto p-6 md:p-8 bg-white dark:bg-gray-900">
-                    
                     {/* Header */}
                     <div className="flex justify-between items-start mb-6">
                         <div>
@@ -402,7 +394,7 @@ WITH CHECK (true);`;
             <p className="text-gray-500 dark:text-gray-400">Control de Pedidos y Base de Datos de Clientes</p>
         </div>
         
-        <div className="flex gap-4">
+        <div className="flex items-center gap-4">
             <div className="relative w-full md:w-auto">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input 
@@ -414,6 +406,15 @@ WITH CHECK (true);`;
                     className={`pl-10 pr-4 py-2 w-full md:w-64 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all ${activeTab === 'settings' ? 'opacity-50' : ''}`}
                 />
             </div>
+            
+            <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors rounded-lg font-bold text-sm"
+                title="Cerrar Sesión"
+            >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Salir</span>
+            </button>
         </div>
       </div>
 

@@ -5,11 +5,14 @@ import { Customizer } from './components/Customizer';
 import { OrderForm } from './components/OrderForm';
 import { OrderSuccess } from './components/OrderSuccess';
 import { AdminPanel } from './components/AdminPanel';
+import { AdminLogin } from './components/AdminLogin';
 import { GalleryPage } from './components/GalleryPage';
 import { TrackOrderPage } from './components/TrackOrderPage';
 import { saveDesignToCollection } from './services/galleryService';
 import { DEFAULT_CONFIG } from './constants';
 import { TShirtConfig, ViewState, Order } from './types';
+import { supabase } from './lib/supabaseClient';
+import { Session } from '@supabase/supabase-js';
 
 const App: React.FC = () => {
   // Theme State
@@ -30,6 +33,9 @@ const App: React.FC = () => {
   // Last successfully created order
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
 
+  // Auth State
+  const [session, setSession] = useState<Session | null>(null);
+
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -39,6 +45,21 @@ const App: React.FC = () => {
       localStorage.setItem('theme', 'light');
     }
   }, [darkMode]);
+
+  // Auth Listener
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleOrderSuccess = (order: Order) => {
     setLastOrder(order);
@@ -97,7 +118,7 @@ const App: React.FC = () => {
           <OrderForm 
             config={config} 
             onSuccess={handleOrderSuccess} 
-            onBack={() => setView('gallery')} // Modified to allow going back to gallery if came from there
+            onBack={() => setView('gallery')} 
           />
         );
       case 'success':
@@ -114,7 +135,8 @@ const App: React.FC = () => {
       case 'track-order':
         return <TrackOrderPage />;
       case 'admin':
-        return <AdminPanel />;
+        // Protected Route Logic
+        return session ? <AdminPanel /> : <AdminLogin />;
       default:
         return <LandingPage onStart={() => setView('customizer')} onViewGallery={() => setView('gallery')} />;
     }

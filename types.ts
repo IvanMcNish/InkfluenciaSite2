@@ -42,6 +42,13 @@ export interface Customer {
   createdAt: string;
 }
 
+export interface InventoryItem {
+  id: string;
+  color: 'white' | 'black';
+  size: string;
+  quantity: number;
+}
+
 export interface CollectionItem {
   id: string;
   name: string;

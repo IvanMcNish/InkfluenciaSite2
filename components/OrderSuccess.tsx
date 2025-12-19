@@ -2,6 +2,7 @@ import React from 'react';
 import { Order } from '../types';
 import { CheckCircle, Printer, Download, MapPin, Mail, Phone, Calendar, ArrowRight, Info } from 'lucide-react';
 import { formatCurrency } from '../constants';
+import { APP_LOGO_URL } from '../lib/supabaseClient';
 
 interface OrderSuccessProps {
   order: Order | null;
@@ -56,9 +57,20 @@ export const OrderSuccess: React.FC<OrderSuccessProps> = ({ order, onReset }) =>
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden print:shadow-none print:border print:border-gray-300 print:text-black print:dark:bg-white print:dark:text-black print:w-full">
         {/* Receipt Header */}
         <div className="bg-gray-50 dark:bg-gray-800/50 p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-start print:bg-gray-100">
-            <div>
-                <h3 className="text-xl font-bold tracking-tight text-pink-600">INKFLUENCIA</h3>
-                <p className="text-xs text-gray-500 mt-1 uppercase tracking-wide">Comprobante de Pedido</p>
+            <div className="flex items-center gap-3">
+                <img 
+                    src={`${APP_LOGO_URL}?t=${new Date().getHours()}`} 
+                    alt="Logo" 
+                    className="w-12 h-12 object-contain"
+                    onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none'; 
+                    }}
+                />
+                <div>
+                    <h3 className="text-xl font-bold tracking-tight text-pink-600">INKFLUENCIA</h3>
+                    <p className="text-xs text-gray-500 mt-1 uppercase tracking-wide">Comprobante de Pedido</p>
+                </div>
             </div>
             <div className="text-right">
                 <div className="font-mono font-bold text-lg">#{order.id}</div>

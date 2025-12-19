@@ -6,6 +6,19 @@ import * as THREE from 'three';
 import { TSHIRT_OBJ_URL } from '../constants';
 import { TShirtConfig as ConfigType, Position } from '../types';
 
+// Add type definitions for R3F elements to satisfy TypeScript
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      mesh: any;
+      meshStandardMaterial: any;
+      meshBasicMaterial: any;
+      ambientLight: any;
+      spotLight: any;
+    }
+  }
+}
+
 interface SceneProps {
   config: ConfigType;
   captureRef?: React.MutableRefObject<(() => string) | null>;

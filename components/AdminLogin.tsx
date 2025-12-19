@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase, APP_LOGO_URL } from '../lib/supabaseClient';
-import { Lock, Mail, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Loader2, AlertCircle, Zap } from 'lucide-react';
 
 export const AdminLogin: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -26,6 +26,31 @@ export const AdminLogin: React.FC = () => {
       setError(err.message || 'Error al iniciar sesión');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDevLogin = async () => {
+    const devEmail = 'inkfluencia@gmail.com';
+    const devPass = 'Na881212';
+    
+    // Actualizamos el estado visual
+    setEmail(devEmail);
+    setPassword(devPass);
+    
+    setLoading(true);
+    setError(null);
+
+    try {
+        const { error } = await supabase.auth.signInWithPassword({
+            email: devEmail,
+            password: devPass,
+        });
+
+        if (error) throw error;
+    } catch (err: any) {
+        setError(err.message || 'Error al iniciar sesión (DEV)');
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -93,6 +118,17 @@ export const AdminLogin: React.FC = () => {
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Entrar al Panel'}
               {!loading && <ArrowRight className="w-5 h-5" />}
+            </button>
+
+            {/* DEV BUTTON */}
+            <button
+              type="button"
+              onClick={handleDevLogin}
+              disabled={loading}
+              className="w-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 font-bold py-3 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-wide disabled:opacity-50"
+            >
+              <Zap className="w-4 h-4 text-yellow-500" />
+              DEV: Auto Login
             </button>
           </form>
         </div>

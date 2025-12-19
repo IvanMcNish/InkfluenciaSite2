@@ -20,6 +20,11 @@ export const AdminPanel: React.FC = () => {
 
   // Gallery State
   const [galleryItems, setGalleryItems] = useState<CollectionItem[]>([]);
+  // Changed from Set to string | null for simpler, more reliable React updates
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  
+  // NEW: State for Custom Confirmation Modal (Bypasses window.confirm sandbox issues)
+  const [itemToDelete, setItemToDelete] = useState<{id: string, name: string} | null>(null);
 
   // Shared State
   const [searchTerm, setSearchTerm] = useState('');
@@ -65,14 +70,39 @@ export const AdminPanel: React.FC = () => {
     }
   };
 
-  const handleDeleteGalleryItem = async (id: string, name: string) => {
-      if (window.confirm(`¿Estás seguro que deseas eliminar el diseño "${name}" de la galería? Esta acción no se puede deshacer.`)) {
-          const result = await deleteDesignFromCollection(id);
-          if (result.success) {
-              setGalleryItems(prev => prev.filter(item => item.id !== id));
-          } else {
-              alert(`Error al eliminar: ${result.error}\n\nPor favor ve a la pestaña "Configuración" y ejecuta el SQL actualizado.`);
-          }
+  // 1. Opens the Modal
+  const requestDeleteGalleryItem = (id: string, name: string) => {
+      setItemToDelete({ id, name });
+  };
+
+  // 2. Executes the delete (Called by the Modal)
+  const confirmDeleteGalleryItem = async () => {
+      if (!itemToDelete) return;
+      
+      const { id } = itemToDelete;
+      setItemToDelete(null); // Close modal
+      setDeletingId(id); // Start loading spinner on button
+      
+      console.log('Executing delete for:', id); 
+
+      try {
+        const result = await deleteDesignFromCollection(id);
+        console.log('Delete result:', result);
+
+        if (result.success) {
+            // Optimistic update
+            setGalleryItems(prev => prev.filter(item => item.id !== id));
+            // Force reload to be safe
+            await loadData();
+        } else {
+            console.error("Delete failed:", result.error);
+            alert(`NO SE PUDO ELIMINAR:\n${result.error}\n\nSolución: Ve a la pestaña 'Configuración' > copia el SQL de Galería > Ejecútalo en Supabase.`);
+        }
+      } catch (e) {
+          console.error("Delete exception:", e);
+          alert("Error inesperado al intentar eliminar.");
+      } finally {
+          setDeletingId(null);
       }
   };
 
@@ -146,22 +176,23 @@ TO public
 USING ( bucket_id = 'inkfluencia-images' )
 WITH CHECK ( bucket_id = 'inkfluencia-images' );`;
 
-  const gallerySQL = `-- ACTUALIZADO: SQL PARA PERMISOS TOTALES
--- Ejecuta esto para reiniciar los permisos de la tabla gallery y permitir borrar.
+  const gallerySQL = `-- SQL PARA REPARAR PERMISOS DE BORRADO (Versión Forzada)
 
--- 1. Deshabilitar y Habilitar RLS para limpiar estado
+-- 1. Reiniciar RLS
 ALTER TABLE gallery DISABLE ROW LEVEL SECURITY;
 ALTER TABLE gallery ENABLE ROW LEVEL SECURITY;
 
--- 2. ELIMINAR TODAS las políticas existentes (limpieza profunda)
+-- 2. Borrar CUALQUIER política previa (evita conflictos de nombres)
 DROP POLICY IF EXISTS "Permitir todo público" ON gallery;
 DROP POLICY IF EXISTS "Enable delete for anon" ON gallery;
 DROP POLICY IF EXISTS "Permitir Borrado Publico" ON gallery;
 DROP POLICY IF EXISTS "Permitir Acceso Total Galeria" ON gallery;
 DROP POLICY IF EXISTS "Enable read access for all users" ON gallery;
 DROP POLICY IF EXISTS "Enable insert for all users" ON gallery;
+DROP POLICY IF EXISTS "Acceso Total Publico" ON gallery;
+DROP POLICY IF EXISTS "Public Access All" ON gallery;
 
--- 3. Crear UNA ÚNICA política maestra para TODO (Select, Insert, Update, Delete)
+-- 3. Crear la política MAESTRA que permite TODO a TODOS
 CREATE POLICY "Acceso Total Publico"
 ON gallery
 FOR ALL
@@ -169,7 +200,45 @@ TO public
 USING (true)
 WITH CHECK (true);`;
 
-  // --- MODAL ---
+  // --- MODALS ---
+  
+  const DeleteConfirmationModal = () => {
+      if (!itemToDelete) return null;
+      return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl p-6 border border-gray-200 dark:border-gray-800">
+                <div className="flex items-center gap-3 text-red-600 mb-4">
+                    <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-full">
+                        <Trash2 className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-xl font-bold">Confirmar Eliminación</h3>
+                </div>
+                
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                    ¿Estás seguro que deseas eliminar el diseño <span className="font-bold text-gray-900 dark:text-white">"{itemToDelete.name}"</span>? 
+                    <br/><br/>
+                    Esta acción no se puede deshacer.
+                </p>
+
+                <div className="flex justify-end gap-3">
+                    <button 
+                        onClick={() => setItemToDelete(null)}
+                        className="px-4 py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button 
+                        onClick={confirmDeleteGalleryItem}
+                        className="px-4 py-2 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20"
+                    >
+                        Sí, Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+      );
+  }
+
   const OrderDetailModal = () => {
     if (!selectedOrder) return null;
 
@@ -325,6 +394,7 @@ WITH CHECK (true);`;
   return (
     <div className="max-w-7xl mx-auto p-6 min-h-screen">
       {selectedOrder && <OrderDetailModal />}
+      {itemToDelete && <DeleteConfirmationModal />}
 
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
         <div>
@@ -565,11 +635,21 @@ WITH CHECK (true);`;
                                             </td>
                                             <td className="p-4 text-center">
                                                 <button 
-                                                    onClick={() => handleDeleteGalleryItem(item.id, item.name)}
-                                                    className="inline-flex items-center gap-1 text-sm font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 px-3 py-1.5 rounded-lg transition-colors"
+                                                    onClick={() => requestDeleteGalleryItem(item.id, item.name)}
+                                                    disabled={deletingId === item.id}
+                                                    className={`inline-flex items-center gap-1 text-sm font-bold px-3 py-1.5 rounded-lg transition-colors ${deletingId === item.id ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40'}`}
                                                 >
-                                                    <Trash2 className="w-4 h-4" />
-                                                    Eliminar
+                                                    {deletingId === item.id ? (
+                                                        <>
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                            Borrando...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Trash2 className="w-4 h-4" />
+                                                            Eliminar
+                                                        </>
+                                                    )}
                                                 </button>
                                             </td>
                                         </tr>

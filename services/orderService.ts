@@ -63,16 +63,30 @@ export const updateOrderStatus = async (orderId: string, newStatus: OrderStatus)
 
   const oldStatus = currentOrder.status;
 
-  // 2. Lógica de Inventario
-  // Caso A: Si pasa a 'processing' desde cualquier otro estado (ej. pending), DESCONTAMOS inventario.
-  if (newStatus === 'processing' && oldStatus !== 'processing') {
+  // 2. Lógica de Inventario Avanzada
+  
+  // Definimos qué estados consideran que la camiseta ha sido "tomada" del inventario.
+  // Tanto 'processing' como 'shipped' implican que la camiseta física ya no está disponible.
+  const isConsumedState = (status: OrderStatus) => status === 'processing' || status === 'shipped';
+  const isSafeState = (status: OrderStatus) => status === 'pending';
+
+  const wasConsumed = isConsumedState(oldStatus);
+  const willBeConsumed = isConsumedState(newStatus);
+
+  // CASO 1: De Pendiente -> (Procesando O Enviado)
+  // Se descuenta del inventario.
+  if (!wasConsumed && willBeConsumed) {
       await adjustInventoryQuantity(currentOrder.config.color, currentOrder.size, -1);
   }
-  // Caso B: Si estaba en 'processing' y regresa a 'pending' (corrección de error), DEVOLVEMOS inventario.
-  // Nota: Si pasa de 'processing' a 'shipped', NO devolvemos ni descontamos más, porque ya se descontó en el paso anterior.
-  else if (oldStatus === 'processing' && newStatus === 'pending') {
+  
+  // CASO 2: De (Procesando O Enviado) -> Pendiente
+  // Se devuelve al inventario (error administrativo o devolución).
+  else if (wasConsumed && !willBeConsumed) {
       await adjustInventoryQuantity(currentOrder.config.color, currentOrder.size, 1);
   }
+
+  // CASO 3: Movimiento entre estados de consumo (ej. Procesando <-> Enviado)
+  // NO se hace nada, el inventario ya fue descontado y sigue ocupado.
 
   // 3. Actualizar estado en base de datos
   const { error } = await supabase

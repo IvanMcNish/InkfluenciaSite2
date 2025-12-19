@@ -6,6 +6,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Constant URL for the App Logo
+export const APP_LOGO_URL = `${SUPABASE_URL}/storage/v1/object/public/inkfluencia-images/LOGO/logo.png`;
+
 // Helper to upload Base64 images to Supabase Storage
 export const uploadBase64Image = async (base64Data: string, folder: string): Promise<string | null> => {
   try {
@@ -62,4 +65,32 @@ export const uploadBase64Image = async (base64Data: string, folder: string): Pro
     // Return null to allow fallback to base64 storage (so the order isn't lost)
     return null;
   }
+};
+
+// Function to upload the App Logo specifically
+export const uploadAppLogo = async (file: File): Promise<string | null> => {
+    try {
+        const fileName = 'LOGO/logo.png';
+        
+        console.log(`📤 Actualizando Logo de la App...`);
+
+        const { data, error } = await supabase.storage
+            .from('inkfluencia-images')
+            .upload(fileName, file, {
+                cacheControl: '0', // No cache to ensure immediate update visibility
+                upsert: true, // Overwrite existing file
+                contentType: 'image/png'
+            });
+
+        if (error) throw error;
+
+        // Force a cache bust on the URL locally by returning it with a timestamp
+        // The base URL remains constant
+        return `${APP_LOGO_URL}?t=${Date.now()}`;
+
+    } catch (error) {
+        console.error('Error updating logo:', error);
+        alert("Error al subir el logo. Revisa la consola o los permisos de Storage.");
+        return null;
+    }
 };

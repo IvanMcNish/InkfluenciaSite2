@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sun, Moon, ShoppingBag, ArrowLeft, LayoutDashboard, Grid, Truck } from 'lucide-react';
 import { ViewState } from '../types';
+import { APP_LOGO_URL } from '../lib/supabaseClient';
 
 interface NavbarProps {
   darkMode: boolean;
@@ -26,7 +27,8 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, curren
           className="flex items-center gap-3 cursor-pointer select-none group"
         >
           <img 
-            src="https://raw.githubusercontent.com/IvanMcNish/InkfluenciaSite2/main/Logo2T.png"
+            // Append timestamp to force refresh if cached, though cleaner in prod to just use URL
+            src={`${APP_LOGO_URL}?t=${new Date().getHours()}`} 
             onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none'; 

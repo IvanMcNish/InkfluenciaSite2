@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { getOrders, updateOrderStatus } from '../services/orderService';
 import { getCustomers } from '../services/customerService';
 import { getCollection, deleteDesignFromCollection } from '../services/galleryService';
+import { uploadAppLogo, APP_LOGO_URL } from '../lib/supabaseClient';
 import { Order, OrderStatus, Customer, CollectionItem } from '../types';
-import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2 } from 'lucide-react';
+import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon } from 'lucide-react';
 import { formatCurrency } from '../constants';
 import { Scene } from './Scene';
 
@@ -27,6 +28,8 @@ export const AdminPanel: React.FC = () => {
   // Settings State
   const [copiedStorage, setCopiedStorage] = useState(false);
   const [copiedGallery, setCopiedGallery] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const loadData = async () => {
       setIsLoading(true);
@@ -70,6 +73,26 @@ export const AdminPanel: React.FC = () => {
           } else {
               alert("Error al eliminar el diseño de Supabase. Revisa la consola o los permisos RLS en la pestaña Configuración.");
           }
+      }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+          alert('Por favor selecciona un archivo de imagen válido.');
+          return;
+      }
+
+      setIsUploadingLogo(true);
+      const newLogoUrl = await uploadAppLogo(file);
+      setIsUploadingLogo(false);
+
+      if (newLogoUrl) {
+          alert('¡Logo actualizado con éxito! Recarga la página para ver los cambios.');
+          // Optional: Force reload to show new logo across the app
+          window.location.reload();
       }
   };
 
@@ -563,6 +586,44 @@ WITH CHECK (true);`;
             {/* SETTINGS VIEW */}
             {activeTab === 'settings' && (
                <div className="max-w-4xl mx-auto animate-fade-in space-y-8">
+                   
+                   {/* Logo Upload Section */}
+                   <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+                       <div className="flex items-center gap-3 mb-6">
+                           <div className="p-3 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg text-indigo-600">
+                               <ImageIcon className="w-6 h-6" />
+                           </div>
+                           <div>
+                               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Personalización de Marca</h2>
+                               <p className="text-gray-500 dark:text-gray-400 text-sm">Actualiza el logo principal de la aplicación (Sobrescribe LOGO/logo.png).</p>
+                           </div>
+                       </div>
+                       
+                       <div className="flex items-center gap-6">
+                           <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center border border-gray-200 dark:border-gray-700 p-2">
+                               <img src={`${APP_LOGO_URL}?t=${Date.now()}`} alt="Current Logo" className="w-full h-full object-contain" />
+                           </div>
+                           <div className="flex-1">
+                               <input 
+                                    type="file" 
+                                    ref={logoInputRef} 
+                                    onChange={handleLogoUpload} 
+                                    accept="image/png, image/jpeg, image/webp" 
+                                    className="hidden" 
+                                />
+                               <button 
+                                    onClick={() => logoInputRef.current?.click()}
+                                    disabled={isUploadingLogo}
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors flex items-center gap-2"
+                               >
+                                   {isUploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                   {isUploadingLogo ? 'Subiendo...' : 'Subir Nuevo Logo'}
+                               </button>
+                               <p className="text-xs text-gray-500 mt-2">Recomendado: PNG Transparente (512x512px). Los cambios pueden tardar unos segundos en reflejarse.</p>
+                           </div>
+                       </div>
+                   </div>
+
                    {/* Storage Settings */}
                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
                        <div className="flex items-center gap-3 mb-6">

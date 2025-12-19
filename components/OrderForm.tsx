@@ -3,7 +3,7 @@ import { SIZES, PRICES, SHIPPING, formatCurrency } from '../constants';
 import { TShirtConfig, Order, InventoryItem } from '../types';
 import { submitOrder } from '../services/orderService';
 import { getInventory } from '../services/inventoryService';
-import { CheckCircle2, Loader2, AlertCircle, Weight, Truck, Phone, Tag } from 'lucide-react';
+import { CheckCircle2, Loader2, AlertCircle, Weight, Truck, Phone, Tag, MapPin } from 'lucide-react';
 
 interface OrderFormProps {
   config: TShirtConfig;
@@ -17,12 +17,22 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [inventoryLoaded, setInventoryLoaded] = useState(false);
 
+  // Address sub-state for structured input
+  const [addressParts, setAddressParts] = useState({
+    type: 'Calle',
+    n1: '',
+    n2: '',
+    n3: '',
+    city: '',
+    details: ''
+  });
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    address: '',
-    size: '', // Start empty to force selection based on availability
+    address: '', // Will be auto-generated
+    size: '', 
     grammage: '200g' as '150g' | '200g'
   });
 
@@ -65,8 +75,23 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
     }
   }, [availableSizes, formData.size, inventoryLoaded]);
 
+  // 4. Update Full Address String when parts change
+  useEffect(() => {
+    const { type, n1, n2, n3, city, details } = addressParts;
+    // Format: Calle 123 # 45 - 67, Apto 101, Ciudad
+    // Only build string if we have at least n1 and city to maintain cleanness
+    const mainAddress = `${type} ${n1} # ${n2} - ${n3}`.trim();
+    const fullAddress = `${mainAddress}${details ? `, ${details}` : ''}${city ? `, ${city}` : ''}`;
+    
+    setFormData(prev => ({ ...prev, address: fullAddress }));
+  }, [addressParts]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      setAddressParts({ ...addressParts, [e.target.name]: e.target.value });
   };
 
   const handleGrammageSelect = (g: '150g' | '200g') => {
@@ -84,6 +109,11 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
     
     if (!formData.size) {
         setError("Por favor selecciona una talla disponible.");
+        return;
+    }
+
+    if (!addressParts.n1 || !addressParts.n2 || !addressParts.city) {
+        setError("Por favor completa los campos obligatorios de la dirección (Vía, Números y Ciudad).");
         return;
     }
 
@@ -293,17 +323,107 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                     </div>
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium mb-1">Dirección Completa</label>
-                    <textarea 
-                        required
-                        name="address"
-                        rows={3}
-                        value={formData.address}
-                        onChange={handleChange}
-                        className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all"
-                        placeholder="Calle 123 # 45-67, Ciudad, Departamento"
-                    />
+                {/* STRUCTURED ADDRESS FIELDS */}
+                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
+                    <label className="block text-sm font-bold flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                        <MapPin className="w-4 h-4 text-pink-500" /> Dirección de Entrega
+                    </label>
+                    
+                    <div className="grid grid-cols-12 gap-2 items-center">
+                         {/* Type */}
+                        <div className="col-span-5 sm:col-span-4">
+                            <label className="text-[10px] uppercase text-gray-400 font-bold ml-1">Vía</label>
+                            <select 
+                                name="type" 
+                                value={addressParts.type}
+                                onChange={handleAddressChange}
+                                className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm"
+                            >
+                                <option value="Calle">Calle</option>
+                                <option value="Carrera">Carrera</option>
+                                <option value="Diagonal">Diagonal</option>
+                                <option value="Transversal">Transversal</option>
+                                <option value="Avenida">Avenida</option>
+                                <option value="Circular">Circular</option>
+                            </select>
+                        </div>
+                        
+                        {/* Num 1 */}
+                        <div className="col-span-3 sm:col-span-3">
+                             <label className="text-[10px] uppercase text-gray-400 font-bold ml-1">Num</label>
+                             <input 
+                                type="text"
+                                name="n1"
+                                value={addressParts.n1}
+                                onChange={handleAddressChange}
+                                placeholder="12A"
+                                className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm"
+                             />
+                        </div>
+
+                        <div className="col-span-1 text-center font-bold text-gray-400 mt-4">#</div>
+
+                        {/* Num 2 */}
+                        <div className="col-span-3 sm:col-span-4">
+                             <label className="text-[10px] uppercase text-gray-400 font-bold ml-1">Num</label>
+                             <input 
+                                type="text"
+                                name="n2"
+                                value={addressParts.n2}
+                                onChange={handleAddressChange}
+                                placeholder="45"
+                                className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm"
+                             />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-1 text-center font-bold text-gray-400 pt-4">-</div>
+                         
+                         {/* Num 3 (Plate) */}
+                         <div className="col-span-4 sm:col-span-3">
+                             <label className="text-[10px] uppercase text-gray-400 font-bold ml-1">Placa</label>
+                             <input 
+                                type="text"
+                                name="n3"
+                                value={addressParts.n3}
+                                onChange={handleAddressChange}
+                                placeholder="67"
+                                className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm"
+                             />
+                        </div>
+
+                        {/* City */}
+                         <div className="col-span-7 sm:col-span-8">
+                             <label className="text-[10px] uppercase text-gray-400 font-bold ml-1">Ciudad / Municipio</label>
+                             <input 
+                                type="text"
+                                name="city"
+                                value={addressParts.city}
+                                onChange={handleAddressChange}
+                                placeholder="Bucaramanga, Santander"
+                                className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm"
+                             />
+                        </div>
+                    </div>
+
+                    {/* Additional Details */}
+                    <div>
+                         <label className="text-[10px] uppercase text-gray-400 font-bold ml-1">Complemento (Opcional)</label>
+                         <input 
+                            type="text"
+                            name="details"
+                            value={addressParts.details}
+                            onChange={handleAddressChange}
+                            placeholder="Torre 1 Apto 502, Barrio Centro, Conjunto..."
+                            className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm"
+                         />
+                    </div>
+                    
+                    {/* Live Preview of Address */}
+                    <div className="text-xs text-gray-500 pt-1 px-1">
+                        Resultado: <span className="font-medium text-gray-800 dark:text-gray-300">{formData.address || '...'}</span>
+                    </div>
                 </div>
             </div>
 

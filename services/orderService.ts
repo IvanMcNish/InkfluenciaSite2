@@ -1,6 +1,7 @@
 import { supabase, uploadBase64Image } from '../lib/supabaseClient';
 import { Order, OrderStatus } from '../types';
 import { saveOrUpdateCustomer } from './customerService';
+import { adjustInventoryQuantity } from './inventoryService';
 
 export const getOrders = async (): Promise<Order[]> => {
   const { data, error } = await supabase
@@ -56,6 +57,24 @@ export const getOrderById = async (id: string): Promise<Order | null> => {
 };
 
 export const updateOrderStatus = async (orderId: string, newStatus: OrderStatus): Promise<boolean> => {
+  // 1. Obtener el pedido actual para saber su estado anterior y configuración (color/talla)
+  const currentOrder = await getOrderById(orderId);
+  if (!currentOrder) return false;
+
+  const oldStatus = currentOrder.status;
+
+  // 2. Lógica de Inventario
+  // Caso A: Si pasa a 'processing' desde cualquier otro estado (ej. pending), DESCONTAMOS inventario.
+  if (newStatus === 'processing' && oldStatus !== 'processing') {
+      await adjustInventoryQuantity(currentOrder.config.color, currentOrder.size, -1);
+  }
+  // Caso B: Si estaba en 'processing' y regresa a 'pending' (corrección de error), DEVOLVEMOS inventario.
+  // Nota: Si pasa de 'processing' a 'shipped', NO devolvemos ni descontamos más, porque ya se descontó en el paso anterior.
+  else if (oldStatus === 'processing' && newStatus === 'pending') {
+      await adjustInventoryQuantity(currentOrder.config.color, currentOrder.size, 1);
+  }
+
+  // 3. Actualizar estado en base de datos
   const { error } = await supabase
     .from('orders')
     .update({ status: newStatus })
@@ -63,6 +82,7 @@ export const updateOrderStatus = async (orderId: string, newStatus: OrderStatus)
 
   if (error) {
       console.error('Error updating order:', error);
+      // Opcional: Podríamos revertir el inventario aquí si falla, pero mantenemos simple la lógica.
       return false;
   }
   return true;

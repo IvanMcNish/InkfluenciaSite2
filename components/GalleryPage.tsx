@@ -37,21 +37,22 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col md:flex-row relative border border-gray-200 dark:border-gray-800">
+            {/* Added max-h-[90vh] and overflow-y-auto for mobile scrolling. md:overflow-hidden keeps desktop clean. */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-4xl w-full flex flex-col md:flex-row relative border border-gray-200 dark:border-gray-800 max-h-[90vh] overflow-y-auto md:overflow-hidden">
                 <button 
                     onClick={() => setSelectedItem(null)}
-                    className="absolute top-4 right-4 z-10 p-2 bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 rounded-full transition-colors"
+                    className="absolute top-4 right-4 z-50 p-2 bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 rounded-full transition-colors backdrop-blur-md"
                 >
                     <X className="w-6 h-6 text-gray-800 dark:text-gray-200" />
                 </button>
 
                 {/* Left: Image */}
-                <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-800 flex items-center justify-center p-8 relative">
+                <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-800 flex items-center justify-center p-8 relative shrink-0 min-h-[300px]">
                     {selectedItem.config.snapshotUrl ? (
                         <img 
                             src={selectedItem.config.snapshotUrl} 
                             alt={selectedItem.name} 
-                            className="w-full h-auto object-contain drop-shadow-2xl transform hover:scale-105 transition-transform duration-500"
+                            className="w-full h-auto object-contain drop-shadow-2xl transform hover:scale-105 transition-transform duration-500 max-h-[40vh] md:max-h-full"
                         />
                     ) : (
                          <div className="flex flex-col items-center text-gray-400">
@@ -64,10 +65,10 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
                     </div>
                 </div>
 
-                {/* Right: Details */}
-                <div className="w-full md:w-1/2 p-8 flex flex-col">
+                {/* Right: Details - Added md:overflow-y-auto for desktop scrolling within the pane */}
+                <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col md:overflow-y-auto">
                     <div className="mb-6">
-                        <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2 leading-tight">
+                        <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-2 leading-tight">
                             {selectedItem.name}
                         </h2>
                         <div className="flex items-center gap-2 text-gray-500 text-sm">
@@ -99,7 +100,7 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
                         </div>
                     </div>
 
-                    <div className="pt-6 border-t border-gray-100 dark:border-gray-800 mt-auto">
+                    <div className="pt-6 border-t border-gray-100 dark:border-gray-800 mt-auto bg-white dark:bg-gray-900 sticky bottom-0 md:static">
                         <div className="flex justify-between items-end mb-4">
                             <span className="text-gray-500 font-medium">Precio desde</span>
                             <span className="text-3xl font-black text-pink-600">{formatCurrency(PRICES['150g'])}</span>

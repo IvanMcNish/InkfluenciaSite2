@@ -4,12 +4,13 @@ import { getCustomers } from '../services/customerService';
 import { getCollection, deleteDesignFromCollection } from '../services/galleryService';
 import { uploadAppLogo, APP_LOGO_URL, supabase } from '../lib/supabaseClient';
 import { Order, OrderStatus, Customer, CollectionItem } from '../types';
-import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut } from 'lucide-react';
+import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent } from 'lucide-react';
 import { formatCurrency } from '../constants';
 import { Scene } from './Scene';
 
 export const AdminPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'orders' | 'customers' | 'settings' | 'gallery'>('orders');
+  // Changed default state to 'financial'
+  const [activeTab, setActiveTab] = useState<'orders' | 'customers' | 'settings' | 'gallery' | 'financial'>('financial');
   
   // Orders State
   const [orders, setOrders] = useState<Order[]>([]);
@@ -36,10 +37,13 @@ export const AdminPanel: React.FC = () => {
 
   const loadData = async () => {
       setIsLoading(true);
-      if (activeTab === 'orders') {
+      // Always load orders if we are in financial tab to calculate stats
+      if (activeTab === 'orders' || activeTab === 'financial') {
           const loadedOrders = await getOrders();
           setOrders(loadedOrders);
-      } else if (activeTab === 'customers') {
+      } 
+      
+      if (activeTab === 'customers') {
           const loadedCustomers = await getCustomers();
           setCustomers(loadedCustomers);
       } else if (activeTab === 'gallery') {
@@ -148,6 +152,28 @@ export const AdminPanel: React.FC = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  // --- Financial Calculations ---
+  const totalOrdersCount = orders.length;
+  const pendingOrdersCount = orders.filter(o => o.status === 'pending').length;
+  const processingOrdersCount = orders.filter(o => o.status === 'processing').length;
+  const shippedOrdersCount = orders.filter(o => o.status === 'shipped').length;
+  
+  // Calculate Revenue (Only Shipped Orders)
+  const realizedRevenue = orders
+    .filter(o => o.status === 'shipped')
+    .reduce((acc, curr) => acc + curr.total, 0);
+
+  // Calculate Potential Revenue (Pending + Processing)
+  const potentialRevenue = orders
+    .filter(o => o.status !== 'shipped')
+    .reduce((acc, curr) => acc + curr.total, 0);
+
+  // Percentages for UI
+  const shippedPercentage = totalOrdersCount > 0 ? (shippedOrdersCount / totalOrdersCount) * 100 : 0;
+  const processingPercentage = totalOrdersCount > 0 ? (processingOrdersCount / totalOrdersCount) * 100 : 0;
+  const pendingPercentage = totalOrdersCount > 0 ? (pendingOrdersCount / totalOrdersCount) * 100 : 0;
+
 
   const storageSQL = `-- Copia y pega esto en el SQL Editor de Supabase para arreglar las imágenes
 
@@ -402,8 +428,8 @@ WITH CHECK (true);`;
                     placeholder={activeTab === 'customers' ? "Buscar cliente..." : activeTab === 'gallery' ? "Buscar diseño..." : "Buscar..."}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    disabled={activeTab === 'settings'}
-                    className={`pl-10 pr-4 py-2 w-full md:w-64 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all ${activeTab === 'settings' ? 'opacity-50' : ''}`}
+                    disabled={activeTab === 'settings' || activeTab === 'financial'}
+                    className={`pl-10 pr-4 py-2 w-full md:w-64 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all ${activeTab === 'settings' || activeTab === 'financial' ? 'opacity-50 cursor-not-allowed' : ''}`}
                 />
             </div>
             
@@ -420,6 +446,13 @@ WITH CHECK (true);`;
 
       {/* TABS */}
       <div className="flex gap-4 mb-6 border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
+          <button
+            onClick={() => { setActiveTab('financial'); setSearchTerm(''); }}
+            className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === 'financial' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
+          >
+              <BarChart3 className="w-4 h-4" />
+              Finanzas
+          </button>
           <button
             onClick={() => { setActiveTab('orders'); setSearchTerm(''); }}
             className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === 'orders' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
@@ -660,6 +693,158 @@ WITH CHECK (true);`;
                         </div>
                     </div>
                 )
+            )}
+
+            {/* FINANCIAL DASHBOARD */}
+            {activeTab === 'financial' && (
+                <div className="animate-fade-in space-y-8">
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {/* Card 1: Total Orders */}
+                        <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <Package className="w-16 h-16 text-blue-500" />
+                            </div>
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg text-blue-600">
+                                    <ShoppingBag className="w-5 h-5" />
+                                </div>
+                                <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Pedidos Totales</h3>
+                            </div>
+                            <div className="text-3xl font-black text-gray-900 dark:text-white">
+                                {totalOrdersCount}
+                            </div>
+                            <p className="text-xs text-blue-600 mt-1 font-medium">Histórico global</p>
+                        </div>
+
+                        {/* Card 2: Orders In Process */}
+                        <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
+                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <Activity className="w-16 h-16 text-yellow-500" />
+                            </div>
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg text-yellow-600">
+                                    <Loader2 className="w-5 h-5" />
+                                </div>
+                                <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">En Proceso</h3>
+                            </div>
+                            <div className="text-3xl font-black text-gray-900 dark:text-white">
+                                {processingOrdersCount + pendingOrdersCount}
+                            </div>
+                            <p className="text-xs text-yellow-600 mt-1 font-medium">Pendientes de envío</p>
+                        </div>
+
+                        {/* Card 3: Orders Shipped */}
+                        <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
+                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <Check className="w-16 h-16 text-green-500" />
+                            </div>
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg text-green-600">
+                                    <Box className="w-5 h-5" />
+                                </div>
+                                <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Pedidos Enviados</h3>
+                            </div>
+                            <div className="text-3xl font-black text-gray-900 dark:text-white">
+                                {shippedOrdersCount}
+                            </div>
+                            <p className="text-xs text-green-600 mt-1 font-medium">Completados</p>
+                        </div>
+
+                         {/* Card 4: Realized Revenue */}
+                         <div className="bg-gradient-to-br from-pink-600 to-orange-500 p-6 rounded-2xl shadow-lg shadow-pink-500/20 relative overflow-hidden text-white">
+                            <div className="absolute top-0 right-0 p-4 opacity-20">
+                                <DollarSign className="w-16 h-16 text-white" />
+                            </div>
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-white/20 rounded-lg text-white backdrop-blur-sm">
+                                    <TrendingUp className="w-5 h-5" />
+                                </div>
+                                <h3 className="text-sm font-bold text-white/80 uppercase">Total Devengado</h3>
+                            </div>
+                            <div className="text-3xl font-black text-white">
+                                {formatCurrency(realizedRevenue)}
+                            </div>
+                            <div className="flex justify-between items-end mt-1">
+                                <p className="text-xs text-white/80 font-medium">Solo pedidos enviados</p>
+                                {potentialRevenue > 0 && (
+                                    <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded text-white/90">
+                                        + {formatCurrency(potentialRevenue)} por cobrar
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Detailed Breakdown */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 md:col-span-2">
+                             <h3 className="font-bold text-lg mb-6 flex items-center gap-2">
+                                <BarChart3 className="w-5 h-5 text-gray-500" />
+                                Distribución de Pedidos
+                            </h3>
+                            
+                            <div className="space-y-6">
+                                {/* Shipped Bar */}
+                                <div>
+                                    <div className="flex justify-between mb-2 text-sm">
+                                        <span className="font-medium text-gray-700 dark:text-gray-300">Enviados (Completados)</span>
+                                        <span className="font-bold text-gray-900 dark:text-white">{shippedOrdersCount} ({shippedPercentage.toFixed(0)}%)</span>
+                                    </div>
+                                    <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-3 overflow-hidden">
+                                        <div className="bg-green-500 h-3 rounded-full" style={{ width: `${shippedPercentage}%` }}></div>
+                                    </div>
+                                </div>
+
+                                {/* Processing Bar */}
+                                <div>
+                                    <div className="flex justify-between mb-2 text-sm">
+                                        <span className="font-medium text-gray-700 dark:text-gray-300">En Proceso (Producción)</span>
+                                        <span className="font-bold text-gray-900 dark:text-white">{processingOrdersCount} ({processingPercentage.toFixed(0)}%)</span>
+                                    </div>
+                                    <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-3 overflow-hidden">
+                                        <div className="bg-blue-500 h-3 rounded-full" style={{ width: `${processingPercentage}%` }}></div>
+                                    </div>
+                                </div>
+
+                                {/* Pending Bar */}
+                                <div>
+                                    <div className="flex justify-between mb-2 text-sm">
+                                        <span className="font-medium text-gray-700 dark:text-gray-300">Pendientes (Nuevos)</span>
+                                        <span className="font-bold text-gray-900 dark:text-white">{pendingOrdersCount} ({pendingPercentage.toFixed(0)}%)</span>
+                                    </div>
+                                    <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-3 overflow-hidden">
+                                        <div className="bg-yellow-400 h-3 rounded-full" style={{ width: `${pendingPercentage}%` }}></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Efficiency Metric */}
+                        <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center text-center">
+                            <div className="w-24 h-24 rounded-full border-8 border-gray-100 dark:border-gray-800 flex items-center justify-center mb-4 relative">
+                                <Percent className="w-8 h-8 text-gray-400 absolute" />
+                                <svg className="w-full h-full transform -rotate-90">
+                                    <circle
+                                        cx="48"
+                                        cy="48"
+                                        r="38"
+                                        stroke="currentColor"
+                                        strokeWidth="8"
+                                        fill="transparent"
+                                        className="text-pink-500"
+                                        strokeDasharray={`${2 * Math.PI * 38}`}
+                                        strokeDashoffset={`${2 * Math.PI * 38 * (1 - shippedPercentage / 100)}`}
+                                    />
+                                </svg>
+                            </div>
+                            <div className="text-4xl font-black text-gray-900 dark:text-white mb-1">
+                                {shippedPercentage.toFixed(0)}%
+                            </div>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium uppercase tracking-wide">Tasa de Cumplimiento</p>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* SETTINGS VIEW */}

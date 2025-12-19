@@ -76,13 +76,13 @@ export const updateOrderStatus = async (orderId: string, newStatus: OrderStatus)
   // CASO 1: De Pendiente -> (Procesando O Enviado)
   // Se descuenta del inventario.
   if (!wasConsumed && willBeConsumed) {
-      await adjustInventoryQuantity(currentOrder.config.color, currentOrder.size, -1);
+      await adjustInventoryQuantity(currentOrder.config.color, currentOrder.size, currentOrder.grammage, -1);
   }
   
   // CASO 2: De (Procesando O Enviado) -> Pendiente
   // Se devuelve al inventario (error administrativo o devolución).
   else if (wasConsumed && !willBeConsumed) {
-      await adjustInventoryQuantity(currentOrder.config.color, currentOrder.size, 1);
+      await adjustInventoryQuantity(currentOrder.config.color, currentOrder.size, currentOrder.grammage, 1);
   }
 
   // CASO 3: Movimiento entre estados de consumo (ej. Procesando <-> Enviado)

@@ -5,7 +5,7 @@ import { getCollection, deleteDesignFromCollection } from '../services/gallerySe
 import { getInventory } from '../services/inventoryService';
 import { uploadAppLogo, APP_LOGO_URL, supabase } from '../lib/supabaseClient';
 import { Order, OrderStatus, Customer, CollectionItem, InventoryItem } from '../types';
-import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler } from 'lucide-react';
+import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler, Weight } from 'lucide-react';
 import { formatCurrency, PRICES, SIZES } from '../constants';
 import { Scene } from './Scene';
 
@@ -196,12 +196,24 @@ export const AdminPanel: React.FC = () => {
   const processingPercentage = totalOrdersCount > 0 ? (processingOrdersCount / totalOrdersCount) * 100 : 0;
   const pendingPercentage = totalOrdersCount > 0 ? (pendingOrdersCount / totalOrdersCount) * 100 : 0;
 
-  // Inventory Calculations
+  // Inventory Calculations (Updated for breakdown)
   const totalStock = inventory.reduce((acc, item) => acc + item.quantity, 0);
-  const whiteStock = inventory.filter(i => i.color === 'white').reduce((acc, i) => acc + i.quantity, 0);
-  const blackStock = inventory.filter(i => i.color === 'black').reduce((acc, i) => acc + i.quantity, 0);
-  // Estimation: Using base price of 150g shirt for inventory value estimation
-  const estimatedInventoryValue = totalStock * PRICES['150g'];
+  
+  // White Stock Breakdown
+  const whiteTotal = inventory.filter(i => i.color === 'white').reduce((acc, i) => acc + i.quantity, 0);
+  const white150 = inventory.filter(i => i.color === 'white' && (i.grammage === '150g' || !i.grammage)).reduce((acc, i) => acc + i.quantity, 0);
+  const white200 = inventory.filter(i => i.color === 'white' && i.grammage === '200g').reduce((acc, i) => acc + i.quantity, 0);
+
+  // Black Stock Breakdown
+  const blackTotal = inventory.filter(i => i.color === 'black').reduce((acc, i) => acc + i.quantity, 0);
+  const black150 = inventory.filter(i => i.color === 'black' && (i.grammage === '150g' || !i.grammage)).reduce((acc, i) => acc + i.quantity, 0);
+  const black200 = inventory.filter(i => i.color === 'black' && i.grammage === '200g').reduce((acc, i) => acc + i.quantity, 0);
+
+  // Estimation: Using specific prices for inventory value estimation
+  const estimatedInventoryValue = inventory.reduce((acc, item) => {
+      const price = PRICES[item.grammage || '150g'] || PRICES['150g'];
+      return acc + (item.quantity * price);
+  }, 0);
 
 
   const storageSQL = `-- Copia y pega esto en el SQL Editor de Supabase para arreglar las imágenes
@@ -248,34 +260,50 @@ TO public
 USING (true)
 WITH CHECK (true);`;
 
-  const inventorySQL = `-- SQL PARA CREAR LA TABLA INVENTORY
+  const inventorySQL = `-- SQL ACTUALIZADO PARA INVENTORY (Con Gramaje)
 
+-- 1. Crear tabla si no existe
 create table if not exists inventory (
   id uuid default gen_random_uuid() primary key,
   color text check (color in ('white', 'black')),
   size text,
+  grammage text check (grammage in ('150g', '200g')) default '150g',
   quantity integer default 0,
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- Habilitar RLS
+-- 2. Añadir columna grammage si la tabla ya existía (Migración)
+do $$
+begin
+    if not exists (select 1 from information_schema.columns where table_name='inventory' and column_name='grammage') then
+        alter table inventory add column grammage text check (grammage in ('150g', '200g')) default '150g';
+    end if;
+end $$;
+
+-- 3. Actualizar la restricción única para incluir grammage
+-- Primero borramos la vieja restricción (si existe)
+alter table inventory drop constraint if exists inventory_color_size_key;
+-- Añadimos la nueva que incluye grammage
+alter table inventory drop constraint if exists inventory_color_size_grammage_key;
+alter table inventory add constraint inventory_color_size_grammage_key unique (color, size, grammage);
+
+-- 4. Habilitar RLS y Políticas
 alter table inventory enable row level security;
+drop policy if exists "Public Read Inventory" on inventory;
+drop policy if exists "Public All Inventory" on inventory;
 
--- Política de lectura pública
-create policy "Public Read Inventory"
-on inventory for select
+create policy "Public All Inventory"
+on inventory for all
 to public
-using (true);
+using (true)
+with check (true);
 
--- Insertar datos iniciales de ejemplo
-insert into inventory (color, size, quantity) values
-  ('white', 'S', 50),
-  ('white', 'M', 45),
-  ('white', 'L', 30),
-  ('black', 'S', 40),
-  ('black', 'M', 35),
-  ('black', 'L', 20)
-on conflict do nothing;
+-- 5. Insertar datos iniciales de ejemplo (Upsert con nueva key)
+insert into inventory (color, size, grammage, quantity) values
+  ('white', 'S', '150g', 50), ('white', 'M', '150g', 45), ('white', 'L', '150g', 30),
+  ('black', 'S', '150g', 40), ('black', 'M', '150g', 35), ('black', 'L', '150g', 20),
+  ('white', 'M', '200g', 25), ('black', 'M', '200g', 20)
+on conflict (color, size, grammage) do nothing;
 `;
 
   // --- MODALS ---
@@ -1074,9 +1102,13 @@ on conflict do nothing;
                                         <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Stock Blancas</h3>
                                     </div>
                                     <div className="text-3xl font-black text-gray-900 dark:text-white">
-                                        {whiteStock}
+                                        {whiteTotal}
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-1 font-medium">Todas las tallas</p>
+                                    <div className="text-xs text-gray-500 mt-1 font-medium flex gap-2">
+                                        <span className="text-purple-600">150g: {white150}</span>
+                                        <span className="text-gray-300">|</span>
+                                        <span className="text-pink-600">200g: {white200}</span>
+                                    </div>
                                 </div>
 
                                 {/* Card 3: Black Stock */}
@@ -1088,9 +1120,13 @@ on conflict do nothing;
                                         <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Stock Negras</h3>
                                     </div>
                                     <div className="text-3xl font-black text-gray-900 dark:text-white">
-                                        {blackStock}
+                                        {blackTotal}
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-1 font-medium">Todas las tallas</p>
+                                    <div className="text-xs text-gray-500 mt-1 font-medium flex gap-2">
+                                        <span className="text-purple-600">150g: {black150}</span>
+                                        <span className="text-gray-300">|</span>
+                                        <span className="text-pink-600">200g: {black200}</span>
+                                    </div>
                                 </div>
 
                                 {/* Card 4: Estimated Value */}
@@ -1107,46 +1143,114 @@ on conflict do nothing;
                                     <div className="text-xl font-black text-gray-900 dark:text-white">
                                         {formatCurrency(estimatedInventoryValue)}
                                     </div>
-                                    <p className="text-xs text-green-600 mt-1 font-medium">Estimado (Costo venta base)</p>
+                                    <p className="text-xs text-green-600 mt-1 font-medium">Estimado (Costo venta)</p>
                                 </div>
                             </div>
 
-                            {/* SIZE BREAKDOWN SECTION */}
+                            {/* SIZE BREAKDOWN SECTION - Updated Hierarchy: Grammage -> Color -> Size */}
                             <h3 className="font-bold text-lg mb-4 mt-8 flex items-center gap-2">
                                 <Ruler className="w-5 h-5 text-gray-500" />
-                                Disponibilidad por Talla
+                                Disponibilidad por Gramaje y Talla
                             </h3>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                                {SIZES.map(size => {
-                                    const stats = inventory.filter(i => i.size === size);
-                                    const total = stats.reduce((acc, i) => acc + i.quantity, 0);
-                                    const w = stats.find(i => i.color === 'white')?.quantity || 0;
-                                    const b = stats.find(i => i.color === 'black')?.quantity || 0;
-
-                                    return (
-                                        <div key={size} className="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 hover:border-pink-300 dark:hover:border-pink-900/50 transition-colors">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div className="text-gray-400 dark:text-gray-500 text-[10px] uppercase font-bold tracking-wider">Talla</div>
-                                                <div className={`w-2 h-2 rounded-full ${total > 10 ? 'bg-green-500' : total > 0 ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Panel 1: 150g (Standard) */}
+                                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+                                    <div className="bg-purple-50 dark:bg-purple-900/20 p-4 border-b border-purple-100 dark:border-purple-800/30 flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                            <Weight className="w-5 h-5 text-purple-600" />
+                                            <h4 className="font-bold text-gray-900 dark:text-white">Gramaje 150g (Estándar)</h4>
+                                        </div>
+                                        <span className="text-xs bg-white dark:bg-gray-800 px-2 py-1 rounded border border-purple-100 dark:border-purple-800 text-purple-600 font-bold">{white150 + black150} Unds</span>
+                                    </div>
+                                    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {/* White 150g */}
+                                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-100 dark:border-gray-700">
+                                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
+                                                <div className="w-3 h-3 rounded-full bg-white border border-gray-300"></div>
+                                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Blancas</span>
                                             </div>
-                                            <div className="text-2xl font-black text-gray-900 dark:text-white mb-2 bg-gray-50 dark:bg-gray-800 inline-block px-2 rounded-lg">{size}</div>
-                                            <div className="text-sm font-bold text-gray-600 dark:text-gray-300 border-t border-gray-100 dark:border-gray-800 pt-2 flex justify-between items-center">
-                                                <span>Total:</span>
-                                                <span className="text-pink-600">{total}</span>
-                                            </div>
-                                            <div className="flex gap-3 mt-2 text-xs text-gray-500 font-medium">
-                                                <span className="flex items-center gap-1" title="Stock Blanco">
-                                                    <div className="w-2 h-2 rounded-full border border-gray-300 bg-white"></div>
-                                                    {w}
-                                                </span>
-                                                <span className="flex items-center gap-1" title="Stock Negro">
-                                                    <div className="w-2 h-2 rounded-full border border-gray-600 bg-black"></div>
-                                                    {b}
-                                                </span>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {SIZES.map(size => {
+                                                     const qty = inventory.find(i => i.size === size && i.color === 'white' && (i.grammage === '150g' || !i.grammage))?.quantity || 0;
+                                                     return (
+                                                         <div key={size} className="text-center">
+                                                             <div className="text-[10px] text-gray-400 uppercase font-bold">{size}</div>
+                                                             <div className={`text-sm font-bold ${qty > 0 ? 'text-gray-800 dark:text-white' : 'text-red-400'}`}>{qty}</div>
+                                                         </div>
+                                                     )
+                                                })}
                                             </div>
                                         </div>
-                                    )
-                                })}
+                                        {/* Black 150g */}
+                                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-100 dark:border-gray-700">
+                                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
+                                                <div className="w-3 h-3 rounded-full bg-black border border-gray-600"></div>
+                                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Negras</span>
+                                            </div>
+                                             <div className="grid grid-cols-3 gap-2">
+                                                {SIZES.map(size => {
+                                                     const qty = inventory.find(i => i.size === size && i.color === 'black' && (i.grammage === '150g' || !i.grammage))?.quantity || 0;
+                                                     return (
+                                                         <div key={size} className="text-center">
+                                                             <div className="text-[10px] text-gray-400 uppercase font-bold">{size}</div>
+                                                             <div className={`text-sm font-bold ${qty > 0 ? 'text-gray-800 dark:text-white' : 'text-red-400'}`}>{qty}</div>
+                                                         </div>
+                                                     )
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Panel 2: 200g (Premium) */}
+                                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+                                    <div className="bg-pink-50 dark:bg-pink-900/20 p-4 border-b border-pink-100 dark:border-pink-800/30 flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                            <Weight className="w-5 h-5 text-pink-600" />
+                                            <h4 className="font-bold text-gray-900 dark:text-white">Gramaje 200g (Premium)</h4>
+                                        </div>
+                                        <span className="text-xs bg-white dark:bg-gray-800 px-2 py-1 rounded border border-pink-100 dark:border-pink-800 text-pink-600 font-bold">{white200 + black200} Unds</span>
+                                    </div>
+                                    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {/* White 200g */}
+                                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-100 dark:border-gray-700">
+                                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
+                                                <div className="w-3 h-3 rounded-full bg-white border border-gray-300"></div>
+                                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Blancas</span>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {SIZES.map(size => {
+                                                     const qty = inventory.find(i => i.size === size && i.color === 'white' && i.grammage === '200g')?.quantity || 0;
+                                                     return (
+                                                         <div key={size} className="text-center">
+                                                             <div className="text-[10px] text-gray-400 uppercase font-bold">{size}</div>
+                                                             <div className={`text-sm font-bold ${qty > 0 ? 'text-gray-800 dark:text-white' : 'text-red-400'}`}>{qty}</div>
+                                                         </div>
+                                                     )
+                                                })}
+                                            </div>
+                                        </div>
+                                        {/* Black 200g */}
+                                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-100 dark:border-gray-700">
+                                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
+                                                <div className="w-3 h-3 rounded-full bg-black border border-gray-600"></div>
+                                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Negras</span>
+                                            </div>
+                                             <div className="grid grid-cols-3 gap-2">
+                                                {SIZES.map(size => {
+                                                     const qty = inventory.find(i => i.size === size && i.color === 'black' && i.grammage === '200g')?.quantity || 0;
+                                                     return (
+                                                         <div key={size} className="text-center">
+                                                             <div className="text-[10px] text-gray-400 uppercase font-bold">{size}</div>
+                                                             <div className={`text-sm font-bold ${qty > 0 ? 'text-gray-800 dark:text-white' : 'text-red-400'}`}>{qty}</div>
+                                                         </div>
+                                                     )
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

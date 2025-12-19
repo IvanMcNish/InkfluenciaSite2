@@ -20,7 +20,7 @@ export const getInventory = async (): Promise<InventoryItem[]> => {
   return data as InventoryItem[];
 };
 
-export const adjustInventoryQuantity = async (color: 'white' | 'black', size: string, amount: number): Promise<boolean> => {
+export const adjustInventoryQuantity = async (color: 'white' | 'black', size: string, grammage: string = '150g', amount: number): Promise<boolean> => {
   try {
     // 1. Obtener el ítem actual para saber su ID y cantidad actual
     const { data: item, error: fetchError } = await supabase
@@ -28,6 +28,7 @@ export const adjustInventoryQuantity = async (color: 'white' | 'black', size: st
       .select('*')
       .eq('color', color)
       .eq('size', size)
+      .eq('grammage', grammage)
       .single();
 
     if (fetchError || !item) {

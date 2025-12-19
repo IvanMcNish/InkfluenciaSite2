@@ -5,7 +5,7 @@ import { getCollection, deleteDesignFromCollection } from '../services/gallerySe
 import { getInventory, upsertInventoryBatch } from '../services/inventoryService';
 import { uploadAppLogo, APP_LOGO_URL, supabase } from '../lib/supabaseClient';
 import { Order, OrderStatus, Customer, CollectionItem, InventoryItem } from '../types';
-import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler, Weight, ExternalLink, Navigation, Save, RefreshCw, AlertCircle } from 'lucide-react';
+import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler, Weight, ExternalLink, Navigation, Save, RefreshCw, AlertCircle, PlusCircle } from 'lucide-react';
 import { formatCurrency, PRICES, SIZES } from '../constants';
 import { Scene } from './Scene';
 
@@ -31,7 +31,7 @@ export const AdminPanel: React.FC = () => {
   // Inventory Management View State (New)
   const [mgmtGrammage, setMgmtGrammage] = useState<'150g' | '200g'>('150g');
   const [mgmtColor, setMgmtColor] = useState<'white' | 'black'>('white');
-  const [stockInputs, setStockInputs] = useState<Record<string, number>>({}); // Maps size -> quantity
+  const [stockInputs, setStockInputs] = useState<Record<string, number>>({}); // Maps size -> quantity to ADD
   const [isSavingStock, setIsSavingStock] = useState(false);
 
   // Shared State
@@ -83,21 +83,7 @@ export const AdminPanel: React.FC = () => {
     loadData();
   }, [activeTab]);
 
-  // Sync stock inputs when inventory, grammage or color changes
-  useEffect(() => {
-      if (activeTab === 'inventory') {
-          const newInputs: Record<string, number> = {};
-          SIZES.forEach(size => {
-              const item = inventory.find(i => 
-                  i.color === mgmtColor && 
-                  i.size === size && 
-                  (i.grammage === mgmtGrammage || (!i.grammage && mgmtGrammage === '150g'))
-              );
-              newInputs[size] = item ? item.quantity : 0;
-          });
-          setStockInputs(newInputs);
-      }
-  }, [inventory, mgmtGrammage, mgmtColor, activeTab]);
+  // REMOVED: Auto-sync effect. We want inputs to stay at 0/empty unless user types.
 
   const handleLogout = async () => {
       await supabase.auth.signOut();
@@ -127,20 +113,44 @@ export const AdminPanel: React.FC = () => {
   const saveStockUpdates = async () => {
       setIsSavingStock(true);
       
-      const updates = SIZES.map(size => ({
-          color: mgmtColor,
-          size: size,
-          grammage: mgmtGrammage,
-          quantity: stockInputs[size] || 0
-      }));
+      // LOGIC CHANGE: We ADD the input value to the existing inventory value
+      const updates = SIZES.map(size => {
+          // 1. Find current quantity in DB (state)
+          const currentItem = inventory.find(i => 
+              i.color === mgmtColor && 
+              i.size === size && 
+              (i.grammage === mgmtGrammage || (!i.grammage && mgmtGrammage === '150g'))
+          );
+          const currentQty = currentItem ? currentItem.quantity : 0;
+          
+          // 2. Get value to add from input
+          const qtyToAdd = stockInputs[size] || 0;
 
+          // 3. Calculate new total
+          const newTotal = currentQty + qtyToAdd;
+
+          return {
+              color: mgmtColor,
+              size: size,
+              grammage: mgmtGrammage,
+              quantity: newTotal
+          };
+      });
+
+      // Filter out updates that didn't change (optimization optional, but good practice)
+      // For now, we update all for the selected grammage/color to be safe
+      
       const result = await upsertInventoryBatch(updates);
       
       if (result.success) {
-          // Reload inventory to confirm
+          // Reload inventory to confirm and update UI
           const updatedInventory = await getInventory();
           setInventory(updatedInventory);
-          alert("¡Inventario actualizado correctamente!");
+          
+          // Clear inputs after successful addition
+          setStockInputs({}); 
+          
+          alert("¡Stock agregado correctamente!");
       } else {
           alert("Error al actualizar inventario. Revisa la consola o los scripts SQL.");
       }
@@ -667,7 +677,7 @@ on conflict (color, size, grammage) do nothing;
             <>
                 {/* NEW INVENTORY MANAGEMENT TAB */}
                 {activeTab === 'inventory' && (
-                    <div className="animate-fade-in space-y-6">
+                    <div className="animate-fade-in space-y-6 pb-20">
                         {/* 1. Quick Stats for Inventory */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex items-center gap-4">
@@ -699,14 +709,14 @@ on conflict (color, size, grammage) do nothing;
                             </div>
                         </div>
 
-                        {/* 2. Management Form */}
+                        {/* 2. ADD STOCK FORM */}
                         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-                            <div className="p-6 border-b border-gray-100 dark:border-gray-800">
-                                <h3 className="font-bold text-lg flex items-center gap-2 text-gray-900 dark:text-white">
-                                    <RefreshCw className="w-5 h-5 text-gray-400" />
-                                    Actualización Masiva de Inventario
+                            <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-pink-50 to-transparent dark:from-pink-900/10">
+                                <h3 className="font-bold text-lg flex items-center gap-2 text-pink-600 dark:text-pink-400">
+                                    <PlusCircle className="w-5 h-5" />
+                                    Agregar al Inventario (Sumar)
                                 </h3>
-                                <p className="text-sm text-gray-500 mt-1">Selecciona el gramaje y color para actualizar todas las tallas simultáneamente.</p>
+                                <p className="text-sm text-gray-500 mt-1">Ingresa la cantidad que deseas <strong>SUMAR</strong> a la base de datos actual.</p>
                             </div>
 
                             <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -753,7 +763,7 @@ on conflict (color, size, grammage) do nothing;
 
                                 {/* Inputs Grid */}
                                 <div className="lg:col-span-2 space-y-4">
-                                    <label className="block text-xs font-bold uppercase text-gray-400">3. Actualizar Cantidades por Talla</label>
+                                    <label className="block text-xs font-bold uppercase text-gray-400">3. Ingresar Cantidad a Sumar</label>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                         {SIZES.map(size => (
                                             <div key={size} className="relative">
@@ -765,9 +775,10 @@ on conflict (color, size, grammage) do nothing;
                                                     min="0"
                                                     value={stockInputs[size] !== undefined ? stockInputs[size] : ''}
                                                     onChange={(e) => handleStockInputChange(size, e.target.value)}
-                                                    className="w-full pt-8 pb-3 px-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none text-2xl font-black text-center text-gray-900 dark:text-white"
+                                                    placeholder="0"
+                                                    className="w-full pt-8 pb-3 px-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none text-2xl font-black text-center text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-700"
                                                 />
-                                                <div className="text-[10px] text-center text-gray-400 mt-1">Unidades</div>
+                                                <div className="text-[10px] text-center text-gray-400 mt-1">Agregar</div>
                                             </div>
                                         ))}
                                     </div>
@@ -779,9 +790,48 @@ on conflict (color, size, grammage) do nothing;
                                             className="bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-500 hover:to-orange-400 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-orange-500/30 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                                         >
                                             {isSavingStock ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                                            {isSavingStock ? 'Guardando...' : 'Guardar Cambios de Stock'}
+                                            {isSavingStock ? 'Guardando...' : 'Guardar y Sumar al Stock'}
                                         </button>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 3. CURRENT STOCK DISPLAY (Read Only) */}
+                        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden opacity-90">
+                            <div className="p-6 border-b border-gray-100 dark:border-gray-800">
+                                <h3 className="font-bold text-lg flex items-center gap-2 text-gray-900 dark:text-white">
+                                    <Database className="w-5 h-5 text-gray-400" />
+                                    Inventario Actual en Base de Datos
+                                </h3>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    Estado actual para <strong>{mgmtGrammage === '150g' ? '150g (Estándar)' : '200g (Premium)'}</strong> en color <strong className="capitalize">{mgmtColor === 'white' ? 'Blanco' : 'Negro'}</strong>.
+                                </p>
+                            </div>
+
+                            <div className="p-6">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+                                    {SIZES.map(size => {
+                                        // Read directly from Inventory State
+                                        const currentItem = inventory.find(i => 
+                                            i.color === mgmtColor && 
+                                            i.size === size && 
+                                            (i.grammage === mgmtGrammage || (!i.grammage && mgmtGrammage === '150g'))
+                                        );
+                                        const qty = currentItem ? currentItem.quantity : 0;
+
+                                        return (
+                                            <div key={`current-${size}`} className="relative group">
+                                                <div className="absolute top-0 left-0 bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded-br-lg text-xs font-bold text-gray-600 dark:text-gray-300 z-10">
+                                                    {size}
+                                                </div>
+                                                <div className={`w-full pt-8 pb-3 px-4 rounded-xl border-2 bg-gray-50 dark:bg-gray-800/50 text-2xl font-black text-center ${qty > 0 ? 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300' : 'border-red-200 dark:border-red-900/30 text-red-400'}`}>
+                                                    {qty}
+                                                </div>
+                                                <div className="text-[10px] text-center text-gray-400 mt-1">Disponibles</div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>

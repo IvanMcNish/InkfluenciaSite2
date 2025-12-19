@@ -7,6 +7,9 @@ export const CommunityPage: React.FC = () => {
   const [posts, setPosts] = useState<InstagramPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Link provided by user
+  const instagramLink = "https://www.instagram.com/inkfluencia_?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==";
+
   useEffect(() => {
     const loadPosts = async () => {
       setIsLoading(true);
@@ -24,7 +27,7 @@ export const CommunityPage: React.FC = () => {
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold border border-white/30">
             <Instagram className="w-4 h-4" />
-            <span>@inkfluencia_oficial</span>
+            <span>@inkfluencia_</span>
           </div>
           <h1 className="text-4xl md:text-6xl font-black tracking-tight">
             La Revolución <span className="text-yellow-300">#Inkfluencia</span>
@@ -33,7 +36,7 @@ export const CommunityPage: React.FC = () => {
             No solo creamos camisetas, creamos historias. Únete a nuestra comunidad, sube tu foto y etiquétanos para aparecer aquí.
           </p>
           <a 
-            href="https://instagram.com" 
+            href={instagramLink} 
             target="_blank" 
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-white text-pink-600 px-8 py-3 rounded-full font-bold shadow-lg hover:scale-105 transition-transform"

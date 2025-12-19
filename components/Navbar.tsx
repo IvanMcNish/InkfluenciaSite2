@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Moon, ShoppingBag, ArrowLeft, LayoutDashboard, Grid, Truck, Instagram } from 'lucide-react';
+import { Sun, Moon, ShoppingBag, ArrowLeft, LayoutDashboard, Grid, Truck, Instagram, MessageCircle } from 'lucide-react';
 import { ViewState } from '../types';
 import { APP_LOGO_URL } from '../lib/supabaseClient';
 
@@ -42,45 +42,70 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, curren
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate('community')}
-          className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
-            currentView === 'community' 
-              ? 'bg-pink-50 dark:bg-pink-900/20 text-pink-600' 
-              : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500'
-          }`}
-          title="Comunidad"
-        >
-          <Instagram className="w-5 h-5" />
-          <span className="hidden sm:inline">Comunidad</span>
-        </button>
+      <div className="flex items-center gap-2 md:gap-4">
+        {/* Navigation Links - Hidden on very small screens or collapsed into menu in a real full app */}
+        <div className="hidden lg:flex items-center gap-1">
+            <button
+            onClick={() => navigate('community')}
+            className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
+                currentView === 'community' 
+                ? 'bg-pink-50 dark:bg-pink-900/20 text-pink-600' 
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500'
+            }`}
+            title="Comunidad"
+            >
+            <Instagram className="w-4 h-4" />
+            <span>Comunidad</span>
+            </button>
 
-        <button
-          onClick={() => navigate('track-order')}
-          className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
-            currentView === 'track-order' 
-              ? 'bg-orange-100 dark:bg-orange-900/20 text-orange-600' 
-              : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500'
-          }`}
-          title="Rastrear Pedido"
-        >
-          <Truck className="w-5 h-5" />
-          <span className="hidden sm:inline">Rastrear</span>
-        </button>
+            <button
+            onClick={() => navigate('track-order')}
+            className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
+                currentView === 'track-order' 
+                ? 'bg-orange-100 dark:bg-orange-900/20 text-orange-600' 
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500'
+            }`}
+            title="Rastrear Pedido"
+            >
+            <Truck className="w-4 h-4" />
+            <span>Rastrear</span>
+            </button>
 
-        <button
-          onClick={() => navigate('gallery')}
-          className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
-            currentView === 'gallery' 
-              ? 'bg-purple-100 dark:bg-purple-900/20 text-purple-600' 
-              : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500'
-          }`}
-          title="Ver Galería"
-        >
-          <Grid className="w-5 h-5" />
-          <span className="hidden sm:inline">Galería</span>
-        </button>
+            <button
+            onClick={() => navigate('gallery')}
+            className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
+                currentView === 'gallery' 
+                ? 'bg-purple-100 dark:bg-purple-900/20 text-purple-600' 
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500'
+            }`}
+            title="Ver Galería"
+            >
+            <Grid className="w-4 h-4" />
+            <span>Galería</span>
+            </button>
+
+            <button
+            onClick={() => navigate('contact')}
+            className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
+                currentView === 'contact' 
+                ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-600' 
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500'
+            }`}
+            title="Contacto"
+            >
+            <MessageCircle className="w-4 h-4" />
+            <span>Contacto</span>
+            </button>
+        </div>
+
+        {/* Mobile Icons (Simplified) */}
+        <div className="lg:hidden flex items-center gap-1">
+             <button onClick={() => navigate('community')} className="p-2 text-gray-500"><Instagram className="w-5 h-5"/></button>
+             <button onClick={() => navigate('gallery')} className="p-2 text-gray-500"><Grid className="w-5 h-5"/></button>
+             <button onClick={() => navigate('contact')} className="p-2 text-gray-500"><MessageCircle className="w-5 h-5"/></button>
+        </div>
+
+        <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 mx-1"></div>
 
         <button
           onClick={() => navigate('admin')}
@@ -92,7 +117,6 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, curren
           title="Panel Admin"
         >
           <LayoutDashboard className="w-5 h-5" />
-          <span className="hidden sm:inline">Admin</span>
         </button>
 
         <button
@@ -109,7 +133,8 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, curren
             className="hidden md:flex items-center gap-2 bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 text-white px-5 py-2.5 rounded-full transition-all font-bold shadow-md hover:shadow-lg"
           >
             <ShoppingBag className="w-4 h-4" />
-            Crear Diseño
+            <span className="hidden lg:inline">Crear Diseño</span>
+            <span className="lg:hidden">Crear</span>
           </button>
         )}
       </div>

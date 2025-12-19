@@ -497,8 +497,8 @@ on conflict (color, size, grammage) do nothing;
   };
 
   return (
-    // CAMBIO IMPORTANTE: Estructura flex con altura fija para scroll interno
-    <div className="max-w-7xl mx-auto p-4 md:p-6 h-[calc(100vh-85px)] flex flex-col">
+    // CAMBIO IMPORTANTE: Eliminado h-[calc] en móvil, aplicado solo en md. Eliminado overflow en wrapper móvil.
+    <div className="max-w-7xl mx-auto p-4 md:p-6 md:h-[calc(100vh-85px)] md:flex md:flex-col">
       {selectedOrder && <OrderDetailModal />}
       {itemToDelete && <DeleteConfirmationModal />}
 
@@ -511,7 +511,8 @@ on conflict (color, size, grammage) do nothing;
             </div>
             
             <div className="flex items-center gap-4">
-                <div className="relative w-full md:w-auto">
+                {/* CAMBIO: Ocultar buscador en móvil si es settings o financial */}
+                <div className={`relative w-full md:w-auto ${(activeTab === 'settings' || activeTab === 'financial') ? 'hidden md:block' : ''}`}>
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input 
                         type="text" 
@@ -567,8 +568,8 @@ on conflict (color, size, grammage) do nothing;
         </div>
       </div>
 
-      {/* SECCIÓN SCROLLABLE: Contenido */}
-      <div className="flex-1 overflow-y-auto min-h-0 pr-1 pb-4">
+      {/* SECCIÓN SCROLLABLE: Contenido - CAMBIO: Scroll solo en desktop */}
+      <div className="md:flex-1 md:overflow-y-auto md:min-h-0 md:pr-1 pb-4">
         {isLoading ? (
             <div className="flex justify-center items-center h-full">
                 <Loader2 className="w-10 h-10 text-pink-500 animate-spin" />

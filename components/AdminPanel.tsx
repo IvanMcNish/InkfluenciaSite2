@@ -445,7 +445,7 @@ WITH CHECK (true);`;
       </div>
 
       {/* TABS */}
-      <div className="flex gap-4 mb-6 border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
+      <div className="flex gap-4 mb-6 border-b border-gray-200 dark:border-gray-800 overflow-x-auto no-scrollbar">
           <button
             onClick={() => { setActiveTab('financial'); setSearchTerm(''); }}
             className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === 'financial' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
@@ -497,61 +497,108 @@ WITH CHECK (true);`;
                         <h3 className="text-xl font-medium text-gray-600 dark:text-gray-400">No hay pedidos registrados</h3>
                     </div>
                 ) : (
-                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                                        <th className="p-4">ID / Fecha</th>
-                                        <th className="p-4">Cliente</th>
-                                        <th className="p-4">Total</th>
-                                        <th className="p-4 text-center">Estado</th>
-                                        <th className="p-4 text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                                    {orders.filter(order => 
-                                        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                        order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                        order.email.toLowerCase().includes(searchTerm.toLowerCase())
-                                    ).map((order) => (
-                                        <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
-                                            <td className="p-4">
-                                                <div className="font-mono text-sm font-bold text-pink-600">#{order.id}</div>
-                                                <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                                                    <Calendar className="w-3 h-3" />
-                                                    {formatDate(order.date)}
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="font-medium text-gray-900 dark:text-white">{order.customerName}</div>
-                                                <div className="text-sm text-gray-500">{order.email}</div>
-                                            </td>
-                                            <td className="p-4 font-bold text-gray-900 dark:text-white">
-                                                {formatCurrency(order.total)}
-                                            </td>
-                                            <td className="p-4 text-center">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
-                                                    {order.status === 'pending' && 'Pendiente'}
-                                                    {order.status === 'processing' && 'Procesando'}
-                                                    {order.status === 'shipped' && 'Enviado'}
-                                                </span>
-                                            </td>
-                                            <td className="p-4 text-center">
-                                                <button 
-                                                    onClick={() => setSelectedOrder(order)}
-                                                    className="inline-flex items-center gap-1 text-sm font-bold text-pink-600 hover:text-pink-700 bg-pink-50 hover:bg-pink-100 dark:bg-pink-900/20 dark:hover:bg-pink-900/40 px-3 py-1.5 rounded-lg transition-colors"
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                    Ver Detalles
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                    <>
+                        {/* Mobile Card View */}
+                        <div className="grid grid-cols-1 gap-4 md:hidden">
+                            {orders.filter(order => 
+                                order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                order.email.toLowerCase().includes(searchTerm.toLowerCase())
+                            ).map((order) => (
+                                <div key={order.id} className="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div>
+                                            <span className="text-xs font-bold text-gray-400 block mb-1">ID: #{order.id}</span>
+                                            <div className="font-bold text-lg text-gray-900 dark:text-white">{order.customerName}</div>
+                                        </div>
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
+                                            {order.status === 'pending' && 'Pendiente'}
+                                            {order.status === 'processing' && 'Procesando'}
+                                            {order.status === 'shipped' && 'Enviado'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-1 mb-4 text-sm text-gray-600 dark:text-gray-300">
+                                        <div className="flex justify-between">
+                                            <span>Fecha:</span>
+                                            <span>{formatDate(order.date)}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Email:</span>
+                                            <span className="truncate max-w-[150px]">{order.email}</span>
+                                        </div>
+                                        <div className="flex justify-between font-bold text-gray-900 dark:text-white border-t border-gray-100 dark:border-gray-800 pt-2 mt-2">
+                                            <span>Total:</span>
+                                            <span className="text-pink-600">{formatCurrency(order.total)}</span>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setSelectedOrder(order)}
+                                        className="w-full flex items-center justify-center gap-2 text-sm font-bold text-white bg-pink-600 hover:bg-pink-700 py-2.5 rounded-lg transition-colors"
+                                    >
+                                        <Eye className="w-4 h-4" />
+                                        Ver Detalles
+                                    </button>
+                                </div>
+                            ))}
                         </div>
-                    </div>
+
+                        {/* Desktop Table View */}
+                        <div className="hidden md:block bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                                            <th className="p-4">ID / Fecha</th>
+                                            <th className="p-4">Cliente</th>
+                                            <th className="p-4">Total</th>
+                                            <th className="p-4 text-center">Estado</th>
+                                            <th className="p-4 text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                        {orders.filter(order => 
+                                            order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                            order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                            order.email.toLowerCase().includes(searchTerm.toLowerCase())
+                                        ).map((order) => (
+                                            <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                                                <td className="p-4">
+                                                    <div className="font-mono text-sm font-bold text-pink-600">#{order.id}</div>
+                                                    <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                                                        <Calendar className="w-3 h-3" />
+                                                        {formatDate(order.date)}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="font-medium text-gray-900 dark:text-white">{order.customerName}</div>
+                                                    <div className="text-sm text-gray-500">{order.email}</div>
+                                                </td>
+                                                <td className="p-4 font-bold text-gray-900 dark:text-white">
+                                                    {formatCurrency(order.total)}
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
+                                                        {order.status === 'pending' && 'Pendiente'}
+                                                        {order.status === 'processing' && 'Procesando'}
+                                                        {order.status === 'shipped' && 'Enviado'}
+                                                    </span>
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    <button 
+                                                        onClick={() => setSelectedOrder(order)}
+                                                        className="inline-flex items-center gap-1 text-sm font-bold text-pink-600 hover:text-pink-700 bg-pink-50 hover:bg-pink-100 dark:bg-pink-900/20 dark:hover:bg-pink-900/40 px-3 py-1.5 rounded-lg transition-colors"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                        Ver Detalles
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </>
                 )
             )}
 
@@ -563,64 +610,106 @@ WITH CHECK (true);`;
                         <h3 className="text-xl font-medium text-gray-600 dark:text-gray-400">No hay clientes en la base de datos</h3>
                     </div>
                 ) : (
-                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                                        <th className="p-4">Cliente</th>
-                                        <th className="p-4">Contacto</th>
-                                        <th className="p-4">Ubicación</th>
-                                        <th className="p-4">Última Compra</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                                    {customers.filter(customer =>
-                                        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                        customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                        customer.phone.includes(searchTerm)
-                                    ).map((customer) => (
-                                        <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-lg">
-                                                        {customer.name.charAt(0).toUpperCase()}
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-bold text-gray-900 dark:text-white">{customer.name}</div>
-                                                        <div className="text-xs text-gray-500">Registrado el {new Date(customer.createdAt).toLocaleDateString()}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex flex-col gap-1 text-sm">
-                                                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                                                        <User className="w-3 h-3 text-gray-400" />
-                                                        {customer.email}
-                                                    </div>
-                                                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                                                        <Phone className="w-3 h-3 text-gray-400" />
-                                                        {customer.phone}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300 max-w-xs">
-                                                    <MapPin className="w-3 h-3 mt-1 text-gray-400 shrink-0" />
-                                                    {customer.address}
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
-                                                    {new Date(customer.lastOrderAt).toLocaleDateString()}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                    <>
+                        {/* Mobile Card View */}
+                        <div className="grid grid-cols-1 gap-4 md:hidden">
+                            {customers.filter(customer =>
+                                customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                customer.phone.includes(searchTerm)
+                            ).map((customer) => (
+                                <div key={customer.id} className="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-xl">
+                                            {customer.name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-gray-900 dark:text-white text-lg">{customer.name}</div>
+                                            <div className="text-xs text-gray-500">Reg: {new Date(customer.createdAt).toLocaleDateString()}</div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg">
+                                        <div className="flex items-center gap-2">
+                                            <User className="w-4 h-4 text-gray-400" />
+                                            {customer.email}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Phone className="w-4 h-4 text-gray-400" />
+                                            {customer.phone}
+                                        </div>
+                                        <div className="flex items-start gap-2">
+                                            <MapPin className="w-4 h-4 mt-0.5 text-gray-400 shrink-0" />
+                                            <span className="text-xs">{customer.address}</span>
+                                        </div>
+                                    </div>
+                                    <div className="mt-3 flex justify-between items-center text-xs">
+                                        <span className="text-gray-500 uppercase font-bold">Última compra</span>
+                                        <span className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded font-medium">{new Date(customer.lastOrderAt).toLocaleDateString()}</span>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    </div>
+
+                        {/* Desktop Table View */}
+                        <div className="hidden md:block bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                                            <th className="p-4">Cliente</th>
+                                            <th className="p-4">Contacto</th>
+                                            <th className="p-4">Ubicación</th>
+                                            <th className="p-4">Última Compra</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                        {customers.filter(customer =>
+                                            customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                            customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                            customer.phone.includes(searchTerm)
+                                        ).map((customer) => (
+                                            <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                                                <td className="p-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-lg">
+                                                            {customer.name.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-bold text-gray-900 dark:text-white">{customer.name}</div>
+                                                            <div className="text-xs text-gray-500">Registrado el {new Date(customer.createdAt).toLocaleDateString()}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="flex flex-col gap-1 text-sm">
+                                                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                                                            <User className="w-3 h-3 text-gray-400" />
+                                                            {customer.email}
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                                                            <Phone className="w-3 h-3 text-gray-400" />
+                                                            {customer.phone}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300 max-w-xs">
+                                                        <MapPin className="w-3 h-3 mt-1 text-gray-400 shrink-0" />
+                                                        {customer.address}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+                                                        {new Date(customer.lastOrderAt).toLocaleDateString()}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </>
                 )
             )}
 
@@ -632,66 +721,115 @@ WITH CHECK (true);`;
                         <h3 className="text-xl font-medium text-gray-600 dark:text-gray-400">No hay diseños en la galería</h3>
                     </div>
                 ) : (
-                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                                        <th className="p-4">Vista Previa</th>
-                                        <th className="p-4">Nombre / Detalles</th>
-                                        <th className="p-4">Fecha Creación</th>
-                                        <th className="p-4 text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                                    {galleryItems.filter(item => 
-                                        item.name.toLowerCase().includes(searchTerm.toLowerCase())
-                                    ).map((item) => (
-                                        <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
-                                            <td className="p-4">
-                                                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-                                                    {item.config.snapshotUrl ? (
-                                                        <img src={item.config.snapshotUrl} alt={item.name} className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">Sin img</div>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="font-bold text-gray-900 dark:text-white mb-1">{item.name}</div>
-                                                <div className="text-xs text-gray-500 flex flex-col gap-1">
-                                                     <span>Color: <span className="capitalize">{item.config.color === 'white' ? 'Blanca' : 'Negra'}</span></span>
-                                                     <span>Capas: {item.config.layers.length}</span>
-                                                </div>
-                                            </td>
-                                            <td className="p-4 text-sm text-gray-600 dark:text-gray-300">
-                                                {formatDate(item.createdAt)}
-                                            </td>
-                                            <td className="p-4 text-center">
-                                                <button 
-                                                    onClick={() => requestDeleteGalleryItem(item.id, item.name)}
-                                                    disabled={deletingId === item.id}
-                                                    className={`inline-flex items-center gap-1 text-sm font-bold px-3 py-1.5 rounded-lg transition-colors ${deletingId === item.id ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40'}`}
-                                                >
-                                                    {deletingId === item.id ? (
-                                                        <>
-                                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                                            Borrando...
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Trash2 className="w-4 h-4" />
-                                                            Eliminar
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                    <>
+                        {/* Mobile Card View */}
+                        <div className="grid grid-cols-1 gap-4 md:hidden">
+                            {galleryItems.filter(item => 
+                                item.name.toLowerCase().includes(searchTerm.toLowerCase())
+                            ).map((item) => (
+                                <div key={item.id} className="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex gap-4">
+                                    {/* Left: Image */}
+                                    <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden shrink-0 border border-gray-200 dark:border-gray-700">
+                                        {item.config.snapshotUrl ? (
+                                            <img src={item.config.snapshotUrl} alt={item.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">Sin img</div>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Right: Info & Actions */}
+                                    <div className="flex flex-col justify-between flex-1">
+                                        <div>
+                                            <div className="font-bold text-gray-900 dark:text-white line-clamp-2 leading-tight">{item.name}</div>
+                                            <div className="text-xs text-gray-500 mt-1 flex flex-col">
+                                                 <span>Color: <span className="capitalize">{item.config.color === 'white' ? 'Blanca' : 'Negra'}</span></span>
+                                                 <span>{formatDate(item.createdAt)}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex justify-end mt-2">
+                                            <button 
+                                                onClick={() => requestDeleteGalleryItem(item.id, item.name)}
+                                                disabled={deletingId === item.id}
+                                                className={`inline-flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-lg transition-colors w-full justify-center ${deletingId === item.id ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40'}`}
+                                            >
+                                                {deletingId === item.id ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <>
+                                                        <Trash2 className="w-4 h-4" />
+                                                        Eliminar
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    </div>
+
+                        {/* Desktop Table View */}
+                        <div className="hidden md:block bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                                            <th className="p-4">Vista Previa</th>
+                                            <th className="p-4">Nombre / Detalles</th>
+                                            <th className="p-4">Fecha Creación</th>
+                                            <th className="p-4 text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                        {galleryItems.filter(item => 
+                                            item.name.toLowerCase().includes(searchTerm.toLowerCase())
+                                        ).map((item) => (
+                                            <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                                                <td className="p-4">
+                                                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                                                        {item.config.snapshotUrl ? (
+                                                            <img src={item.config.snapshotUrl} alt={item.name} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">Sin img</div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="font-bold text-gray-900 dark:text-white mb-1">{item.name}</div>
+                                                    <div className="text-xs text-gray-500 flex flex-col gap-1">
+                                                         <span>Color: <span className="capitalize">{item.config.color === 'white' ? 'Blanca' : 'Negra'}</span></span>
+                                                         <span>Capas: {item.config.layers.length}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-sm text-gray-600 dark:text-gray-300">
+                                                    {formatDate(item.createdAt)}
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    <button 
+                                                        onClick={() => requestDeleteGalleryItem(item.id, item.name)}
+                                                        disabled={deletingId === item.id}
+                                                        className={`inline-flex items-center gap-1 text-sm font-bold px-3 py-1.5 rounded-lg transition-colors ${deletingId === item.id ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40'}`}
+                                                    >
+                                                        {deletingId === item.id ? (
+                                                            <>
+                                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                                Borrando...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Trash2 className="w-4 h-4" />
+                                                                Eliminar
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </>
                 )
             )}
 

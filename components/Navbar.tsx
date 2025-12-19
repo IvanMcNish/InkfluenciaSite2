@@ -12,19 +12,19 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, currentView, navigate }) => {
   return (
-    <nav className="w-full py-4 px-6 flex justify-between items-center sticky top-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 print:hidden">
-      <div className="flex items-center gap-4">
+    <nav className="w-full py-3 md:py-4 px-4 md:px-6 flex justify-between items-center sticky top-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 print:hidden transition-all">
+      <div className="flex items-center gap-2 md:gap-4">
         {currentView !== 'landing' && (
           <button 
             onClick={() => navigate('landing')}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="p-1.5 md:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
         )}
         <div 
           onClick={() => navigate('landing')}
-          className="flex items-center gap-3 cursor-pointer select-none group"
+          className="flex items-center gap-2 md:gap-3 cursor-pointer select-none group"
         >
           <img 
             // Append timestamp to force refresh if cached, though cleaner in prod to just use URL
@@ -34,9 +34,10 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, curren
                 target.style.display = 'none'; 
             }}
             alt="Logo" 
-            className="w-10 h-10 object-contain drop-shadow-sm transition-transform group-hover:scale-110" 
+            className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-sm transition-transform group-hover:scale-110" 
           />
-          <span className="text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-yellow-400 to-cyan-500 hover:animate-gradient-x bg-[length:200%_auto]">
+          {/* Title hidden on mobile (default), visible on md screens and up */}
+          <span className="hidden md:block text-2xl lg:text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-yellow-400 to-cyan-500 hover:animate-gradient-x bg-[length:200%_auto]">
             INKFLUENCIA
           </span>
         </div>

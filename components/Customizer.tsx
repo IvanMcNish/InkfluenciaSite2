@@ -17,7 +17,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const fileInputRef2 = useRef<HTMLInputElement>(null);
   const captureRef = useRef<(() => string) | null>(null);
   
-  // Track which layer index is currently selected for editing (0 or 1)
   const [activeLayerIndex, setActiveLayerIndex] = useState<number>(0);
   const [designName, setDesignName] = useState('');
   const [saveError, setSaveError] = useState('');
@@ -26,7 +25,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, slotIndex: number) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Basic validation
       if (file.size > 5 * 1024 * 1024) {
         alert("La imagen es demasiado grande. Por favor usa una imagen menor a 5MB.");
         return;
@@ -37,7 +35,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         const img = new Image();
         img.onload = () => {
            const canvas = document.createElement('canvas');
-           // Reduced max width to save LocalStorage space
            const MAX_WIDTH = 600; 
            let width = img.width;
            let height = img.height;
@@ -55,11 +52,8 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
              ctx.clearRect(0, 0, width, height);
              ctx.drawImage(img, 0, 0, width, height);
              
-             // Use WebP with compression to drastically reduce string size
-             // Fallback to PNG if browser doesn't support WebP, but most do.
              let url = canvas.toDataURL('image/webp', 0.8);
              
-             // Fallback check: if data url starts with image/png, webp wasn't supported
              if (url.indexOf('image/webp') === -1) {
                  url = canvas.toDataURL('image/png');
              }
@@ -167,7 +161,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
     setIsProcessing(true);
     setSaveError('');
 
-    // Wait a brief moment to allow UI to update
     await new Promise(resolve => setTimeout(resolve, 50));
 
     try {
@@ -177,7 +170,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 snapshot = captureRef.current();
             } catch (e) {
                 console.error("Failed to capture snapshot:", e);
-                // Continue without snapshot if it fails (avoids blocking the user)
             }
         }
 
@@ -216,27 +208,23 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const activeLayer = config.layers[activeLayerIndex];
 
   return (
-    // Changed Layout: Flex Col for Mobile (allows natural sizing) vs Grid for Desktop
-    <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-8 p-4 lg:p-6 max-w-7xl mx-auto h-[calc(100vh-65px)] lg:h-[calc(100vh-80px)]">
+    <div className="flex flex-col sm:flex-row lg:grid lg:grid-cols-3 gap-4 lg:gap-8 p-4 lg:p-6 max-w-7xl mx-auto h-[calc(100vh-65px)] lg:h-[calc(100vh-80px)]">
       
       {/* 3D Scene Area */}
-      {/* Reduced mobile height from 50vh to 35vh to give more room to controls */}
-      <div className="lg:col-span-2 h-[35vh] lg:h-auto min-h-[250px] border-2 lg:border-4 border-white dark:border-gray-800 rounded-2xl shadow-lg lg:shadow-2xl overflow-hidden relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 shrink-0">
+      <div className="w-full sm:w-1/2 lg:w-auto lg:col-span-2 h-[35vh] sm:h-full lg:h-full min-h-[250px] border-2 lg:border-4 border-white dark:border-gray-800 rounded-2xl shadow-lg lg:shadow-2xl overflow-hidden relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 shrink-0">
         <Scene config={config} captureRef={captureRef} />
       </div>
 
       {/* Controls Panel */}
-      {/* Flex layout with overflow handling for mobile */}
-      <div className="bg-white dark:bg-gray-900 p-4 lg:p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 flex flex-col gap-4 lg:gap-6 overflow-y-auto flex-1">
+      <div className="w-full sm:w-1/2 lg:w-auto bg-white dark:bg-gray-900 p-4 lg:p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 flex flex-col gap-4 lg:gap-6 overflow-y-auto flex-1">
         
-        {/* Header with Title and Color Picker (Compact for mobile) */}
+        {/* Header with Title and Color Picker */}
         <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
             <div className="flex items-center gap-2">
                 <div className={`h-6 lg:h-8 w-1 bg-gradient-to-b rounded-full ${isDesignerMode ? 'from-purple-500 to-indigo-500' : 'from-pink-500 to-orange-500'}`}></div>
                 <h2 className="text-xl lg:text-2xl font-bold text-gray-800 dark:text-gray-100">{isDesignerMode ? 'Diseñador' : 'Personalizar'}</h2>
             </div>
             
-            {/* Color Selection moved to header to save vertical space */}
             <div className="flex gap-2">
                 <button
                 onClick={() => handleColorChange('white')}
@@ -314,7 +302,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
             )}
         </div>
 
-        {/* Adjustments (Shown if an active layer exists) */}
+        {/* Adjustments */}
         {activeLayer && (
           <div className="space-y-4 lg:space-y-6 animate-fade-in border-t border-gray-100 dark:border-gray-800 pt-2 lg:pt-4">
             <div className="space-y-2">
@@ -330,7 +318,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 </button>
               </div>
               
-              {/* Compact Arrow Controls */}
               <div className="grid grid-cols-3 gap-1 w-28 mx-auto">
                 <div />
                 <button 
@@ -397,7 +384,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
           </div>
         )}
 
-        {/* Footer Actions - Pushed to bottom */}
+        {/* Footer Actions */}
         <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
           {isDesignerMode ? (
             <div className="space-y-3">

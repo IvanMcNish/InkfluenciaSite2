@@ -1,6 +1,7 @@
 import { supabase, uploadBase64Image } from '../lib/supabaseClient';
 import { Order, OrderStatus } from '../types';
 import { saveOrUpdateCustomer } from './customerService';
+import { adjustInventoryQuantity } from './inventoryService';
 
 export const getOrders = async (): Promise<Order[]> => {
   const { data, error } = await supabase
@@ -56,6 +57,38 @@ export const getOrderById = async (id: string): Promise<Order | null> => {
 };
 
 export const updateOrderStatus = async (orderId: string, newStatus: OrderStatus): Promise<boolean> => {
+  // 1. Obtener el pedido actual para saber su estado anterior y configuración (color/talla)
+  const currentOrder = await getOrderById(orderId);
+  if (!currentOrder) return false;
+
+  const oldStatus = currentOrder.status;
+
+  // 2. Lógica de Inventario Avanzada
+  
+  // Definimos qué estados consideran que la camiseta ha sido "tomada" del inventario.
+  // Tanto 'processing' como 'shipped' implican que la camiseta física ya no está disponible.
+  const isConsumedState = (status: OrderStatus) => status === 'processing' || status === 'shipped';
+  const isSafeState = (status: OrderStatus) => status === 'pending';
+
+  const wasConsumed = isConsumedState(oldStatus);
+  const willBeConsumed = isConsumedState(newStatus);
+
+  // CASO 1: De Pendiente -> (Procesando O Enviado)
+  // Se descuenta del inventario.
+  if (!wasConsumed && willBeConsumed) {
+      await adjustInventoryQuantity(currentOrder.config.color, currentOrder.size, -1);
+  }
+  
+  // CASO 2: De (Procesando O Enviado) -> Pendiente
+  // Se devuelve al inventario (error administrativo o devolución).
+  else if (wasConsumed && !willBeConsumed) {
+      await adjustInventoryQuantity(currentOrder.config.color, currentOrder.size, 1);
+  }
+
+  // CASO 3: Movimiento entre estados de consumo (ej. Procesando <-> Enviado)
+  // NO se hace nada, el inventario ya fue descontado y sigue ocupado.
+
+  // 3. Actualizar estado en base de datos
   const { error } = await supabase
     .from('orders')
     .update({ status: newStatus })
@@ -63,6 +96,7 @@ export const updateOrderStatus = async (orderId: string, newStatus: OrderStatus)
 
   if (error) {
       console.error('Error updating order:', error);
+      // Opcional: Podríamos revertir el inventario aquí si falla, pero mantenemos simple la lógica.
       return false;
   }
   return true;

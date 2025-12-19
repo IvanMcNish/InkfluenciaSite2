@@ -46,7 +46,6 @@ export interface InventoryItem {
   id: string;
   color: 'white' | 'black';
   size: string;
-  grammage: '150g' | '200g';
   quantity: number;
 }
 

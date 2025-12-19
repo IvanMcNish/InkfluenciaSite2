@@ -5,7 +5,7 @@ import { getCollection, deleteDesignFromCollection } from '../services/gallerySe
 import { getInventory } from '../services/inventoryService';
 import { uploadAppLogo, APP_LOGO_URL, supabase } from '../lib/supabaseClient';
 import { Order, OrderStatus, Customer, CollectionItem, InventoryItem } from '../types';
-import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler, Weight } from 'lucide-react';
+import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler } from 'lucide-react';
 import { formatCurrency, PRICES, SIZES } from '../constants';
 import { Scene } from './Scene';
 
@@ -198,14 +198,10 @@ export const AdminPanel: React.FC = () => {
 
   // Inventory Calculations
   const totalStock = inventory.reduce((acc, item) => acc + item.quantity, 0);
-  const stock150g = inventory.filter(i => i.grammage === '150g' || !i.grammage).reduce((acc, i) => acc + i.quantity, 0);
-  const stock200g = inventory.filter(i => i.grammage === '200g').reduce((acc, i) => acc + i.quantity, 0);
-  
-  // Estimation: Using specific prices for inventory value estimation
-  const estimatedInventoryValue = inventory.reduce((acc, item) => {
-      const price = PRICES[item.grammage || '150g'] || PRICES['150g'];
-      return acc + (item.quantity * price);
-  }, 0);
+  const whiteStock = inventory.filter(i => i.color === 'white').reduce((acc, i) => acc + i.quantity, 0);
+  const blackStock = inventory.filter(i => i.color === 'black').reduce((acc, i) => acc + i.quantity, 0);
+  // Estimation: Using base price of 150g shirt for inventory value estimation
+  const estimatedInventoryValue = totalStock * PRICES['150g'];
 
 
   const storageSQL = `-- Copia y pega esto en el SQL Editor de Supabase para arreglar las imágenes
@@ -252,50 +248,34 @@ TO public
 USING (true)
 WITH CHECK (true);`;
 
-  const inventorySQL = `-- SQL ACTUALIZADO PARA INVENTORY (Con Gramaje)
+  const inventorySQL = `-- SQL PARA CREAR LA TABLA INVENTORY
 
--- 1. Crear tabla si no existe
 create table if not exists inventory (
   id uuid default gen_random_uuid() primary key,
   color text check (color in ('white', 'black')),
   size text,
-  grammage text check (grammage in ('150g', '200g')) default '150g',
   quantity integer default 0,
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- 2. Añadir columna grammage si la tabla ya existía (Migración)
-do $$
-begin
-    if not exists (select 1 from information_schema.columns where table_name='inventory' and column_name='grammage') then
-        alter table inventory add column grammage text check (grammage in ('150g', '200g')) default '150g';
-    end if;
-end $$;
-
--- 3. Actualizar la restricción única para incluir grammage
--- Primero borramos la vieja restricción (si existe)
-alter table inventory drop constraint if exists inventory_color_size_key;
--- Añadimos la nueva que incluye grammage
-alter table inventory drop constraint if exists inventory_color_size_grammage_key;
-alter table inventory add constraint inventory_color_size_grammage_key unique (color, size, grammage);
-
--- 4. Habilitar RLS y Políticas
+-- Habilitar RLS
 alter table inventory enable row level security;
-drop policy if exists "Public Read Inventory" on inventory;
-drop policy if exists "Public All Inventory" on inventory;
 
-create policy "Public All Inventory"
-on inventory for all
+-- Política de lectura pública
+create policy "Public Read Inventory"
+on inventory for select
 to public
-using (true)
-with check (true);
+using (true);
 
--- 5. Insertar datos iniciales de ejemplo (Upsert con nueva key)
-insert into inventory (color, size, grammage, quantity) values
-  ('white', 'S', '150g', 50), ('white', 'M', '150g', 45), ('white', 'L', '150g', 30),
-  ('black', 'S', '150g', 40), ('black', 'M', '150g', 35), ('black', 'L', '150g', 20),
-  ('white', 'M', '200g', 25), ('black', 'M', '200g', 20)
-on conflict (color, size, grammage) do nothing;
+-- Insertar datos iniciales de ejemplo
+insert into inventory (color, size, quantity) values
+  ('white', 'S', 50),
+  ('white', 'M', 45),
+  ('white', 'L', 30),
+  ('black', 'S', 40),
+  ('black', 'M', 35),
+  ('black', 'L', 20)
+on conflict do nothing;
 `;
 
   // --- MODALS ---
@@ -688,54 +668,227 @@ on conflict (color, size, grammage) do nothing;
                             <h3 className="text-xl font-medium text-gray-600 dark:text-gray-400">No hay clientes en la base de datos</h3>
                         </div>
                     ) : (
-                        <div className="hidden md:block bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                                            <th className="p-4">Cliente</th>
-                                            <th className="p-4">Contacto</th>
-                                            <th className="p-4">Ubicación</th>
-                                            <th className="p-4">Última Compra</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                                        {customers.map(customer => (
-                                            <tr key={customer.id}>
-                                                <td className="p-4">{customer.name}</td>
-                                                <td className="p-4">{customer.email}</td>
-                                                <td className="p-4">{customer.address}</td>
-                                                <td className="p-4">{new Date(customer.lastOrderAt).toLocaleDateString()}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                        <>
+                            {/* Mobile Card View */}
+                            <div className="grid grid-cols-1 gap-4 md:hidden">
+                                {customers.filter(customer =>
+                                    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    customer.phone.includes(searchTerm)
+                                ).map((customer) => (
+                                    <div key={customer.id} className="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-xl">
+                                                {customer.name.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <div className="font-bold text-gray-900 dark:text-white text-lg">{customer.name}</div>
+                                                <div className="text-xs text-gray-500">Reg: {new Date(customer.createdAt).toLocaleDateString()}</div>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg">
+                                            <div className="flex items-center gap-2">
+                                                <User className="w-4 h-4 text-gray-400" />
+                                                {customer.email}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Phone className="w-4 h-4 text-gray-400" />
+                                                {customer.phone}
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <MapPin className="w-4 h-4 mt-0.5 text-gray-400 shrink-0" />
+                                                <span className="text-xs">{customer.address}</span>
+                                            </div>
+                                        </div>
+                                        <div className="mt-3 flex justify-between items-center text-xs">
+                                            <span className="text-gray-500 uppercase font-bold">Última compra</span>
+                                            <span className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded font-medium">{new Date(customer.lastOrderAt).toLocaleDateString()}</span>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        </div>
+
+                            {/* Desktop Table View */}
+                            <div className="hidden md:block bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                                                <th className="p-4">Cliente</th>
+                                                <th className="p-4">Contacto</th>
+                                                <th className="p-4">Ubicación</th>
+                                                <th className="p-4">Última Compra</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                            {customers.filter(customer =>
+                                                customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                customer.phone.includes(searchTerm)
+                                            ).map((customer) => (
+                                                <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                                                    <td className="p-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-lg">
+                                                                {customer.name.charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-bold text-gray-900 dark:text-white">{customer.name}</div>
+                                                                <div className="text-xs text-gray-500">Registrado el {new Date(customer.createdAt).toLocaleDateString()}</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className="flex flex-col gap-1 text-sm">
+                                                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                                                                <User className="w-3 h-3 text-gray-400" />
+                                                                {customer.email}
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                                                                <Phone className="w-3 h-3 text-gray-400" />
+                                                                {customer.phone}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300 max-w-xs">
+                                                            <MapPin className="w-3 h-3 mt-1 text-gray-400 shrink-0" />
+                                                            {customer.address}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+                                                            {new Date(customer.lastOrderAt).toLocaleDateString()}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </>
                     )
                 )}
 
                 {/* GALLERY MANAGEMENT VIEW */}
                 {activeTab === 'gallery' && (
-                     galleryItems.length === 0 ? (
+                    galleryItems.length === 0 ? (
                         <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
                             <Grid className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                             <h3 className="text-xl font-medium text-gray-600 dark:text-gray-400">No hay diseños en la galería</h3>
                         </div>
                     ) : (
-                         <div className="hidden md:block bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in">
-                             <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr><th className="p-4">Nombre</th></tr>
-                                    </thead>
-                                    <tbody>
-                                        {galleryItems.map(item => <tr key={item.id}><td className="p-4">{item.name}</td></tr>)}
-                                    </tbody>
-                                </table>
+                        <>
+                            {/* Mobile Card View */}
+                            <div className="grid grid-cols-1 gap-4 md:hidden">
+                                {galleryItems.filter(item => 
+                                    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+                                ).map((item) => (
+                                    <div key={item.id} className="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex gap-4">
+                                        {/* Left: Image */}
+                                        <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden shrink-0 border border-gray-200 dark:border-gray-700">
+                                            {item.config.snapshotUrl ? (
+                                                <img src={item.config.snapshotUrl} alt={item.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">Sin img</div>
+                                            )}
+                                        </div>
+                                        
+                                        {/* Right: Info & Actions */}
+                                        <div className="flex flex-col justify-between flex-1">
+                                            <div>
+                                                <div className="font-bold text-gray-900 dark:text-white line-clamp-2 leading-tight">{item.name}</div>
+                                                <div className="text-xs text-gray-500 mt-1 flex flex-col">
+                                                    <span>Color: <span className="capitalize">{item.config.color === 'white' ? 'Blanca' : 'Negra'}</span></span>
+                                                    <span>{formatDate(item.createdAt)}</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex justify-end mt-2">
+                                                <button 
+                                                    onClick={() => requestDeleteGalleryItem(item.id, item.name)}
+                                                    disabled={deletingId === item.id}
+                                                    className={`inline-flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-lg transition-colors w-full justify-center ${deletingId === item.id ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40'}`}
+                                                >
+                                                    {deletingId === item.id ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                        <>
+                                                            <Trash2 className="w-4 h-4" />
+                                                            Eliminar
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                         </div>
-                     )
+
+                            {/* Desktop Table View */}
+                            <div className="hidden md:block bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                                                <th className="p-4">Vista Previa</th>
+                                                <th className="p-4">Nombre / Detalles</th>
+                                                <th className="p-4">Fecha Creación</th>
+                                                <th className="p-4 text-center">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                            {galleryItems.filter(item => 
+                                                item.name.toLowerCase().includes(searchTerm.toLowerCase())
+                                            ).map((item) => (
+                                                <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                                                    <td className="p-4">
+                                                        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                                                            {item.config.snapshotUrl ? (
+                                                                <img src={item.config.snapshotUrl} alt={item.name} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">Sin img</div>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className="font-bold text-gray-900 dark:text-white mb-1">{item.name}</div>
+                                                        <div className="text-xs text-gray-500 flex flex-col gap-1">
+                                                            <span>Color: <span className="capitalize">{item.config.color === 'white' ? 'Blanca' : 'Negra'}</span></span>
+                                                            <span>Capas: {item.config.layers.length}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4 text-sm text-gray-600 dark:text-gray-300">
+                                                        {formatDate(item.createdAt)}
+                                                    </td>
+                                                    <td className="p-4 text-center">
+                                                        <button 
+                                                            onClick={() => requestDeleteGalleryItem(item.id, item.name)}
+                                                            disabled={deletingId === item.id}
+                                                            className={`inline-flex items-center gap-1 text-sm font-bold px-3 py-1.5 rounded-lg transition-colors ${deletingId === item.id ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40'}`}
+                                                        >
+                                                            {deletingId === item.id ? (
+                                                                <>
+                                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                                    Borrando...
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                    Eliminar
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </>
+                    )
                 )}
 
                 {/* FINANCIAL DASHBOARD */}
@@ -887,10 +1040,9 @@ on conflict (color, size, grammage) do nothing;
                                 <p className="text-gray-500 dark:text-gray-400 text-sm font-medium uppercase tracking-wide">Tasa de Cumplimiento</p>
                             </div>
                         </div>
-                        {/* Summary Cards END*/}
-
-                         {/* ... Inventory Cards Updated for Grammage ... */}
-                         <div>
+                        
+                        {/* INVENTORY SUMMARY SECTION (NEW) */}
+                        <div>
                             <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
                             <Layers className="w-5 h-5 text-gray-500" />
                             Resumen de Inventario
@@ -898,49 +1050,67 @@ on conflict (color, size, grammage) do nothing;
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 {/* Card 1: Total Stock */}
                                 <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                        <Shirt className="w-16 h-16 text-indigo-500" />
+                                    </div>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg text-indigo-600">
+                                            <Layers className="w-5 h-5" />
+                                        </div>
+                                        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Stock Total</h3>
+                                    </div>
                                     <div className="text-3xl font-black text-gray-900 dark:text-white">
                                         {totalStock}
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-1 font-medium">Unidades Totales</p>
+                                    <p className="text-xs text-indigo-600 mt-1 font-medium">Camisetas disponibles</p>
                                 </div>
 
-                                {/* Card 2: 150g Stock */}
+                                {/* Card 2: White Stock */}
                                 <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
                                     <div className="flex items-center gap-3 mb-2">
-                                        <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg text-purple-600">
-                                            <Weight className="w-5 h-5" />
+                                        <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 border border-gray-200 dark:border-gray-700">
+                                            <div className="w-5 h-5 bg-white rounded-full border border-gray-300"></div>
                                         </div>
-                                        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Stock 150g</h3>
+                                        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Stock Blancas</h3>
                                     </div>
                                     <div className="text-3xl font-black text-gray-900 dark:text-white">
-                                        {stock150g}
+                                        {whiteStock}
                                     </div>
-                                    <p className="text-xs text-purple-600 mt-1 font-medium">Estándar</p>
+                                    <p className="text-xs text-gray-500 mt-1 font-medium">Todas las tallas</p>
                                 </div>
 
-                                {/* Card 3: 200g Stock */}
+                                {/* Card 3: Black Stock */}
                                 <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
                                     <div className="flex items-center gap-3 mb-2">
-                                        <div className="p-2 bg-pink-100 dark:bg-pink-900/20 rounded-lg text-pink-600">
-                                            <Weight className="w-5 h-5" />
+                                        <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 border border-gray-200 dark:border-gray-700">
+                                            <div className="w-5 h-5 bg-black rounded-full border border-gray-600"></div>
                                         </div>
-                                        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Stock 200g</h3>
+                                        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Stock Negras</h3>
                                     </div>
                                     <div className="text-3xl font-black text-gray-900 dark:text-white">
-                                        {stock200g}
+                                        {blackStock}
                                     </div>
-                                    <p className="text-xs text-pink-600 mt-1 font-medium">Premium</p>
+                                    <p className="text-xs text-gray-500 mt-1 font-medium">Todas las tallas</p>
                                 </div>
 
-                                {/* Card 4: Value */}
+                                {/* Card 4: Estimated Value */}
                                 <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
-                                     <div className="text-xl font-black text-gray-900 dark:text-white">
+                                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                        <DollarSign className="w-16 h-16 text-green-500" />
+                                    </div>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg text-green-600">
+                                            <TrendingUp className="w-5 h-5" />
+                                        </div>
+                                        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Valor Inventario</h3>
+                                    </div>
+                                    <div className="text-xl font-black text-gray-900 dark:text-white">
                                         {formatCurrency(estimatedInventoryValue)}
                                     </div>
-                                    <p className="text-xs text-green-600 mt-1 font-medium">Valor Estimado</p>
+                                    <p className="text-xs text-green-600 mt-1 font-medium">Estimado (Costo venta base)</p>
                                 </div>
                             </div>
-                            
+
                             {/* SIZE BREAKDOWN SECTION */}
                             <h3 className="font-bold text-lg mb-4 mt-8 flex items-center gap-2">
                                 <Ruler className="w-5 h-5 text-gray-500" />
@@ -950,9 +1120,8 @@ on conflict (color, size, grammage) do nothing;
                                 {SIZES.map(size => {
                                     const stats = inventory.filter(i => i.size === size);
                                     const total = stats.reduce((acc, i) => acc + i.quantity, 0);
-                                    // Calculate breakdown by grammage for this size
-                                    const g150 = stats.filter(i => (i.grammage === '150g' || !i.grammage)).reduce((acc,i) => acc + i.quantity, 0);
-                                    const g200 = stats.filter(i => i.grammage === '200g').reduce((acc,i) => acc + i.quantity, 0);
+                                    const w = stats.find(i => i.color === 'white')?.quantity || 0;
+                                    const b = stats.find(i => i.color === 'black')?.quantity || 0;
 
                                     return (
                                         <div key={size} className="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 hover:border-pink-300 dark:hover:border-pink-900/50 transition-colors">
@@ -965,15 +1134,15 @@ on conflict (color, size, grammage) do nothing;
                                                 <span>Total:</span>
                                                 <span className="text-pink-600">{total}</span>
                                             </div>
-                                            <div className="flex flex-col gap-1 mt-2 text-xs text-gray-500 font-medium">
-                                                <div className="flex justify-between">
-                                                    <span>150g:</span>
-                                                    <span>{g150}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>200g:</span>
-                                                    <span>{g200}</span>
-                                                </div>
+                                            <div className="flex gap-3 mt-2 text-xs text-gray-500 font-medium">
+                                                <span className="flex items-center gap-1" title="Stock Blanco">
+                                                    <div className="w-2 h-2 rounded-full border border-gray-300 bg-white"></div>
+                                                    {w}
+                                                </span>
+                                                <span className="flex items-center gap-1" title="Stock Negro">
+                                                    <div className="w-2 h-2 rounded-full border border-gray-600 bg-black"></div>
+                                                    {b}
+                                                </span>
                                             </div>
                                         </div>
                                     )
@@ -986,8 +1155,112 @@ on conflict (color, size, grammage) do nothing;
                 {/* SETTINGS VIEW */}
                 {activeTab === 'settings' && (
                 <div className="max-w-4xl mx-auto animate-fade-in space-y-8">
-                    {/* ... (Logo settings preserved) */}
-                     {/* Inventory SQL Settings */}
+                    
+                    {/* Logo Upload Section */}
+                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-3 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg text-indigo-600">
+                                <ImageIcon className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Personalización de Marca</h2>
+                                <p className="text-gray-500 dark:text-gray-400 text-sm">Actualiza el logo principal de la aplicación (Sobrescribe LOGO/logo.png).</p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-6">
+                            <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center border border-gray-200 dark:border-gray-700 p-2">
+                                <img src={`${APP_LOGO_URL}?t=${Date.now()}`} alt="Current Logo" className="w-full h-full object-contain" />
+                            </div>
+                            <div className="flex-1">
+                                <input 
+                                        type="file" 
+                                        ref={logoInputRef} 
+                                        onChange={handleLogoUpload} 
+                                        accept="image/png, image/jpeg, image/webp" 
+                                        className="hidden" 
+                                    />
+                                <button 
+                                        onClick={() => logoInputRef.current?.click()}
+                                        disabled={isUploadingLogo}
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors flex items-center gap-2"
+                                >
+                                    {isUploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                    {isUploadingLogo ? 'Subiendo...' : 'Subir Nuevo Logo'}
+                                </button>
+                                <p className="text-xs text-gray-500 mt-2">Recomendado: PNG Transparente (512x512px). Los cambios pueden tardar unos segundos en reflejarse.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Storage Settings */}
+                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-3 bg-pink-100 dark:bg-pink-900/20 rounded-lg text-pink-600">
+                                <Database className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">SQL para Imágenes (Storage)</h2>
+                                <p className="text-gray-500 dark:text-gray-400 text-sm">Ejecuta esto si las imágenes no se suben.</p>
+                            </div>
+                        </div>
+
+                        <div className="relative">
+                            <div className="absolute top-3 right-3">
+                                <button 
+                                    onClick={() => copyToClipboard(storageSQL, 'storage')}
+                                    className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-xs font-bold shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                >
+                                    {copiedStorage ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                                    {copiedStorage ? 'Copiado' : 'Copiar SQL'}
+                                </button>
+                            </div>
+                            <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl overflow-x-auto text-sm font-mono leading-relaxed border border-gray-800">
+                                {storageSQL}
+                            </pre>
+                        </div>
+                    </div>
+
+                    {/* Database Permissions Settings */}
+                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg text-purple-600">
+                                <Trash2 className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">SQL para Permisos de Galería</h2>
+                                <p className="text-gray-500 dark:text-gray-400 text-sm">Ejecuta esto si no puedes ELIMINAR diseños.</p>
+                            </div>
+                        </div>
+
+                            <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/30 rounded-lg p-4 mb-6 flex gap-3">
+                            <AlertTriangle className="w-6 h-6 text-yellow-600 dark:text-yellow-500 shrink-0" />
+                            <div>
+                                <h3 className="font-bold text-yellow-800 dark:text-yellow-400 text-sm">Advertencia de Seguridad (RLS)</h3>
+                                <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-1">
+                                    Supabase bloquea la eliminación de registros por defecto para usuarios anónimos. 
+                                    Este script habilita una política pública de borrado para que el panel funcione sin autenticación.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="relative">
+                            <div className="absolute top-3 right-3">
+                                <button 
+                                    onClick={() => copyToClipboard(gallerySQL, 'gallery')}
+                                    className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-xs font-bold shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                >
+                                    {copiedGallery ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                                    {copiedGallery ? 'Copiado' : 'Copiar SQL'}
+                                </button>
+                            </div>
+                            <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl overflow-x-auto text-sm font-mono leading-relaxed border border-gray-800">
+                                {gallerySQL}
+                            </pre>
+                        </div>
+                    </div>
+                    
+                    {/* Inventory SQL Settings */}
                     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="p-3 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg text-indigo-600">
@@ -995,7 +1268,7 @@ on conflict (color, size, grammage) do nothing;
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">SQL para Tabla de Inventario</h2>
-                                <p className="text-gray-500 dark:text-gray-400 text-sm">Ejecuta esto para actualizar la tabla con soporte para GRAMAJE.</p>
+                                <p className="text-gray-500 dark:text-gray-400 text-sm">Ejecuta esto si ves el error "Could not find the table inventory".</p>
                             </div>
                         </div>
 
@@ -1014,7 +1287,6 @@ on conflict (color, size, grammage) do nothing;
                             </pre>
                         </div>
                     </div>
-                    {/* ... (Other settings preserved) */}
                 </div>
                 )}
             </>

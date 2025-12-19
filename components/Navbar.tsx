@@ -25,17 +25,11 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, curren
           onClick={() => navigate('landing')}
           className="flex items-center gap-3 cursor-pointer select-none group"
         >
-          {/* Reemplaza 'logo.png' con la ruta de tu archivo o URL */}
           <img 
-            src="https://raw.githubusercontent.com/IvanMcNish/camiseta/refs/heads/main/logo.png"
+            src="https://raw.githubusercontent.com/IvanMcNish/InkfluenciaSite2/main/Logo2T.png"
             onError={(e) => {
-                // Fallback: intenta buscar en la raíz si la URL remota falla
                 const target = e.target as HTMLImageElement;
-                if (target.src !== window.location.origin + '/logo.png') {
-                    target.src = '/logo.png';
-                } else {
-                    target.style.display = 'none';
-                }
+                target.style.display = 'none'; 
             }}
             alt="Logo" 
             className="w-10 h-10 object-contain drop-shadow-sm transition-transform group-hover:scale-110" 

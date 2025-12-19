@@ -56,3 +56,22 @@ export const adjustInventoryQuantity = async (color: 'white' | 'black', size: st
     return false;
   }
 };
+
+export const upsertInventoryBatch = async (items: {color: string, size: string, grammage: string, quantity: number}[]): Promise<{ success: boolean, error?: any }> => {
+    try {
+        // Upsert using the composite unique key constraint (color, size, grammage)
+        const { error } = await supabase
+            .from('inventory')
+            .upsert(items, { onConflict: 'color, size, grammage' });
+
+        if (error) {
+            console.error("Error upserting inventory:", error);
+            return { success: false, error };
+        }
+
+        return { success: true };
+    } catch (e) {
+        console.error("Exception upserting inventory:", e);
+        return { success: false, error: e };
+    }
+};

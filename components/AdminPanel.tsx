@@ -2,16 +2,16 @@ import React, { useEffect, useState, useRef } from 'react';
 import { getOrders, updateOrderStatus } from '../services/orderService';
 import { getCustomers } from '../services/customerService';
 import { getCollection, deleteDesignFromCollection } from '../services/galleryService';
-import { getInventory } from '../services/inventoryService';
+import { getInventory, upsertInventoryBatch } from '../services/inventoryService';
 import { uploadAppLogo, APP_LOGO_URL, supabase } from '../lib/supabaseClient';
 import { Order, OrderStatus, Customer, CollectionItem, InventoryItem } from '../types';
-import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler, Weight, ExternalLink, Navigation } from 'lucide-react';
+import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler, Weight, ExternalLink, Navigation, Save, RefreshCw, AlertCircle } from 'lucide-react';
 import { formatCurrency, PRICES, SIZES } from '../constants';
 import { Scene } from './Scene';
 
 export const AdminPanel: React.FC = () => {
   // Changed default state to 'financial'
-  const [activeTab, setActiveTab] = useState<'orders' | 'customers' | 'settings' | 'gallery' | 'financial'>('financial');
+  const [activeTab, setActiveTab] = useState<'orders' | 'customers' | 'settings' | 'gallery' | 'financial' | 'inventory'>('financial');
   
   // Orders State
   const [orders, setOrders] = useState<Order[]>([]);
@@ -28,6 +28,12 @@ export const AdminPanel: React.FC = () => {
   // Inventory State
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
 
+  // Inventory Management View State (New)
+  const [mgmtGrammage, setMgmtGrammage] = useState<'150g' | '200g'>('150g');
+  const [mgmtColor, setMgmtColor] = useState<'white' | 'black'>('white');
+  const [stockInputs, setStockInputs] = useState<Record<string, number>>({}); // Maps size -> quantity
+  const [isSavingStock, setIsSavingStock] = useState(false);
+
   // Shared State
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -43,6 +49,7 @@ export const AdminPanel: React.FC = () => {
   const tabs = [
     { id: 'financial', label: 'Finanzas', icon: BarChart3 },
     { id: 'orders', label: 'Pedidos', icon: ShoppingBag },
+    { id: 'inventory', label: 'Gestión Stock', icon: Layers },
     { id: 'customers', label: 'Clientes', icon: Users },
     { id: 'gallery', label: 'Galería', icon: Grid },
     { id: 'settings', label: 'Config', icon: Settings },
@@ -56,8 +63,8 @@ export const AdminPanel: React.FC = () => {
           setOrders(loadedOrders);
       }
       
-      // Load inventory for financial tab
-      if (activeTab === 'financial') {
+      // Load inventory for financial or inventory tab
+      if (activeTab === 'financial' || activeTab === 'inventory') {
           const loadedInventory = await getInventory();
           setInventory(loadedInventory);
       }
@@ -75,6 +82,22 @@ export const AdminPanel: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [activeTab]);
+
+  // Sync stock inputs when inventory, grammage or color changes
+  useEffect(() => {
+      if (activeTab === 'inventory') {
+          const newInputs: Record<string, number> = {};
+          SIZES.forEach(size => {
+              const item = inventory.find(i => 
+                  i.color === mgmtColor && 
+                  i.size === size && 
+                  (i.grammage === mgmtGrammage || (!i.grammage && mgmtGrammage === '150g'))
+              );
+              newInputs[size] = item ? item.quantity : 0;
+          });
+          setStockInputs(newInputs);
+      }
+  }, [inventory, mgmtGrammage, mgmtColor, activeTab]);
 
   const handleLogout = async () => {
       await supabase.auth.signOut();
@@ -94,6 +117,37 @@ export const AdminPanel: React.FC = () => {
         alert("Error al actualizar el estado");
     }
   };
+
+  // Inventory Management Functions
+  const handleStockInputChange = (size: string, value: string) => {
+      const numValue = parseInt(value) || 0;
+      setStockInputs(prev => ({ ...prev, [size]: Math.max(0, numValue) }));
+  };
+
+  const saveStockUpdates = async () => {
+      setIsSavingStock(true);
+      
+      const updates = SIZES.map(size => ({
+          color: mgmtColor,
+          size: size,
+          grammage: mgmtGrammage,
+          quantity: stockInputs[size] || 0
+      }));
+
+      const result = await upsertInventoryBatch(updates);
+      
+      if (result.success) {
+          // Reload inventory to confirm
+          const updatedInventory = await getInventory();
+          setInventory(updatedInventory);
+          alert("¡Inventario actualizado correctamente!");
+      } else {
+          alert("Error al actualizar inventario. Revisa la consola o los scripts SQL.");
+      }
+      
+      setIsSavingStock(false);
+  };
+
 
   const requestDeleteGalleryItem = (id: string, name: string) => {
       setItemToDelete({ id, name });
@@ -198,6 +252,7 @@ export const AdminPanel: React.FC = () => {
 
   // Inventory Calculations (Updated for breakdown)
   const totalStock = inventory.reduce((acc, item) => acc + item.quantity, 0);
+  const lowStockItems = inventory.filter(i => i.quantity < 10).length;
   
   // White Stock Breakdown
   const whiteTotal = inventory.filter(i => i.color === 'white').reduce((acc, i) => acc + i.quantity, 0);
@@ -546,15 +601,15 @@ on conflict (color, size, grammage) do nothing;
             
             <div className="flex items-center gap-4">
                 {/* CAMBIO: Ocultar buscador en móvil si es settings o financial */}
-                <div className={`relative w-full md:w-auto ${(activeTab === 'settings' || activeTab === 'financial') ? 'hidden md:block' : ''}`}>
+                <div className={`relative w-full md:w-auto ${(activeTab === 'settings' || activeTab === 'financial' || activeTab === 'inventory') ? 'hidden md:block' : ''}`}>
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input 
                         type="text" 
                         placeholder={activeTab === 'customers' ? "Buscar cliente..." : activeTab === 'gallery' ? "Buscar diseño..." : "Buscar..."}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        disabled={activeTab === 'settings' || activeTab === 'financial'}
-                        className={`pl-10 pr-4 py-2 w-full md:w-64 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all ${activeTab === 'settings' || activeTab === 'financial' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={activeTab === 'settings' || activeTab === 'financial' || activeTab === 'inventory'}
+                        className={`pl-10 pr-4 py-2 w-full md:w-64 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all ${activeTab === 'settings' || activeTab === 'financial' || activeTab === 'inventory' ? 'opacity-50 cursor-not-allowed' : ''}`}
                     />
                 </div>
                 
@@ -610,6 +665,129 @@ on conflict (color, size, grammage) do nothing;
             </div>
         ) : (
             <>
+                {/* NEW INVENTORY MANAGEMENT TAB */}
+                {activeTab === 'inventory' && (
+                    <div className="animate-fade-in space-y-6">
+                        {/* 1. Quick Stats for Inventory */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex items-center gap-4">
+                                <div className="p-3 bg-indigo-100 dark:bg-indigo-900/20 rounded-xl text-indigo-600">
+                                    <Layers className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-gray-500 dark:text-gray-400 text-xs uppercase font-bold">Unidades Totales</h3>
+                                    <div className="text-2xl font-black text-gray-900 dark:text-white">{totalStock}</div>
+                                </div>
+                            </div>
+                             <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex items-center gap-4">
+                                <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-xl text-green-600">
+                                    <DollarSign className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-gray-500 dark:text-gray-400 text-xs uppercase font-bold">Valorización Estimada</h3>
+                                    <div className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(estimatedInventoryValue)}</div>
+                                </div>
+                            </div>
+                             <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex items-center gap-4">
+                                <div className={`p-3 rounded-xl ${lowStockItems > 0 ? 'bg-red-100 dark:bg-red-900/20 text-red-600' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
+                                    <AlertCircle className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-gray-500 dark:text-gray-400 text-xs uppercase font-bold">Alertas Stock Bajo</h3>
+                                    <div className={`text-2xl font-black ${lowStockItems > 0 ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>{lowStockItems} Items</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 2. Management Form */}
+                        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                            <div className="p-6 border-b border-gray-100 dark:border-gray-800">
+                                <h3 className="font-bold text-lg flex items-center gap-2 text-gray-900 dark:text-white">
+                                    <RefreshCw className="w-5 h-5 text-gray-400" />
+                                    Actualización Masiva de Inventario
+                                </h3>
+                                <p className="text-sm text-gray-500 mt-1">Selecciona el gramaje y color para actualizar todas las tallas simultáneamente.</p>
+                            </div>
+
+                            <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                {/* Selectors */}
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="block text-xs font-bold uppercase text-gray-400 mb-2">1. Seleccionar Gramaje</label>
+                                        <div className="flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1">
+                                            <button 
+                                                onClick={() => setMgmtGrammage('150g')}
+                                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mgmtGrammage === '150g' ? 'bg-white dark:bg-gray-700 shadow-sm text-pink-600' : 'text-gray-500'}`}
+                                            >
+                                                150g (Estándar)
+                                            </button>
+                                            <button 
+                                                onClick={() => setMgmtGrammage('200g')}
+                                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mgmtGrammage === '200g' ? 'bg-white dark:bg-gray-700 shadow-sm text-pink-600' : 'text-gray-500'}`}
+                                            >
+                                                200g (Premium)
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-xs font-bold uppercase text-gray-400 mb-2">2. Seleccionar Color</label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <button 
+                                                onClick={() => setMgmtColor('white')}
+                                                className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all ${mgmtColor === 'white' ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/10 text-pink-700 dark:text-pink-300' : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`}
+                                            >
+                                                <div className="w-4 h-4 rounded-full bg-white border border-gray-300"></div>
+                                                <span className="font-bold text-sm">Blanco</span>
+                                            </button>
+                                            <button 
+                                                onClick={() => setMgmtColor('black')}
+                                                className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all ${mgmtColor === 'black' ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/10 text-pink-700 dark:text-pink-300' : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`}
+                                            >
+                                                <div className="w-4 h-4 rounded-full bg-black border border-gray-600"></div>
+                                                <span className="font-bold text-sm">Negro</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Inputs Grid */}
+                                <div className="lg:col-span-2 space-y-4">
+                                    <label className="block text-xs font-bold uppercase text-gray-400">3. Actualizar Cantidades por Talla</label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                        {SIZES.map(size => (
+                                            <div key={size} className="relative">
+                                                <div className="absolute top-0 left-0 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-br-lg text-xs font-bold text-gray-500 border-r border-b border-gray-200 dark:border-gray-700">
+                                                    {size}
+                                                </div>
+                                                <input 
+                                                    type="number"
+                                                    min="0"
+                                                    value={stockInputs[size] !== undefined ? stockInputs[size] : ''}
+                                                    onChange={(e) => handleStockInputChange(size, e.target.value)}
+                                                    className="w-full pt-8 pb-3 px-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none text-2xl font-black text-center text-gray-900 dark:text-white"
+                                                />
+                                                <div className="text-[10px] text-center text-gray-400 mt-1">Unidades</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    <div className="pt-4 flex justify-end">
+                                        <button 
+                                            onClick={saveStockUpdates}
+                                            disabled={isSavingStock}
+                                            className="bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-500 hover:to-orange-400 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-orange-500/30 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                        >
+                                            {isSavingStock ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                                            {isSavingStock ? 'Guardando...' : 'Guardar Cambios de Stock'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* ORDERS VIEW */}
                 {activeTab === 'orders' && (
                     orders.length === 0 ? (

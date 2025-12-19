@@ -5,7 +5,7 @@ import { getCollection, deleteDesignFromCollection } from '../services/gallerySe
 import { getInventory } from '../services/inventoryService';
 import { uploadAppLogo, APP_LOGO_URL, supabase } from '../lib/supabaseClient';
 import { Order, OrderStatus, Customer, CollectionItem, InventoryItem } from '../types';
-import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler, Weight, ExternalLink } from 'lucide-react';
+import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler, Weight, ExternalLink, Navigation } from 'lucide-react';
 import { formatCurrency, PRICES, SIZES } from '../constants';
 import { Scene } from './Scene';
 
@@ -348,6 +348,9 @@ on conflict (color, size, grammage) do nothing;
   const OrderDetailModal = () => {
     if (!selectedOrder) return null;
 
+    // Define HQ address for directions
+    const hqAddress = "Carrera 31 # 20 - 26, Bucaramanga";
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in overflow-y-auto md:overflow-hidden">
             <div className="bg-white dark:bg-gray-900 w-full max-w-6xl max-h-[90vh] rounded-2xl shadow-2xl overflow-y-auto md:overflow-hidden flex flex-col md:flex-row relative border border-gray-200 dark:border-gray-800">
@@ -428,28 +431,33 @@ on conflict (color, size, grammage) do nothing;
                                 </div>
                             </div>
 
-                            {/* LOCATION MAP */}
+                            {/* LOCATION MAP - ROUTE MODE */}
                             <div className="mt-4 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
+                                <div className="bg-gray-200 dark:bg-gray-700 px-3 py-1 text-[10px] font-bold uppercase text-gray-500 dark:text-gray-300 flex justify-between items-center">
+                                    <span>Ruta de Entrega</span>
+                                    <span>HQ ➝ Cliente</span>
+                                </div>
                                 <iframe
                                     width="100%"
-                                    height="200"
+                                    height="250"
                                     style={{ border: 0 }}
                                     loading="lazy"
                                     allowFullScreen
                                     referrerPolicy="no-referrer-when-downgrade"
-                                    src={`https://maps.google.com/maps?q=${encodeURIComponent(selectedOrder.address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                                    title="Mapa de Entrega"
+                                    // Use saddr (Start Address) and daddr (Destination Address) for directions embed
+                                    src={`https://maps.google.com/maps?saddr=${encodeURIComponent(hqAddress)}&daddr=${encodeURIComponent(selectedOrder.address)}&output=embed`}
+                                    title="Ruta de Entrega"
                                     className="grayscale hover:grayscale-0 transition-all duration-500"
                                 ></iframe>
                                 <div className="bg-white dark:bg-gray-900 p-2 text-xs text-center border-t border-gray-200 dark:border-gray-700">
                                     <a 
-                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedOrder.address)}`} 
+                                        href={`https://www.google.com/maps/dir/${encodeURIComponent(hqAddress)}/${encodeURIComponent(selectedOrder.address)}`} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 font-bold flex items-center justify-center gap-1"
                                     >
-                                        <ExternalLink className="w-3 h-3" />
-                                        Abrir en Google Maps
+                                        <Navigation className="w-3 h-3" />
+                                        Ver Ruta Completa en Google Maps
                                     </a>
                                 </div>
                             </div>

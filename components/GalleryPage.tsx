@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CollectionItem, TShirtConfig } from '../types';
-import { getCollection, deleteDesignFromCollection } from '../services/galleryService';
-import { Palette, Trash2, Eye, Grid, X, ShoppingBag, Calendar, CheckCircle2, Loader2 } from 'lucide-react';
+import { getCollection } from '../services/galleryService';
+import { Palette, Eye, Grid, X, ShoppingBag, Calendar, CheckCircle2, Loader2 } from 'lucide-react';
 import { formatCurrency, PRICES } from '../constants';
 
 interface GalleryPageProps {
@@ -24,21 +24,6 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
   useEffect(() => {
     fetchGallery();
   }, []);
-
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (window.confirm('¿Estás seguro de que deseas eliminar este diseño de la colección?')) {
-        const success = await deleteDesignFromCollection(id);
-        if (success) {
-            setCollection(prev => prev.filter(item => item.id !== id));
-            if (selectedItem?.id === id) {
-                setSelectedItem(null);
-            }
-        } else {
-            alert('No se pudo eliminar el diseño. Intenta nuevamente.');
-        }
-    }
-  };
 
   const handleBuy = () => {
     if (selectedItem) {
@@ -199,14 +184,6 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
                             <Eye className="w-4 h-4" /> Ver Diseño
                         </span>
                     </div>
-
-                    <button 
-                        onClick={(e) => handleDelete(item.id, e)}
-                        className="absolute top-2 right-2 p-2 bg-white/80 dark:bg-black/80 rounded-full text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 dark:hover:bg-red-900/50 z-20"
-                        title="Eliminar diseño"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                    </button>
                 </div>
                 
                 <div className="p-4">

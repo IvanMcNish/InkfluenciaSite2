@@ -23,9 +23,24 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, curren
         )}
         <div 
           onClick={() => navigate('landing')}
-          className="text-3xl font-black tracking-wider cursor-pointer select-none"
+          className="flex items-center gap-3 cursor-pointer select-none group"
         >
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-yellow-400 to-cyan-500 hover:animate-gradient-x bg-[length:200%_auto]">
+          {/* Reemplaza 'logo.png' con la ruta de tu archivo o URL */}
+          <img 
+            src="https://raw.githubusercontent.com/IvanMcNish/camiseta/refs/heads/main/logo.png"
+            onError={(e) => {
+                // Fallback: intenta buscar en la raíz si la URL remota falla
+                const target = e.target as HTMLImageElement;
+                if (target.src !== window.location.origin + '/logo.png') {
+                    target.src = '/logo.png';
+                } else {
+                    target.style.display = 'none';
+                }
+            }}
+            alt="Logo" 
+            className="w-10 h-10 object-contain drop-shadow-sm transition-transform group-hover:scale-110" 
+          />
+          <span className="text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-yellow-400 to-cyan-500 hover:animate-gradient-x bg-[length:200%_auto]">
             INKFLUENCIA
           </span>
         </div>

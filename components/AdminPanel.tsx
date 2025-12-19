@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { getOrders, updateOrderStatus } from '../services/orderService';
 import { getCustomers } from '../services/customerService';
-import { Order, OrderStatus, Customer } from '../types';
-import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle } from 'lucide-react';
+import { getCollection, deleteDesignFromCollection } from '../services/galleryService';
+import { Order, OrderStatus, Customer, CollectionItem } from '../types';
+import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2 } from 'lucide-react';
 import { formatCurrency } from '../constants';
 import { Scene } from './Scene';
 
 export const AdminPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'orders' | 'customers' | 'settings'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'customers' | 'settings' | 'gallery'>('orders');
   
   // Orders State
   const [orders, setOrders] = useState<Order[]>([]);
@@ -15,6 +16,9 @@ export const AdminPanel: React.FC = () => {
   
   // Customers State
   const [customers, setCustomers] = useState<Customer[]>([]);
+
+  // Gallery State
+  const [galleryItems, setGalleryItems] = useState<CollectionItem[]>([]);
 
   // Shared State
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,8 +35,9 @@ export const AdminPanel: React.FC = () => {
       } else if (activeTab === 'customers') {
           const loadedCustomers = await getCustomers();
           setCustomers(loadedCustomers);
-      } else {
-          // No data fetch needed for settings
+      } else if (activeTab === 'gallery') {
+          const loadedGallery = await getCollection();
+          setGalleryItems(loadedGallery);
       }
       setIsLoading(false);
   };
@@ -54,6 +59,17 @@ export const AdminPanel: React.FC = () => {
         loadData(); // Revert on failure
         alert("Error al actualizar el estado");
     }
+  };
+
+  const handleDeleteGalleryItem = async (id: string, name: string) => {
+      if (window.confirm(`¿Estás seguro que deseas eliminar el diseño "${name}" de la galería? Esta acción no se puede deshacer.`)) {
+          const success = await deleteDesignFromCollection(id);
+          if (success) {
+              setGalleryItems(prev => prev.filter(item => item.id !== id));
+          } else {
+              alert("Error al eliminar el diseño de Supabase.");
+          }
+      }
   };
 
   const copyToClipboard = (text: string) => {
@@ -269,7 +285,7 @@ WITH CHECK ( bucket_id = 'inkfluencia-images' );`;
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input 
                     type="text" 
-                    placeholder={activeTab === 'customers' ? "Buscar cliente..." : "Buscar..."}
+                    placeholder={activeTab === 'customers' ? "Buscar cliente..." : activeTab === 'gallery' ? "Buscar diseño..." : "Buscar..."}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     disabled={activeTab === 'settings'}
@@ -294,6 +310,13 @@ WITH CHECK ( bucket_id = 'inkfluencia-images' );`;
           >
               <Users className="w-4 h-4" />
               Base de Clientes
+          </button>
+          <button
+            onClick={() => { setActiveTab('gallery'); setSearchTerm(''); }}
+            className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === 'gallery' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
+          >
+              <Grid className="w-4 h-4" />
+              Galería
           </button>
           <button
             onClick={() => { setActiveTab('settings'); setSearchTerm(''); }}
@@ -435,6 +458,67 @@ WITH CHECK ( bucket_id = 'inkfluencia-images' );`;
                                                 <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
                                                     {new Date(customer.lastOrderAt).toLocaleDateString()}
                                                 </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )
+            )}
+
+            {/* GALLERY MANAGEMENT VIEW */}
+            {activeTab === 'gallery' && (
+                galleryItems.length === 0 ? (
+                    <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
+                        <Grid className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-xl font-medium text-gray-600 dark:text-gray-400">No hay diseños en la galería</h3>
+                    </div>
+                ) : (
+                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                                        <th className="p-4">Vista Previa</th>
+                                        <th className="p-4">Nombre / Detalles</th>
+                                        <th className="p-4">Fecha Creación</th>
+                                        <th className="p-4 text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                    {galleryItems.filter(item => 
+                                        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+                                    ).map((item) => (
+                                        <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                                            <td className="p-4">
+                                                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                                                    {item.config.snapshotUrl ? (
+                                                        <img src={item.config.snapshotUrl} alt={item.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">Sin img</div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="p-4">
+                                                <div className="font-bold text-gray-900 dark:text-white mb-1">{item.name}</div>
+                                                <div className="text-xs text-gray-500 flex flex-col gap-1">
+                                                     <span>Color: <span className="capitalize">{item.config.color === 'white' ? 'Blanca' : 'Negra'}</span></span>
+                                                     <span>Capas: {item.config.layers.length}</span>
+                                                </div>
+                                            </td>
+                                            <td className="p-4 text-sm text-gray-600 dark:text-gray-300">
+                                                {formatDate(item.createdAt)}
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                <button 
+                                                    onClick={() => handleDeleteGalleryItem(item.id, item.name)}
+                                                    className="inline-flex items-center gap-1 text-sm font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 px-3 py-1.5 rounded-lg transition-colors"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                    Eliminar
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}

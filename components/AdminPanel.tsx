@@ -25,7 +25,8 @@ export const AdminPanel: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   // Settings State
-  const [copied, setCopied] = useState(false);
+  const [copiedStorage, setCopiedStorage] = useState(false);
+  const [copiedGallery, setCopiedGallery] = useState(false);
 
   const loadData = async () => {
       setIsLoading(true);
@@ -67,15 +68,20 @@ export const AdminPanel: React.FC = () => {
           if (success) {
               setGalleryItems(prev => prev.filter(item => item.id !== id));
           } else {
-              alert("Error al eliminar el diseño de Supabase.");
+              alert("Error al eliminar el diseño de Supabase. Revisa la consola o los permisos RLS en la pestaña Configuración.");
           }
       }
   };
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, type: 'storage' | 'gallery') => {
     navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (type === 'storage') {
+        setCopiedStorage(true);
+        setTimeout(() => setCopiedStorage(false), 2000);
+    } else {
+        setCopiedGallery(true);
+        setTimeout(() => setCopiedGallery(false), 2000);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -116,6 +122,31 @@ ON storage.objects FOR ALL
 TO public
 USING ( bucket_id = 'inkfluencia-images' )
 WITH CHECK ( bucket_id = 'inkfluencia-images' );`;
+
+  const gallerySQL = `-- Copia y pega esto en el SQL Editor de Supabase para permitir eliminar diseños
+
+-- 1. Habilitar RLS (si no está habilitado) en la tabla gallery
+ALTER TABLE gallery ENABLE ROW LEVEL SECURITY;
+
+-- 2. Eliminar políticas conflictivas anteriores (limpieza)
+DROP POLICY IF EXISTS "Permitir todo público" ON gallery;
+DROP POLICY IF EXISTS "Enable delete for anon" ON gallery;
+DROP POLICY IF EXISTS "Permitir Borrado Publico" ON gallery;
+
+-- 3. Crear política para permitir ELIMINAR (DELETE) a usuarios anónimos
+CREATE POLICY "Permitir Borrado Publico"
+ON gallery
+FOR DELETE
+TO public
+USING (true);
+
+-- 4. Asegurar que también se pueda VER e INSERTAR (Recomendado)
+CREATE POLICY "Permitir Acceso Total Galeria"
+ON gallery
+FOR ALL
+TO public
+USING (true)
+WITH CHECK (true);`;
 
   // --- MODAL ---
   const OrderDetailModal = () => {
@@ -531,25 +562,54 @@ WITH CHECK ( bucket_id = 'inkfluencia-images' );`;
 
             {/* SETTINGS VIEW */}
             {activeTab === 'settings' && (
-               <div className="max-w-4xl mx-auto animate-fade-in">
+               <div className="max-w-4xl mx-auto animate-fade-in space-y-8">
+                   {/* Storage Settings */}
                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
                        <div className="flex items-center gap-3 mb-6">
                            <div className="p-3 bg-pink-100 dark:bg-pink-900/20 rounded-lg text-pink-600">
                                <Database className="w-6 h-6" />
                            </div>
                            <div>
-                               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Configuración de Base de Datos</h2>
-                               <p className="text-gray-500 dark:text-gray-400 text-sm">Utilidades para solucionar problemas de conexión y permisos.</p>
+                               <h2 className="text-xl font-bold text-gray-900 dark:text-white">SQL para Imágenes (Storage)</h2>
+                               <p className="text-gray-500 dark:text-gray-400 text-sm">Ejecuta esto si las imágenes no se suben.</p>
                            </div>
                        </div>
 
-                       <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/30 rounded-lg p-4 mb-6 flex gap-3">
+                       <div className="relative">
+                           <div className="absolute top-3 right-3">
+                               <button 
+                                   onClick={() => copyToClipboard(storageSQL, 'storage')}
+                                   className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-xs font-bold shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                               >
+                                   {copiedStorage ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                                   {copiedStorage ? 'Copiado' : 'Copiar SQL'}
+                               </button>
+                           </div>
+                           <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl overflow-x-auto text-sm font-mono leading-relaxed border border-gray-800">
+                               {storageSQL}
+                           </pre>
+                       </div>
+                   </div>
+
+                   {/* Database Permissions Settings */}
+                   <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+                       <div className="flex items-center gap-3 mb-6">
+                           <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg text-purple-600">
+                               <Trash2 className="w-6 h-6" />
+                           </div>
+                           <div>
+                               <h2 className="text-xl font-bold text-gray-900 dark:text-white">SQL para Permisos de Galería</h2>
+                               <p className="text-gray-500 dark:text-gray-400 text-sm">Ejecuta esto si no puedes ELIMINAR diseños.</p>
+                           </div>
+                       </div>
+
+                        <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/30 rounded-lg p-4 mb-6 flex gap-3">
                            <AlertTriangle className="w-6 h-6 text-yellow-600 dark:text-yellow-500 shrink-0" />
                            <div>
-                               <h3 className="font-bold text-yellow-800 dark:text-yellow-400 text-sm">¿Problemas con las imágenes?</h3>
+                               <h3 className="font-bold text-yellow-800 dark:text-yellow-400 text-sm">Advertencia de Seguridad (RLS)</h3>
                                <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-1">
-                                   Si ves el error "row-level security policy" en la consola, es porque Supabase bloquea la subida de archivos por defecto.
-                                   Ejecuta el siguiente código SQL en tu panel de Supabase para solucionarlo.
+                                   Supabase bloquea la eliminación de registros por defecto para usuarios anónimos. 
+                                   Este script habilita una política pública de borrado para que el panel funcione sin autenticación.
                                </p>
                            </div>
                        </div>
@@ -557,15 +617,15 @@ WITH CHECK ( bucket_id = 'inkfluencia-images' );`;
                        <div className="relative">
                            <div className="absolute top-3 right-3">
                                <button 
-                                   onClick={() => copyToClipboard(storageSQL)}
+                                   onClick={() => copyToClipboard(gallerySQL, 'gallery')}
                                    className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-xs font-bold shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                                >
-                                   {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-                                   {copied ? 'Copiado' : 'Copiar SQL'}
+                                   {copiedGallery ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                                   {copiedGallery ? 'Copiado' : 'Copiar SQL'}
                                </button>
                            </div>
                            <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl overflow-x-auto text-sm font-mono leading-relaxed border border-gray-800">
-                               {storageSQL}
+                               {gallerySQL}
                            </pre>
                        </div>
                    </div>

@@ -35,6 +35,15 @@ export const AdminPanel: React.FC = () => {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  // Tabs Configuration
+  const tabs = [
+    { id: 'financial', label: 'Finanzas', icon: BarChart3 },
+    { id: 'orders', label: 'Pedidos', icon: ShoppingBag },
+    { id: 'customers', label: 'Clientes', icon: Users },
+    { id: 'gallery', label: 'Galería', icon: Grid },
+    { id: 'settings', label: 'Config', icon: Settings },
+  ] as const;
+
   const loadData = async () => {
       setIsLoading(true);
       // Always load orders if we are in financial tab to calculate stats
@@ -262,18 +271,19 @@ WITH CHECK (true);`;
     if (!selectedOrder) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-            <div className="bg-white dark:bg-gray-900 w-full max-w-6xl h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in overflow-y-auto md:overflow-hidden">
+            <div className="bg-white dark:bg-gray-900 w-full max-w-6xl max-h-[90vh] rounded-2xl shadow-2xl overflow-y-auto md:overflow-hidden flex flex-col md:flex-row relative border border-gray-200 dark:border-gray-800">
                 <button 
                     onClick={() => setSelectedOrder(null)}
-                    className="absolute top-4 right-4 z-10 p-2 bg-white/50 dark:bg-black/50 hover:bg-white dark:hover:bg-black rounded-full backdrop-blur-sm transition-all"
+                    className="absolute top-4 right-4 z-50 p-2 bg-white/50 dark:bg-black/50 hover:bg-white dark:hover:bg-black rounded-full backdrop-blur-sm transition-all shadow-md"
                 >
                     <X className="w-6 h-6" />
                 </button>
 
                 {/* Left: 3D Visualization */}
-                <div className="w-full md:w-1/2 h-1/2 md:h-full bg-gray-100 dark:bg-gray-800 relative border-r border-gray-200 dark:border-gray-700">
-                    <div className="absolute top-4 left-4 z-10 bg-white/80 dark:bg-black/80 backdrop-blur px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                {/* Changed height logic: Fixed height on mobile (h-80), Full on desktop. Added shrink-0. */}
+                <div className="w-full md:w-1/2 h-80 md:h-auto bg-gray-100 dark:bg-gray-800 relative border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 shrink-0">
+                    <div className="absolute top-4 left-4 z-10 bg-white/80 dark:bg-black/80 backdrop-blur px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">
                         Render en Vivo
                     </div>
                     {/* Reusing Scene component to show the exact config */}
@@ -281,9 +291,10 @@ WITH CHECK (true);`;
                 </div>
 
                 {/* Right: Details & Data */}
-                <div className="w-full md:w-1/2 h-1/2 md:h-full overflow-y-auto p-6 md:p-8 bg-white dark:bg-gray-900">
+                {/* Removed fixed h-1/2 on mobile to allow expansion. kept md:overflow-y-auto for desktop scrolling */}
+                <div className="w-full md:w-1/2 p-6 md:p-8 md:overflow-y-auto bg-white dark:bg-gray-900">
                     {/* Header */}
-                    <div className="flex justify-between items-start mb-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start mb-6 gap-4">
                         <div>
                             <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center gap-2">
                                 Pedido #{selectedOrder.id}
@@ -293,15 +304,15 @@ WITH CHECK (true);`;
                                 {formatDate(selectedOrder.date)}
                             </div>
                         </div>
-                        <div className="relative inline-block text-left group">
-                            <button className={`inline-flex items-center justify-between gap-2 px-4 py-2 rounded-lg text-sm font-bold border cursor-pointer uppercase tracking-wide transition-all ${getStatusColor(selectedOrder.status)}`}>
+                        <div className="relative inline-block text-left group w-full sm:w-auto">
+                            <button className={`inline-flex items-center justify-between gap-2 px-4 py-2 rounded-lg text-sm font-bold border cursor-pointer uppercase tracking-wide transition-all w-full sm:w-auto ${getStatusColor(selectedOrder.status)}`}>
                                 {selectedOrder.status === 'pending' && 'Pendiente'}
                                 {selectedOrder.status === 'processing' && 'Procesando'}
                                 {selectedOrder.status === 'shipped' && 'Enviado'}
                                 <ChevronDown className="w-4 h-4 opacity-50" />
                             </button>
                             
-                             <div className="hidden group-hover:block absolute right-0 mt-0 w-48 rounded-lg shadow-xl bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-20 overflow-hidden">
+                             <div className="hidden group-hover:block absolute right-0 mt-0 w-full sm:w-48 rounded-lg shadow-xl bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-20 overflow-hidden">
                                 {(['pending', 'processing', 'shipped'] as OrderStatus[]).map((status) => (
                                     <div 
                                         key={status}
@@ -444,43 +455,36 @@ WITH CHECK (true);`;
         </div>
       </div>
 
-      {/* TABS */}
-      <div className="flex gap-4 mb-6 border-b border-gray-200 dark:border-gray-800 overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => { setActiveTab('financial'); setSearchTerm(''); }}
-            className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === 'financial' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
-          >
-              <BarChart3 className="w-4 h-4" />
-              Finanzas
-          </button>
-          <button
-            onClick={() => { setActiveTab('orders'); setSearchTerm(''); }}
-            className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === 'orders' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
-          >
-              <ShoppingBag className="w-4 h-4" />
-              Pedidos Activos
-          </button>
-          <button
-            onClick={() => { setActiveTab('customers'); setSearchTerm(''); }}
-            className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === 'customers' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
-          >
-              <Users className="w-4 h-4" />
-              Base de Clientes
-          </button>
-          <button
-            onClick={() => { setActiveTab('gallery'); setSearchTerm(''); }}
-            className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === 'gallery' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
-          >
-              <Grid className="w-4 h-4" />
-              Galería
-          </button>
-          <button
-            onClick={() => { setActiveTab('settings'); setSearchTerm(''); }}
-            className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === 'settings' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
-          >
-              <Settings className="w-4 h-4" />
-              Configuración
-          </button>
+      {/* MOBILE GRID MENU (No Horizontal Scroll) */}
+      <div className="grid grid-cols-3 gap-2 mb-6 md:hidden">
+         {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => { setActiveTab(tab.id as any); setSearchTerm(''); }}
+              className={`flex flex-col items-center justify-center p-3 rounded-xl text-xs font-bold transition-all ${
+                 activeTab === tab.id
+                 ? 'bg-pink-600 text-white shadow-lg shadow-pink-500/30'
+                 : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-800'
+              }`}
+            >
+               <tab.icon className="w-5 h-5 mb-1.5" />
+               {tab.label}
+            </button>
+         ))}
+      </div>
+
+      {/* DESKTOP TABS (Standard) */}
+      <div className="hidden md:flex gap-4 mb-6 border-b border-gray-200 dark:border-gray-800 overflow-x-auto no-scrollbar">
+          {tabs.map(tab => (
+            <button
+                key={tab.id}
+                onClick={() => { setActiveTab(tab.id as any); setSearchTerm(''); }}
+                className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === tab.id ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
+            >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+            </button>
+          ))}
       </div>
 
       {isLoading ? (

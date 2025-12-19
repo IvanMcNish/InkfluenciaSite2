@@ -230,7 +230,8 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef }) => {
   const controlsRef = useRef<any>(null);
 
   return (
-    <div className="w-full h-full min-h-[400px] relative bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden shadow-inner">
+    // Changed min-h-[400px] to min-h-[250px] md:min-h-[400px] for better mobile adaptability in modals
+    <div className="w-full h-full min-h-[250px] md:min-h-[400px] relative bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden shadow-inner">
       <Canvas 
         shadows 
         camera={{ position: [0, 0, 5], fov: 45 }}

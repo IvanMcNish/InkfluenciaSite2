@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { SIZES, PRICES, SHIPPING, formatCurrency } from '../constants';
-import { TShirtConfig, Order } from '../types';
+import { TShirtConfig, Order, InventoryItem } from '../types';
 import { submitOrder } from '../services/orderService';
+import { getInventory } from '../services/inventoryService';
 import { CheckCircle2, Loader2, AlertCircle, Weight, Truck, Phone, Tag } from 'lucide-react';
 
 interface OrderFormProps {
@@ -13,14 +14,56 @@ interface OrderFormProps {
 export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [inventoryLoaded, setInventoryLoaded] = useState(false);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     address: '',
-    size: 'M',
+    size: '', // Start empty to force selection based on availability
     grammage: '200g' as '150g' | '200g'
   });
+
+  // 1. Fetch Inventory on Mount
+  useEffect(() => {
+    const loadInventory = async () => {
+        const data = await getInventory();
+        setInventory(data);
+        setInventoryLoaded(true);
+    };
+    loadInventory();
+  }, []);
+
+  // 2. Calculate Available Sizes based on Config(Color) + Grammage + Inventory Quantity
+  const availableSizes = useMemo(() => {
+    if (!inventoryLoaded) return [];
+
+    return SIZES.filter(size => {
+        const item = inventory.find(i => 
+            i.color === config.color && 
+            i.size === size && 
+            (i.grammage === formData.grammage || (!i.grammage && formData.grammage === '150g'))
+        );
+        return item ? item.quantity > 0 : false;
+    });
+  }, [inventory, inventoryLoaded, config.color, formData.grammage]);
+
+  // 3. Auto-select logic: If current size is invalid/unavailable, switch to first available
+  useEffect(() => {
+    if (inventoryLoaded) {
+        if (availableSizes.length > 0) {
+            // If currently selected size is not in available list, pick the first one
+            if (!availableSizes.includes(formData.size)) {
+                setFormData(prev => ({ ...prev, size: availableSizes[0] }));
+            }
+        } else {
+            // No sizes available at all
+            setFormData(prev => ({ ...prev, size: '' }));
+        }
+    }
+  }, [availableSizes, formData.size, inventoryLoaded]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -38,6 +81,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.size) {
+        setError("Por favor selecciona una talla disponible.");
+        return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -96,7 +145,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                 </div>
                 <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                     <span>Talla:</span>
-                    <span className="font-medium text-gray-900 dark:text-white font-mono">{formData.size}</span>
+                    <span className="font-medium text-gray-900 dark:text-white font-mono">
+                        {formData.size || <span className="text-red-500 italic">Sin Stock</span>}
+                    </span>
                 </div>
                 <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                     <span>Gramaje:</span>
@@ -132,16 +183,24 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
             <div className="space-y-4">
                 <h3 className="text-lg font-bold border-b border-gray-100 dark:border-gray-800 pb-2">1. Detalles de la Prenda</h3>
                 
+                {/* LOGIC CHANGE: Size selector dependent on Inventory */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium mb-2">Talla</label>
+                        <label className="block text-sm font-medium mb-2">
+                            Talla {availableSizes.length === 0 && inventoryLoaded && <span className="text-red-500 text-xs ml-2">(Agotado en este gramaje)</span>}
+                        </label>
                         <select
                             name="size"
                             value={formData.size}
                             onChange={handleChange}
-                            className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all"
+                            disabled={availableSizes.length === 0}
+                            className={`w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all ${availableSizes.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                            {SIZES.map(s => <option key={s} value={s}>{s}</option>)}
+                            {availableSizes.length > 0 ? (
+                                availableSizes.map(s => <option key={s} value={s}>{s}</option>)
+                            ) : (
+                                <option value="">Sin Stock</option>
+                            )}
                         </select>
                     </div>
                 </div>
@@ -265,10 +324,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                 </button>
                 <button 
                     type="submit" 
-                    disabled={loading}
+                    disabled={loading || availableSizes.length === 0}
                     className="w-2/3 py-4 px-4 bg-gradient-to-r from-pink-600 to-orange-500 text-white rounded-xl font-bold hover:shadow-lg hover:from-pink-500 hover:to-orange-400 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : `Pagar ${formatCurrency(total)}`}
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : availableSizes.length === 0 ? 'Sin Stock' : `Pagar ${formatCurrency(total)}`}
                 </button>
             </div>
           </form>

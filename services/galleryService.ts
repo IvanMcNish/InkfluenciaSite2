@@ -66,7 +66,7 @@ export const saveDesignToCollection = async (name: string, config: TShirtConfig)
   }
 };
 
-export const deleteDesignFromCollection = async (id: string): Promise<boolean> => {
+export const deleteDesignFromCollection = async (id: string): Promise<{ success: boolean; error?: string }> => {
     const { error } = await supabase
       .from('gallery')
       .delete()
@@ -74,7 +74,7 @@ export const deleteDesignFromCollection = async (id: string): Promise<boolean> =
 
     if (error) {
         console.error("Failed to delete design:", error);
-        return false;
+        return { success: false, error: error.message };
     }
-    return true;
+    return { success: true };
 };

@@ -67,11 +67,11 @@ export const AdminPanel: React.FC = () => {
 
   const handleDeleteGalleryItem = async (id: string, name: string) => {
       if (window.confirm(`¿Estás seguro que deseas eliminar el diseño "${name}" de la galería? Esta acción no se puede deshacer.`)) {
-          const success = await deleteDesignFromCollection(id);
-          if (success) {
+          const result = await deleteDesignFromCollection(id);
+          if (result.success) {
               setGalleryItems(prev => prev.filter(item => item.id !== id));
           } else {
-              alert("Error al eliminar el diseño de Supabase. Revisa la consola o los permisos RLS en la pestaña Configuración.");
+              alert(`Error al eliminar: ${result.error}\n\nPor favor ve a la pestaña "Configuración" y ejecuta el SQL actualizado.`);
           }
       }
   };
@@ -146,25 +146,23 @@ TO public
 USING ( bucket_id = 'inkfluencia-images' )
 WITH CHECK ( bucket_id = 'inkfluencia-images' );`;
 
-  const gallerySQL = `-- Copia y pega esto en el SQL Editor de Supabase para permitir eliminar diseños
+  const gallerySQL = `-- ACTUALIZADO: SQL PARA PERMISOS TOTALES
+-- Ejecuta esto para reiniciar los permisos de la tabla gallery y permitir borrar.
 
--- 1. Habilitar RLS (si no está habilitado) en la tabla gallery
+-- 1. Deshabilitar y Habilitar RLS para limpiar estado
+ALTER TABLE gallery DISABLE ROW LEVEL SECURITY;
 ALTER TABLE gallery ENABLE ROW LEVEL SECURITY;
 
--- 2. Eliminar políticas conflictivas anteriores (limpieza)
+-- 2. ELIMINAR TODAS las políticas existentes (limpieza profunda)
 DROP POLICY IF EXISTS "Permitir todo público" ON gallery;
 DROP POLICY IF EXISTS "Enable delete for anon" ON gallery;
 DROP POLICY IF EXISTS "Permitir Borrado Publico" ON gallery;
+DROP POLICY IF EXISTS "Permitir Acceso Total Galeria" ON gallery;
+DROP POLICY IF EXISTS "Enable read access for all users" ON gallery;
+DROP POLICY IF EXISTS "Enable insert for all users" ON gallery;
 
--- 3. Crear política para permitir ELIMINAR (DELETE) a usuarios anónimos
-CREATE POLICY "Permitir Borrado Publico"
-ON gallery
-FOR DELETE
-TO public
-USING (true);
-
--- 4. Asegurar que también se pueda VER e INSERTAR (Recomendado)
-CREATE POLICY "Permitir Acceso Total Galeria"
+-- 3. Crear UNA ÚNICA política maestra para TODO (Select, Insert, Update, Delete)
+CREATE POLICY "Acceso Total Publico"
 ON gallery
 FOR ALL
 TO public

@@ -49,4 +49,14 @@ export interface CollectionItem {
   createdAt: string;
 }
 
-export type ViewState = 'landing' | 'customizer' | 'checkout' | 'success' | 'admin' | 'designer' | 'gallery' | 'track-order';
+export interface InstagramPost {
+  id: string;
+  username: string;
+  userAvatar: string;
+  imageUrl: string;
+  likes: number;
+  caption: string;
+  timestamp: string;
+}
+
+export type ViewState = 'landing' | 'customizer' | 'checkout' | 'success' | 'admin' | 'designer' | 'gallery' | 'track-order' | 'community';

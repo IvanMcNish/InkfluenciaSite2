@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Moon, ShoppingBag, ArrowLeft, LayoutDashboard, Grid, Truck } from 'lucide-react';
+import { Sun, Moon, ShoppingBag, ArrowLeft, LayoutDashboard, Grid, Truck, Instagram } from 'lucide-react';
 import { ViewState } from '../types';
 import { APP_LOGO_URL } from '../lib/supabaseClient';
 
@@ -43,6 +43,19 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, curren
       </div>
 
       <div className="flex items-center gap-4">
+        <button
+          onClick={() => navigate('community')}
+          className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
+            currentView === 'community' 
+              ? 'bg-pink-50 dark:bg-pink-900/20 text-pink-600' 
+              : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500'
+          }`}
+          title="Comunidad"
+        >
+          <Instagram className="w-5 h-5" />
+          <span className="hidden sm:inline">Comunidad</span>
+        </button>
+
         <button
           onClick={() => navigate('track-order')}
           className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${

@@ -5,7 +5,7 @@ import { getCollection, deleteDesignFromCollection } from '../services/gallerySe
 import { getInventory } from '../services/inventoryService';
 import { uploadAppLogo, APP_LOGO_URL, supabase } from '../lib/supabaseClient';
 import { Order, OrderStatus, Customer, CollectionItem, InventoryItem } from '../types';
-import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler, Weight } from 'lucide-react';
+import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler, Weight, ExternalLink } from 'lucide-react';
 import { formatCurrency, PRICES, SIZES } from '../constants';
 import { Scene } from './Scene';
 
@@ -425,6 +425,32 @@ on conflict (color, size, grammage) do nothing;
                                 <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
                                     <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-gray-400" />
                                     <span>{selectedOrder.address}</span>
+                                </div>
+                            </div>
+
+                            {/* LOCATION MAP */}
+                            <div className="mt-4 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
+                                <iframe
+                                    width="100%"
+                                    height="200"
+                                    style={{ border: 0 }}
+                                    loading="lazy"
+                                    allowFullScreen
+                                    referrerPolicy="no-referrer-when-downgrade"
+                                    src={`https://maps.google.com/maps?q=${encodeURIComponent(selectedOrder.address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                                    title="Mapa de Entrega"
+                                    className="grayscale hover:grayscale-0 transition-all duration-500"
+                                ></iframe>
+                                <div className="bg-white dark:bg-gray-900 p-2 text-xs text-center border-t border-gray-200 dark:border-gray-700">
+                                    <a 
+                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedOrder.address)}`} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 font-bold flex items-center justify-center gap-1"
+                                    >
+                                        <ExternalLink className="w-3 h-3" />
+                                        Abrir en Google Maps
+                                    </a>
                                 </div>
                             </div>
                         </div>

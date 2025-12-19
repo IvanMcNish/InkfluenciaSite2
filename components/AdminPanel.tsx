@@ -5,8 +5,8 @@ import { getCollection, deleteDesignFromCollection } from '../services/gallerySe
 import { getInventory } from '../services/inventoryService';
 import { uploadAppLogo, APP_LOGO_URL, supabase } from '../lib/supabaseClient';
 import { Order, OrderStatus, Customer, CollectionItem, InventoryItem } from '../types';
-import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt } from 'lucide-react';
-import { formatCurrency, PRICES } from '../constants';
+import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler } from 'lucide-react';
+import { formatCurrency, PRICES, SIZES } from '../constants';
 import { Scene } from './Scene';
 
 export const AdminPanel: React.FC = () => {
@@ -1109,6 +1109,44 @@ on conflict do nothing;
                                     </div>
                                     <p className="text-xs text-green-600 mt-1 font-medium">Estimado (Costo venta base)</p>
                                 </div>
+                            </div>
+
+                            {/* SIZE BREAKDOWN SECTION */}
+                            <h3 className="font-bold text-lg mb-4 mt-8 flex items-center gap-2">
+                                <Ruler className="w-5 h-5 text-gray-500" />
+                                Disponibilidad por Talla
+                            </h3>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                                {SIZES.map(size => {
+                                    const stats = inventory.filter(i => i.size === size);
+                                    const total = stats.reduce((acc, i) => acc + i.quantity, 0);
+                                    const w = stats.find(i => i.color === 'white')?.quantity || 0;
+                                    const b = stats.find(i => i.color === 'black')?.quantity || 0;
+
+                                    return (
+                                        <div key={size} className="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 hover:border-pink-300 dark:hover:border-pink-900/50 transition-colors">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="text-gray-400 dark:text-gray-500 text-[10px] uppercase font-bold tracking-wider">Talla</div>
+                                                <div className={`w-2 h-2 rounded-full ${total > 10 ? 'bg-green-500' : total > 0 ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+                                            </div>
+                                            <div className="text-2xl font-black text-gray-900 dark:text-white mb-2 bg-gray-50 dark:bg-gray-800 inline-block px-2 rounded-lg">{size}</div>
+                                            <div className="text-sm font-bold text-gray-600 dark:text-gray-300 border-t border-gray-100 dark:border-gray-800 pt-2 flex justify-between items-center">
+                                                <span>Total:</span>
+                                                <span className="text-pink-600">{total}</span>
+                                            </div>
+                                            <div className="flex gap-3 mt-2 text-xs text-gray-500 font-medium">
+                                                <span className="flex items-center gap-1" title="Stock Blanco">
+                                                    <div className="w-2 h-2 rounded-full border border-gray-300 bg-white"></div>
+                                                    {w}
+                                                </span>
+                                                <span className="flex items-center gap-1" title="Stock Negro">
+                                                    <div className="w-2 h-2 rounded-full border border-gray-600 bg-black"></div>
+                                                    {b}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
                             </div>
                         </div>
                     </div>

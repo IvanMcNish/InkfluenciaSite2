@@ -19,39 +19,3 @@ export const getInventory = async (): Promise<InventoryItem[]> => {
 
   return data as InventoryItem[];
 };
-
-export const adjustInventoryQuantity = async (color: 'white' | 'black', size: string, amount: number): Promise<boolean> => {
-  try {
-    // 1. Obtener el ítem actual para saber su ID y cantidad actual
-    const { data: item, error: fetchError } = await supabase
-      .from('inventory')
-      .select('*')
-      .eq('color', color)
-      .eq('size', size)
-      .single();
-
-    if (fetchError || !item) {
-       console.error("No se encontró el ítem de inventario para ajustar", fetchError);
-       return false;
-    }
-
-    // 2. Calcular nueva cantidad
-    const newQuantity = item.quantity + amount;
-
-    // 3. Actualizar
-    const { error: updateError } = await supabase
-      .from('inventory')
-      .update({ quantity: newQuantity })
-      .eq('id', item.id);
-
-    if (updateError) {
-        console.error("Error actualizando cantidad de inventario", updateError);
-        return false;
-    }
-
-    return true;
-  } catch (e) {
-    console.error("Excepción al ajustar inventario", e);
-    return false;
-  }
-};

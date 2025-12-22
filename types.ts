@@ -55,6 +55,7 @@ export interface CollectionItem {
   name: string;
   config: TShirtConfig;
   createdAt: string;
+  approved: boolean; // Moderation flag
 }
 
 export interface InstagramPost {

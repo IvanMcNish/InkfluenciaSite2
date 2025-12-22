@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { getOrders, updateOrderStatus } from '../services/orderService';
 import { getCustomers } from '../services/customerService';
-import { getCollection, deleteDesignFromCollection } from '../services/galleryService';
+import { getAdminCollection, deleteDesignFromCollection, approveDesign } from '../services/galleryService';
 import { getInventory, upsertInventoryBatch } from '../services/inventoryService';
 import { uploadAppLogo, APP_LOGO_URL, supabase } from '../lib/supabaseClient';
 import { Order, OrderStatus, Customer, CollectionItem, InventoryItem } from '../types';
-import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler, Weight, ExternalLink, Navigation, Save, RefreshCw, AlertCircle, PlusCircle } from 'lucide-react';
+import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler, Weight, ExternalLink, Navigation, Save, RefreshCw, AlertCircle, PlusCircle, CheckCircle2 } from 'lucide-react';
 import { formatCurrency, PRICES, SIZES } from '../constants';
 import { Scene } from './Scene';
 
@@ -23,7 +23,9 @@ export const AdminPanel: React.FC = () => {
   // Gallery State
   const [galleryItems, setGalleryItems] = useState<CollectionItem[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
   const [itemToDelete, setItemToDelete] = useState<{id: string, name: string} | null>(null);
+  const [previewDesign, setPreviewDesign] = useState<CollectionItem | null>(null);
 
   // Inventory State
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -73,7 +75,8 @@ export const AdminPanel: React.FC = () => {
           const loadedCustomers = await getCustomers();
           setCustomers(loadedCustomers);
       } else if (activeTab === 'gallery') {
-          const loadedGallery = await getCollection();
+          // Change: Use getAdminCollection to see unapproved items
+          const loadedGallery = await getAdminCollection();
           setGalleryItems(loadedGallery);
       }
       setIsLoading(false);
@@ -185,6 +188,17 @@ export const AdminPanel: React.FC = () => {
       } finally {
           setDeletingId(null);
       }
+  };
+
+  const handleApproveDesign = async (id: string) => {
+      setApprovingId(id);
+      const success = await approveDesign(id);
+      if (success) {
+          setGalleryItems(prev => prev.map(item => item.id === id ? { ...item, approved: true } : item));
+      } else {
+          alert("Error al aprobar el diseño. Revisa la conexión.");
+      }
+      setApprovingId(null);
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -301,23 +315,28 @@ TO public
 USING ( bucket_id = 'inkfluencia-images' )
 WITH CHECK ( bucket_id = 'inkfluencia-images' );`;
 
-  const gallerySQL = `-- SQL PARA REPARAR PERMISOS DE BORRADO (Versión Forzada)
+  const gallerySQL = `-- SQL PARA REPARAR PERMISOS Y AÑADIR MODERACIÓN
 
--- 1. Reiniciar RLS
+-- 1. Añadir columna 'approved' si no existe
+do $$
+begin
+    if not exists (select 1 from information_schema.columns where table_name='gallery' and column_name='approved') then
+        alter table gallery add column approved boolean default false;
+    end if;
+end $$;
+
+-- 2. Reiniciar RLS
 ALTER TABLE gallery DISABLE ROW LEVEL SECURITY;
 ALTER TABLE gallery ENABLE ROW LEVEL SECURITY;
 
--- 2. Borrar CUALQUIER política previa (evita conflictos de nombres)
+-- 3. Borrar CUALQUIER política previa (evita conflictos de nombres)
 DROP POLICY IF EXISTS "Permitir todo público" ON gallery;
 DROP POLICY IF EXISTS "Enable delete for anon" ON gallery;
 DROP POLICY IF EXISTS "Permitir Borrado Publico" ON gallery;
 DROP POLICY IF EXISTS "Permitir Acceso Total Galeria" ON gallery;
-DROP POLICY IF EXISTS "Enable read access for all users" ON gallery;
-DROP POLICY IF EXISTS "Enable insert for all users" ON gallery;
 DROP POLICY IF EXISTS "Acceso Total Publico" ON gallery;
-DROP POLICY IF EXISTS "Public Access All" ON gallery;
 
--- 3. Crear la política MAESTRA que permite TODO a TODOS
+-- 4. Crear la política MAESTRA que permite TODO a TODOS
 CREATE POLICY "Acceso Total Publico"
 ON gallery
 FOR ALL
@@ -404,6 +423,84 @@ on conflict (color, size, grammage) do nothing;
                     >
                         Sí, Eliminar
                     </button>
+                </div>
+            </div>
+        </div>
+      );
+  }
+
+  const GalleryPreviewModal = () => {
+      if (!previewDesign) return null;
+      return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in overflow-y-auto">
+            <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl shadow-2xl p-0 overflow-hidden border border-gray-200 dark:border-gray-800 relative">
+                <button 
+                    onClick={() => setPreviewDesign(null)}
+                    className="absolute top-4 right-4 z-10 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors backdrop-blur-md"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+                
+                <div className="bg-gray-100 dark:bg-gray-800 aspect-square flex items-center justify-center relative">
+                    {previewDesign.config.snapshotUrl ? (
+                        <img 
+                            src={previewDesign.config.snapshotUrl} 
+                            alt={previewDesign.name} 
+                            className="w-full h-full object-cover" 
+                        />
+                    ) : (
+                        <div className="text-gray-400 text-sm">Sin vista previa</div>
+                    )}
+                    
+                    {!previewDesign.approved && (
+                        <div className="absolute top-4 left-4 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold uppercase shadow-sm">
+                            Pendiente de Aprobación
+                        </div>
+                    )}
+                </div>
+
+                <div className="p-6">
+                    <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{previewDesign.name}</h3>
+                    <div className="flex gap-4 text-sm text-gray-500 mb-6">
+                        <div className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            {new Date(previewDesign.createdAt).toLocaleDateString()}
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <Layers className="w-4 h-4" />
+                            {previewDesign.config.layers.length} capas
+                        </div>
+                    </div>
+
+                    {!previewDesign.approved ? (
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    handleApproveDesign(previewDesign.id);
+                                    setPreviewDesign(null);
+                                }}
+                                disabled={approvingId === previewDesign.id}
+                                className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-green-500/20"
+                            >
+                                {approvingId === previewDesign.id ? <Loader2 className="w-5 h-5 animate-spin"/> : <CheckCircle2 className="w-5 h-5"/>}
+                                Aprobar Diseño
+                            </button>
+                            <button
+                                onClick={() => {
+                                    requestDeleteGalleryItem(previewDesign.id, previewDesign.name);
+                                    setPreviewDesign(null);
+                                }}
+                                className="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-red-600 font-bold py-3 rounded-xl transition-colors"
+                            >
+                                Rechazar / Eliminar
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="w-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 py-3 rounded-xl font-bold text-center border border-green-100 dark:border-green-900 flex items-center justify-center gap-2">
+                            <CheckCircle2 className="w-5 h-5" />
+                            Este diseño está público
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -600,6 +697,7 @@ on conflict (color, size, grammage) do nothing;
     <div className="max-w-7xl mx-auto p-4 md:p-6 md:h-[calc(100vh-85px)] md:flex md:flex-col">
       {selectedOrder && <OrderDetailModal />}
       {itemToDelete && <DeleteConfirmationModal />}
+      {previewDesign && <GalleryPreviewModal />}
 
       {/* SECCIÓN FIJA: Cabecera y Pestañas */}
       <div className="shrink-0 mb-4 z-10">
@@ -675,7 +773,7 @@ on conflict (color, size, grammage) do nothing;
             </div>
         ) : (
             <>
-                {/* NEW INVENTORY MANAGEMENT TAB */}
+                {/* INVENTORY MANAGEMENT TAB */}
                 {activeTab === 'inventory' && (
                     <div className="animate-fade-in space-y-6 pb-20">
                         {/* 1. Quick Stats for Inventory */}
@@ -1078,11 +1176,16 @@ on conflict (color, size, grammage) do nothing;
                                 ).map((item) => (
                                     <div key={item.id} className="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex gap-4">
                                         {/* Left: Image */}
-                                        <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden shrink-0 border border-gray-200 dark:border-gray-700">
+                                        <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden shrink-0 border border-gray-200 dark:border-gray-700 relative">
                                             {item.config.snapshotUrl ? (
                                                 <img src={item.config.snapshotUrl} alt={item.name} className="w-full h-full object-cover" />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">Sin img</div>
+                                            )}
+                                            {!item.approved && (
+                                                <div className="absolute top-0 left-0 bg-yellow-400 text-[8px] font-bold px-1.5 py-0.5 text-yellow-900 uppercase">
+                                                    Pendiente
+                                                </div>
                                             )}
                                         </div>
                                         
@@ -1091,25 +1194,30 @@ on conflict (color, size, grammage) do nothing;
                                             <div>
                                                 <div className="font-bold text-gray-900 dark:text-white line-clamp-2 leading-tight">{item.name}</div>
                                                 <div className="text-xs text-gray-500 mt-1 flex flex-col">
-                                                    <span>Color: <span className="capitalize">{item.config.color === 'white' ? 'Blanca' : 'Negra'}</span></span>
                                                     <span>{formatDate(item.createdAt)}</span>
                                                 </div>
                                             </div>
                                             
-                                            <div className="flex justify-end mt-2">
+                                            <div className="flex justify-end gap-2 mt-2">
+                                                <button
+                                                    onClick={() => setPreviewDesign(item)}
+                                                    className="p-2 text-gray-600 bg-gray-100 rounded-lg"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </button>
+                                                {!item.approved && (
+                                                    <button 
+                                                        onClick={() => handleApproveDesign(item.id)}
+                                                        className="p-2 text-white bg-green-500 rounded-lg"
+                                                    >
+                                                        {approvingId === item.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4" />}
+                                                    </button>
+                                                )}
                                                 <button 
                                                     onClick={() => requestDeleteGalleryItem(item.id, item.name)}
-                                                    disabled={deletingId === item.id}
-                                                    className={`inline-flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-lg transition-colors w-full justify-center ${deletingId === item.id ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40'}`}
+                                                    className="p-2 text-white bg-red-500 rounded-lg"
                                                 >
-                                                    {deletingId === item.id ? (
-                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                    ) : (
-                                                        <>
-                                                            <Trash2 className="w-4 h-4" />
-                                                            Eliminar
-                                                        </>
-                                                    )}
+                                                    <Trash2 className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         </div>
@@ -1125,6 +1233,7 @@ on conflict (color, size, grammage) do nothing;
                                             <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 text-xs uppercase tracking-wider text-gray-500 font-semibold">
                                                 <th className="p-4">Vista Previa</th>
                                                 <th className="p-4">Nombre / Detalles</th>
+                                                <th className="p-4">Estado</th>
                                                 <th className="p-4">Fecha Creación</th>
                                                 <th className="p-4 text-center">Acciones</th>
                                             </tr>
@@ -1150,27 +1259,50 @@ on conflict (color, size, grammage) do nothing;
                                                             <span>Capas: {item.config.layers.length}</span>
                                                         </div>
                                                     </td>
+                                                    <td className="p-4">
+                                                        {item.approved ? (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                                                <CheckCircle2 className="w-3 h-3" /> Aprobado
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                                                                <AlertCircle className="w-3 h-3" /> Pendiente
+                                                            </span>
+                                                        )}
+                                                    </td>
                                                     <td className="p-4 text-sm text-gray-600 dark:text-gray-300">
                                                         {formatDate(item.createdAt)}
                                                     </td>
                                                     <td className="p-4 text-center">
-                                                        <button 
-                                                            onClick={() => requestDeleteGalleryItem(item.id, item.name)}
-                                                            disabled={deletingId === item.id}
-                                                            className={`inline-flex items-center gap-1 text-sm font-bold px-3 py-1.5 rounded-lg transition-colors ${deletingId === item.id ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40'}`}
-                                                        >
-                                                            {deletingId === item.id ? (
-                                                                <>
-                                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                                    Borrando...
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                    Eliminar
-                                                                </>
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <button
+                                                                onClick={() => setPreviewDesign(item)}
+                                                                className="p-1.5 text-gray-500 hover:text-blue-500 bg-gray-100 hover:bg-blue-50 dark:bg-gray-800 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                                                title="Vista Previa"
+                                                            >
+                                                                <Eye className="w-4 h-4" />
+                                                            </button>
+                                                            
+                                                            {!item.approved && (
+                                                                <button
+                                                                    onClick={() => handleApproveDesign(item.id)}
+                                                                    disabled={approvingId === item.id}
+                                                                    className="p-1.5 text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40 rounded-lg transition-colors"
+                                                                    title="Aprobar Diseño"
+                                                                >
+                                                                    {approvingId === item.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4" />}
+                                                                </button>
                                                             )}
-                                                        </button>
+
+                                                            <button 
+                                                                onClick={() => requestDeleteGalleryItem(item.id, item.name)}
+                                                                disabled={deletingId === item.id}
+                                                                className="p-1.5 text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded-lg transition-colors"
+                                                                title="Eliminar"
+                                                            >
+                                                                {deletingId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -1595,18 +1727,17 @@ on conflict (color, size, grammage) do nothing;
                                 <Trash2 className="w-6 h-6" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">SQL para Permisos de Galería</h2>
-                                <p className="text-gray-500 dark:text-gray-400 text-sm">Ejecuta esto si no puedes ELIMINAR diseños.</p>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">SQL para Galería (Moderación)</h2>
+                                <p className="text-gray-500 dark:text-gray-400 text-sm">Ejecuta esto para habilitar el sistema de aprobación de diseños.</p>
                             </div>
                         </div>
 
                             <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/30 rounded-lg p-4 mb-6 flex gap-3">
                             <AlertTriangle className="w-6 h-6 text-yellow-600 dark:text-yellow-500 shrink-0" />
                             <div>
-                                <h3 className="font-bold text-yellow-800 dark:text-yellow-400 text-sm">Advertencia de Seguridad (RLS)</h3>
+                                <h3 className="font-bold text-yellow-800 dark:text-yellow-400 text-sm">Actualización Requerida</h3>
                                 <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-1">
-                                    Supabase bloquea la eliminación de registros por defecto para usuarios anónimos. 
-                                    Este script habilita una política pública de borrado para que el panel funcione sin autenticación.
+                                    Para que funcione la moderación de diseños, debes ejecutar este script SQL. Añadirá la columna "approved" a la base de datos.
                                 </p>
                             </div>
                         </div>

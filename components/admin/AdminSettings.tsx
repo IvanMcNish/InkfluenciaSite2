@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { ImageIcon, Smartphone, Monitor, Layout, Upload, Loader2, Database, Copy, Check, Trash2, AlertTriangle, Layers } from 'lucide-react';
 import { uploadAppLogo, APP_LOGO_URL, APP_DESKTOP_LOGO_URL, APP_LANDING_LOGO_URL } from '../../lib/supabaseClient';
 
+
 export const AdminSettings: React.FC = () => {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isUploadingDesktopLogo, setIsUploadingDesktopLogo] = useState(false);

@@ -3,9 +3,9 @@ import { getOrders, updateOrderStatus } from '../services/orderService';
 import { getCustomers } from '../services/customerService';
 import { getAdminCollection, deleteDesignFromCollection, approveDesign } from '../services/galleryService';
 import { getInventory, upsertInventoryBatch } from '../services/inventoryService';
-import { uploadAppLogo, APP_LOGO_URL, supabase } from '../lib/supabaseClient';
+import { uploadAppLogo, APP_LOGO_URL, APP_DESKTOP_LOGO_URL, supabase } from '../lib/supabaseClient';
 import { Order, OrderStatus, Customer, CollectionItem, InventoryItem } from '../types';
-import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler, Weight, ExternalLink, Navigation, Save, RefreshCw, AlertCircle, PlusCircle, CheckCircle2 } from 'lucide-react';
+import { Package, Search, Calendar, X, Download, ChevronDown, Check, Eye, User, MapPin, CreditCard, Box, Phone, Loader2, Users, ShoppingBag, Settings, Database, Copy, AlertTriangle, Grid, Trash2, Upload, Image as ImageIcon, LogOut, TrendingUp, BarChart3, DollarSign, Activity, Percent, Layers, Shirt, Ruler, Weight, ExternalLink, Navigation, Save, RefreshCw, AlertCircle, PlusCircle, CheckCircle2, Monitor, Smartphone } from 'lucide-react';
 import { formatCurrency, PRICES, SIZES } from '../constants';
 import { Scene } from './Scene';
 
@@ -44,8 +44,13 @@ export const AdminPanel: React.FC = () => {
   const [copiedStorage, setCopiedStorage] = useState(false);
   const [copiedGallery, setCopiedGallery] = useState(false);
   const [copiedInventory, setCopiedInventory] = useState(false);
+  
+  // Logo Upload State
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingDesktopLogo, setIsUploadingDesktopLogo] = useState(false);
+  
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const desktopLogoInputRef = useRef<HTMLInputElement>(null);
 
   // Tabs Configuration
   const tabs = [
@@ -211,11 +216,31 @@ export const AdminPanel: React.FC = () => {
       }
 
       setIsUploadingLogo(true);
-      const newLogoUrl = await uploadAppLogo(file);
+      // 'mobile' is default type in uploadAppLogo
+      const newLogoUrl = await uploadAppLogo(file, 'mobile');
       setIsUploadingLogo(false);
 
       if (newLogoUrl) {
-          alert('¡Logo actualizado con éxito! Recarga la página para ver los cambios.');
+          alert('¡Logo móvil actualizado con éxito! Recarga la página para ver los cambios.');
+          window.location.reload();
+      }
+  };
+
+  const handleDesktopLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+          alert('Por favor selecciona un archivo de imagen válido.');
+          return;
+      }
+
+      setIsUploadingDesktopLogo(true);
+      const newLogoUrl = await uploadAppLogo(file, 'desktop');
+      setIsUploadingDesktopLogo(false);
+
+      if (newLogoUrl) {
+          alert('¡Logo desktop actualizado con éxito! Recarga la página para ver los cambios.');
           window.location.reload();
       }
   };
@@ -773,6 +798,7 @@ on conflict (color, size, grammage) do nothing;
             </div>
         ) : (
             <>
+            {/* LOCKED */}
                 {/* INVENTORY MANAGEMENT TAB */}
                 {activeTab === 'inventory' && (
                     <div className="animate-fade-in space-y-6 pb-20">
@@ -1650,44 +1676,75 @@ on conflict (color, size, grammage) do nothing;
                         </div>
                     </div>
                 )}
+            {/* LOCKED end */}
 
                 {/* SETTINGS VIEW */}
                 {activeTab === 'settings' && (
                 <div className="max-w-4xl mx-auto animate-fade-in space-y-8">
                     
-                    {/* Logo Upload Section */}
+                    {/* Logo Management Section - UPDATED for two logos */}
                     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="p-3 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg text-indigo-600">
                                 <ImageIcon className="w-6 h-6" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Personalización de Marca</h2>
-                                <p className="text-gray-500 dark:text-gray-400 text-sm">Actualiza el logo principal de la aplicación (Sobrescribe LOGO/logo.png).</p>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Identidad de Marca (Logos)</h2>
+                                <p className="text-gray-500 dark:text-gray-400 text-sm">Gestiona las imágenes oficiales de la marca para diferentes dispositivos.</p>
                             </div>
                         </div>
                         
-                        <div className="flex items-center gap-6">
-                            <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center border border-gray-200 dark:border-gray-700 p-2">
-                                <img src={`${APP_LOGO_URL}?t=${Date.now()}`} alt="Current Logo" className="w-full h-full object-contain" />
-                            </div>
-                            <div className="flex-1">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* Mobile Logo Upload */}
+                            <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl border border-gray-100 dark:border-gray-700 flex flex-col items-center">
+                                <div className="flex items-center gap-2 mb-4 text-gray-600 dark:text-gray-300 font-bold uppercase text-xs tracking-wider">
+                                    <Smartphone className="w-4 h-4" /> Logo Móvil (Icono)
+                                </div>
+                                <div className="w-32 h-32 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-200 dark:border-gray-700 p-4 mb-4">
+                                    <img src={`${APP_LOGO_URL}?t=${Date.now()}`} alt="Mobile Logo" className="w-full h-full object-contain" />
+                                </div>
                                 <input 
-                                        type="file" 
-                                        ref={logoInputRef} 
-                                        onChange={handleLogoUpload} 
-                                        accept="image/png, image/jpeg, image/webp" 
-                                        className="hidden" 
-                                    />
+                                    type="file" 
+                                    ref={logoInputRef} 
+                                    onChange={handleLogoUpload} 
+                                    accept="image/png, image/jpeg, image/webp" 
+                                    className="hidden" 
+                                />
                                 <button 
-                                        onClick={() => logoInputRef.current?.click()}
-                                        disabled={isUploadingLogo}
-                                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors flex items-center gap-2"
+                                    onClick={() => logoInputRef.current?.click()}
+                                    disabled={isUploadingLogo}
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
                                 >
                                     {isUploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                                    {isUploadingLogo ? 'Subiendo...' : 'Subir Nuevo Logo'}
+                                    {isUploadingLogo ? 'Subiendo...' : 'Actualizar Móvil'}
                                 </button>
-                                <p className="text-xs text-gray-500 mt-2">Recomendado: PNG Transparente (512x512px). Los cambios pueden tardar unos segundos en reflejarse.</p>
+                                <p className="text-[10px] text-gray-400 mt-2 text-center">PNG Transparente (Cuadrado 512x512px)</p>
+                            </div>
+
+                            {/* Desktop Logo Upload */}
+                            <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl border border-gray-100 dark:border-gray-700 flex flex-col items-center">
+                                <div className="flex items-center gap-2 mb-4 text-gray-600 dark:text-gray-300 font-bold uppercase text-xs tracking-wider">
+                                    <Monitor className="w-4 h-4" /> Logo Desktop (Completo)
+                                </div>
+                                <div className="w-full h-32 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-200 dark:border-gray-700 p-4 mb-4">
+                                    <img src={`${APP_DESKTOP_LOGO_URL}?t=${Date.now()}`} alt="Desktop Logo" className="h-full w-auto object-contain" />
+                                </div>
+                                <input 
+                                    type="file" 
+                                    ref={desktopLogoInputRef} 
+                                    onChange={handleDesktopLogoUpload} 
+                                    accept="image/png, image/jpeg, image/webp" 
+                                    className="hidden" 
+                                />
+                                <button 
+                                    onClick={() => desktopLogoInputRef.current?.click()}
+                                    disabled={isUploadingDesktopLogo}
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+                                >
+                                    {isUploadingDesktopLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                    {isUploadingDesktopLogo ? 'Subiendo...' : 'Actualizar Desktop'}
+                                </button>
+                                <p className="text-[10px] text-gray-400 mt-2 text-center">PNG Transparente (Horizontal)</p>
                             </div>
                         </div>
                     </div>

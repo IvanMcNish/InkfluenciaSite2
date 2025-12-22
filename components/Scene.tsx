@@ -7,7 +7,20 @@ import { TSHIRT_OBJ_URL } from '../constants';
 import { TShirtConfig as ConfigType, Position } from '../types';
 
 // Add type definitions for R3F elements to satisfy TypeScript
+// We augment both global JSX and React.JSX to handle different TypeScript/React version configurations
 declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      mesh: any;
+      meshStandardMaterial: any;
+      meshBasicMaterial: any;
+      ambientLight: any;
+      spotLight: any;
+    }
+  }
+}
+
+declare module 'react' {
   namespace JSX {
     interface IntrinsicElements {
       mesh: any;

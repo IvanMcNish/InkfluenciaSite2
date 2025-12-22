@@ -1,7 +1,7 @@
 import React from 'react';
 import { Sun, Moon, ShoppingBag, ArrowLeft, LayoutDashboard, Grid, Truck, Instagram, MessageCircle } from 'lucide-react';
 import { ViewState } from '../types';
-import { APP_LOGO_URL } from '../lib/supabaseClient';
+import { APP_LOGO_URL, APP_DESKTOP_LOGO_URL } from '../lib/supabaseClient';
 
 interface NavbarProps {
   darkMode: boolean;
@@ -24,22 +24,29 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, curren
         )}
         <div 
           onClick={() => navigate('landing')}
-          className="flex items-center gap-2 md:gap-3 cursor-pointer select-none group"
+          className="flex items-center cursor-pointer select-none group"
         >
+          {/* Mobile Logo (Square/Icon) - Visible on small screens */}
           <img 
-            // Append timestamp to force refresh if cached, though cleaner in prod to just use URL
             src={`${APP_LOGO_URL}?t=${new Date().getHours()}`} 
             onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none'; 
             }}
-            alt="Logo" 
-            className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-sm transition-transform group-hover:scale-110" 
+            alt="Inkfluencia" 
+            className="block md:hidden w-10 h-10 object-contain drop-shadow-sm transition-transform group-hover:scale-110" 
           />
-          {/* Title hidden on mobile (default), visible on md screens and up */}
-          <span className="hidden md:block text-2xl lg:text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-yellow-400 to-cyan-500 hover:animate-gradient-x bg-[length:200%_auto]">
-            INKFLUENCIA
-          </span>
+
+          {/* Desktop Logo (Full/Landscape) - Visible on medium screens and up */}
+          <img 
+            src={`${APP_DESKTOP_LOGO_URL}?t=${new Date().getHours()}`} 
+            onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none'; 
+            }}
+            alt="Inkfluencia" 
+            className="hidden md:block h-12 w-auto object-contain drop-shadow-sm transition-transform group-hover:scale-105" 
+          />
         </div>
       </div>
 

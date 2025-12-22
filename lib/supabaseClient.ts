@@ -6,8 +6,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Constant URL for the App Logo
+// Constant URL for the App Logos
 export const APP_LOGO_URL = `${SUPABASE_URL}/storage/v1/object/public/inkfluencia-images/LOGO/logo.png`;
+export const APP_DESKTOP_LOGO_URL = `${SUPABASE_URL}/storage/v1/object/public/inkfluencia-images/LOGO/logo-desktop.png`;
 
 // Helper to upload Base64 images to Supabase Storage
 export const uploadBase64Image = async (base64Data: string, folder: string): Promise<string | null> => {
@@ -68,11 +69,12 @@ export const uploadBase64Image = async (base64Data: string, folder: string): Pro
 };
 
 // Function to upload the App Logo specifically
-export const uploadAppLogo = async (file: File): Promise<string | null> => {
+export const uploadAppLogo = async (file: File, type: 'mobile' | 'desktop' = 'mobile'): Promise<string | null> => {
     try {
-        const fileName = 'LOGO/logo.png';
+        const fileName = type === 'mobile' ? 'LOGO/logo.png' : 'LOGO/logo-desktop.png';
+        const returnUrl = type === 'mobile' ? APP_LOGO_URL : APP_DESKTOP_LOGO_URL;
         
-        console.log(`📤 Actualizando Logo de la App...`);
+        console.log(`📤 Actualizando Logo (${type})...`);
 
         const { data, error } = await supabase.storage
             .from('inkfluencia-images')
@@ -86,7 +88,7 @@ export const uploadAppLogo = async (file: File): Promise<string | null> => {
 
         // Force a cache bust on the URL locally by returning it with a timestamp
         // The base URL remains constant
-        return `${APP_LOGO_URL}?t=${Date.now()}`;
+        return `${returnUrl}?t=${Date.now()}`;
 
     } catch (error) {
         console.error('Error updating logo:', error);

@@ -9,16 +9,15 @@ import { Gender } from '../../types';
 export const AdminInventory: React.FC = () => {
   const { metrics, loading, refreshInventory, getQuantity } = useInventory();
 
-  // Local state for management
+  // Unified Global State
+  const [selectedGender, setSelectedGender] = useState<Gender>('male');
+  
+  // Management State (Color & Grammage still specific to the operation focus, but determine the view)
   const [mgmtGrammage, setMgmtGrammage] = useState<'150g' | '200g'>('150g');
   const [mgmtColor, setMgmtColor] = useState<'white' | 'black'>('white');
-  const [mgmtGender, setMgmtGender] = useState<Gender>('male');
   
   const [stockInputs, setStockInputs] = useState<Record<string, number>>({});
   const [isSavingStock, setIsSavingStock] = useState(false);
-
-  // Separate state for Viewing Grid filter
-  const [viewGender, setViewGender] = useState<Gender>('male');
 
   const handleStockInputChange = (size: string, value: string) => {
       const numValue = parseInt(value) || 0;
@@ -28,12 +27,12 @@ export const AdminInventory: React.FC = () => {
   const saveStockUpdates = async () => {
       setIsSavingStock(true);
       const updates = SIZES.map(size => {
-          const currentQty = getQuantity(mgmtGender, mgmtColor, size, mgmtGrammage);
+          const currentQty = getQuantity(selectedGender, mgmtColor, size, mgmtGrammage);
           const qtyToAdd = stockInputs[size] || 0;
           const newTotal = currentQty + qtyToAdd;
 
           return {
-              gender: mgmtGender,
+              gender: selectedGender,
               color: mgmtColor,
               size: size,
               grammage: mgmtGrammage,
@@ -90,41 +89,63 @@ export const AdminInventory: React.FC = () => {
             </div>
         </div>
 
+        {/* GLOBAL GENDER SELECTOR */}
+        <div className="flex justify-center">
+            <div className="bg-white dark:bg-gray-900 p-1.5 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex gap-2">
+                <button 
+                    onClick={() => setSelectedGender('male')}
+                    className={`px-8 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
+                        selectedGender === 'male' 
+                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg' 
+                        : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                >
+                    <User className="w-4 h-4" />
+                    Inventario Hombre
+                </button>
+                <button 
+                    onClick={() => setSelectedGender('female')}
+                    className={`px-8 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
+                        selectedGender === 'female' 
+                        ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-lg' 
+                        : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                >
+                    <User className="w-4 h-4" />
+                    Inventario Mujer
+                </button>
+            </div>
+        </div>
+
         {/* 2. ADD STOCK FORM */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-            <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-pink-50 to-transparent dark:from-pink-900/10">
-                <h3 className="font-bold text-lg flex items-center gap-2 text-pink-600 dark:text-pink-400">
-                    <PlusCircle className="w-5 h-5" />
-                    Agregar al Inventario (Sumar)
+            <div className={`p-6 border-b border-gray-100 dark:border-gray-800 transition-colors ${selectedGender === 'male' ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'bg-pink-50/50 dark:bg-pink-900/10'}`}>
+                <h3 className="font-bold text-lg flex items-center gap-2 text-gray-900 dark:text-white">
+                    <PlusCircle className={`w-5 h-5 ${selectedGender === 'male' ? 'text-blue-500' : 'text-pink-500'}`} />
+                    Gestión de Stock: <span className="uppercase">{selectedGender === 'male' ? 'Hombre' : 'Mujer'}</span>
                 </h3>
             </div>
 
             <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="space-y-6">
-                    <div>
-                        <label className="block text-xs font-bold uppercase text-gray-400 mb-2">1. Seleccionar Género</label>
-                        <div className="flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1">
-                            <button onClick={() => setMgmtGender('male')} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mgmtGender === 'male' ? 'bg-white dark:bg-gray-700 shadow-sm text-pink-600' : 'text-gray-500'}`}>Hombre</button>
-                            <button onClick={() => setMgmtGender('female')} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mgmtGender === 'female' ? 'bg-white dark:bg-gray-700 shadow-sm text-pink-600' : 'text-gray-500'}`}>Mujer</button>
-                        </div>
-                    </div>
+                    {/* Gender selector removed from here, now global */}
 
                     <div>
-                        <label className="block text-xs font-bold uppercase text-gray-400 mb-2">2. Seleccionar Gramaje</label>
+                        <label className="block text-xs font-bold uppercase text-gray-400 mb-2">1. Seleccionar Gramaje</label>
                         <div className="flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1">
-                            <button onClick={() => setMgmtGrammage('150g')} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mgmtGrammage === '150g' ? 'bg-white dark:bg-gray-700 shadow-sm text-pink-600' : 'text-gray-500'}`}>150g</button>
-                            <button onClick={() => setMgmtGrammage('200g')} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mgmtGrammage === '200g' ? 'bg-white dark:bg-gray-700 shadow-sm text-pink-600' : 'text-gray-500'}`}>200g</button>
+                            <button onClick={() => setMgmtGrammage('150g')} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mgmtGrammage === '150g' ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500'}`}>150g</button>
+                            <button onClick={() => setMgmtGrammage('200g')} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mgmtGrammage === '200g' ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500'}`}>200g</button>
                         </div>
                     </div>
                     
                     <div>
-                        <label className="block text-xs font-bold uppercase text-gray-400 mb-2">3. Seleccionar Color</label>
+                        <label className="block text-xs font-bold uppercase text-gray-400 mb-2">2. Seleccionar Color</label>
                         <div className="grid grid-cols-2 gap-4">
-                            <button onClick={() => setMgmtColor('white')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all ${mgmtColor === 'white' ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/10 text-pink-700 dark:text-pink-300' : 'border-gray-200 dark:border-gray-700'}`}>
+                            <button onClick={() => setMgmtColor('white')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all ${mgmtColor === 'white' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/10 text-indigo-700 dark:text-indigo-300' : 'border-gray-200 dark:border-gray-700'}`}>
                                 <div className="w-3 h-3 rounded-full bg-white border border-gray-300"></div>
                                 <span className="font-bold text-sm">Blanco</span>
                             </button>
-                            <button onClick={() => setMgmtColor('black')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all ${mgmtColor === 'black' ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/10 text-pink-700 dark:text-pink-300' : 'border-gray-200 dark:border-gray-700'}`}>
+                            <button onClick={() => setMgmtColor('black')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all ${mgmtColor === 'black' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/10 text-indigo-700 dark:text-indigo-300' : 'border-gray-200 dark:border-gray-700'}`}>
                                 <div className="w-3 h-3 rounded-full bg-black border border-gray-600"></div>
                                 <span className="font-bold text-sm">Negro</span>
                             </button>
@@ -133,7 +154,7 @@ export const AdminInventory: React.FC = () => {
                 </div>
 
                 <div className="lg:col-span-2 space-y-4">
-                    <label className="block text-xs font-bold uppercase text-gray-400">4. Ingresar Cantidad a Sumar</label>
+                    <label className="block text-xs font-bold uppercase text-gray-400">3. Ingresar Cantidad a Sumar</label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         {SIZES.map(size => (
                             <div key={size} className="relative">
@@ -146,7 +167,7 @@ export const AdminInventory: React.FC = () => {
                                     value={stockInputs[size] !== undefined ? stockInputs[size] : ''}
                                     onChange={(e) => handleStockInputChange(size, e.target.value)}
                                     placeholder="0"
-                                    className="w-full pt-8 pb-3 px-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none text-2xl font-black text-center"
+                                    className="w-full pt-8 pb-3 px-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none text-2xl font-black text-center"
                                 />
                             </div>
                         ))}
@@ -156,7 +177,11 @@ export const AdminInventory: React.FC = () => {
                         <button 
                             onClick={saveStockUpdates}
                             disabled={isSavingStock}
-                            className="bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-500 hover:to-orange-400 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-orange-500/30 transition-all flex items-center gap-2"
+                            className={`text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all flex items-center gap-2 ${
+                                selectedGender === 'male' 
+                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 hover:shadow-blue-500/30' 
+                                : 'bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 hover:shadow-pink-500/30'
+                            }`}
                         >
                             {isSavingStock ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                             {isSavingStock ? 'Guardando...' : 'Guardar y Sumar al Stock'}
@@ -172,24 +197,27 @@ export const AdminInventory: React.FC = () => {
                 <div>
                     <h3 className="font-bold text-lg flex items-center gap-2 text-gray-900 dark:text-white">
                         <Database className="w-5 h-5 text-gray-400" />
-                        Inventario Actual en Base de Datos
+                        Vista Previa del Stock
                     </h3>
                     <p className="text-sm text-gray-500 mt-1">
-                        Mostrando para: <strong className="capitalize">{viewGender === 'male' ? 'Hombres' : 'Mujeres'}</strong> - <strong className="capitalize">{mgmtColor === 'white' ? 'Blanco' : 'Negro'}</strong> - <strong>{mgmtGrammage}</strong>
+                        Mostrando para: <strong className="capitalize text-indigo-600 dark:text-indigo-400">{selectedGender === 'male' ? 'Hombre' : 'Mujer'}</strong> - <strong className="capitalize">{mgmtColor === 'white' ? 'Blanco' : 'Negro'}</strong> - <strong>{mgmtGrammage}</strong>
                     </p>
                 </div>
                 
-                {/* View Filters */}
-                <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
-                     <button onClick={() => setViewGender('male')} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${viewGender === 'male' ? 'bg-white dark:bg-gray-700 shadow text-pink-600' : 'text-gray-500'}`}>Hombres</button>
-                     <button onClick={() => setViewGender('female')} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${viewGender === 'female' ? 'bg-white dark:bg-gray-700 shadow text-pink-600' : 'text-gray-500'}`}>Mujeres</button>
+                {/* Visual indicator (Read-only as it's controlled globally now) */}
+                <div className="flex bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg border border-gray-100 dark:border-gray-700">
+                     <span className="text-xs font-bold uppercase text-gray-400 mr-2 flex items-center">Filtro Activo:</span>
+                     <span className={`px-3 py-1 rounded text-xs font-bold capitalize ${selectedGender === 'male' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300'}`}>
+                        {selectedGender === 'male' ? 'Hombre' : 'Mujer'}
+                     </span>
                 </div>
             </div>
 
             <div className="p-6">
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
                     {SIZES.map(size => {
-                        const qty = getQuantity(viewGender, mgmtColor, size, mgmtGrammage);
+                        // Uses unified selectedGender
+                        const qty = getQuantity(selectedGender, mgmtColor, size, mgmtGrammage);
 
                         return (
                             <div key={`current-${size}`} className="relative group">

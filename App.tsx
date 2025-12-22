@@ -50,8 +50,15 @@ const App: React.FC = () => {
 
   // Auth Listener
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        // Handle "Invalid Refresh Token" error by clearing the session state
+        // This often happens if the local token is stale
+        console.warn("Session error:", error.message);
+        setSession(null);
+      } else {
+        setSession(session);
+      }
     });
 
     const {

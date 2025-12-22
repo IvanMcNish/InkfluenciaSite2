@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, ImageIcon, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Users, Loader2 } from 'lucide-react';
+import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, ImageIcon, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Users, Loader2, Info } from 'lucide-react';
 import { TShirtConfig } from '../types';
 import { Scene } from './Scene';
 import { PRICES, formatCurrency } from '../constants';
@@ -388,6 +388,14 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
           {isDesignerMode ? (
             <div className="space-y-3">
+               <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800 flex gap-2">
+                  <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed text-justify">
+                      Las imágenes que va a incluir en el diseño serán <strong>públicas</strong> para toda la comunidad. 
+                      Evite compartir imágenes personales o sensibles. Su diseño será revisado por el admin y una vez aprobado estará disponible en la galería de la comunidad.
+                  </p>
+               </div>
+
                <div>
                   <label className="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-300">Nombre del Diseño</label>
                   <input 

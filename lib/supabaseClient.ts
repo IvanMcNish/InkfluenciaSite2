@@ -9,6 +9,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // Constant URL for the App Logos
 export const APP_LOGO_URL = `${SUPABASE_URL}/storage/v1/object/public/inkfluencia-images/LOGO/logo.png`;
 export const APP_DESKTOP_LOGO_URL = `${SUPABASE_URL}/storage/v1/object/public/inkfluencia-images/LOGO/logo-desktop.png`;
+export const APP_LANDING_LOGO_URL = `${SUPABASE_URL}/storage/v1/object/public/inkfluencia-images/LOGO/logo-landing.png`;
 
 // Helper to upload Base64 images to Supabase Storage
 export const uploadBase64Image = async (base64Data: string, folder: string): Promise<string | null> => {
@@ -69,10 +70,18 @@ export const uploadBase64Image = async (base64Data: string, folder: string): Pro
 };
 
 // Function to upload the App Logo specifically
-export const uploadAppLogo = async (file: File, type: 'mobile' | 'desktop' = 'mobile'): Promise<string | null> => {
+export const uploadAppLogo = async (file: File, type: 'mobile' | 'desktop' | 'landing' = 'mobile'): Promise<string | null> => {
     try {
-        const fileName = type === 'mobile' ? 'LOGO/logo.png' : 'LOGO/logo-desktop.png';
-        const returnUrl = type === 'mobile' ? APP_LOGO_URL : APP_DESKTOP_LOGO_URL;
+        let fileName = 'LOGO/logo.png';
+        let returnUrl = APP_LOGO_URL;
+
+        if (type === 'desktop') {
+            fileName = 'LOGO/logo-desktop.png';
+            returnUrl = APP_DESKTOP_LOGO_URL;
+        } else if (type === 'landing') {
+            fileName = 'LOGO/logo-landing.png';
+            returnUrl = APP_LANDING_LOGO_URL;
+        }
         
         console.log(`📤 Actualizando Logo (${type})...`);
 

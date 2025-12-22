@@ -34,7 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, curren
                 target.style.display = 'none'; 
             }}
             alt="Inkfluencia" 
-            className="block md:hidden w-10 h-10 object-contain drop-shadow-sm transition-transform group-hover:scale-110" 
+            className="block md:hidden w-14 h-14 object-contain drop-shadow-sm transition-transform group-hover:scale-110" 
           />
 
           {/* Desktop Logo (Full/Landscape) - Visible on medium screens and up */}
@@ -45,7 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, curren
                 target.style.display = 'none'; 
             }}
             alt="Inkfluencia" 
-            className="hidden md:block h-12 w-auto object-contain drop-shadow-sm transition-transform group-hover:scale-105" 
+            className="hidden md:block h-20 w-auto object-contain drop-shadow-sm transition-transform group-hover:scale-105" 
           />
         </div>
       </div>
@@ -109,8 +109,10 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, curren
         {/* Mobile Icons (Simplified) */}
         <div className="lg:hidden flex items-center gap-1">
              <button onClick={() => navigate('community')} className="p-2 text-gray-500"><Instagram className="w-5 h-5"/></button>
+             <button onClick={() => navigate('track-order')} className="p-2 text-gray-500"><Truck className="w-5 h-5"/></button>
              <button onClick={() => navigate('gallery')} className="p-2 text-gray-500"><Grid className="w-5 h-5"/></button>
              <button onClick={() => navigate('contact')} className="p-2 text-gray-500"><MessageCircle className="w-5 h-5"/></button>
+             
         </div>
 
         <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 mx-1"></div>

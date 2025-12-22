@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Package, ShoppingBag, Loader2, Box, Check, TrendingUp, DollarSign, BarChart3, Percent, Layers, Shirt, Ruler, Weight, Activity } from 'lucide-react';
+import { Package, ShoppingBag, Loader2, Box, Check, TrendingUp, DollarSign, BarChart3, Percent, Layers, Shirt, Ruler, Weight, Activity, User } from 'lucide-react';
 import { getOrders } from '../../services/orderService';
-import { Order } from '../../types';
+import { Order, Gender } from '../../types';
 import { formatCurrency, SIZES } from '../../constants';
 import { useInventory } from '../../hooks/useInventory';
 
 export const AdminFinancial: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+  
+  // State for the specific section filter
+  const [viewGender, setViewGender] = useState<'all' | Gender>('all');
   
   // Use the shared hook for inventory data
   const { inventory, metrics, loading: isLoadingInventory, getQuantity } = useInventory();
@@ -39,6 +42,27 @@ export const AdminFinancial: React.FC = () => {
   const shippedPercentage = totalOrdersCount > 0 ? (shippedOrdersCount / totalOrdersCount) * 100 : 0;
   const processingPercentage = totalOrdersCount > 0 ? (processingOrdersCount / totalOrdersCount) * 100 : 0;
   const pendingPercentage = totalOrdersCount > 0 ? (pendingOrdersCount / totalOrdersCount) * 100 : 0;
+
+  // Helper to calculate displayed quantity based on filter
+  const getDisplayedQty = (color: 'white' | 'black', size: string, grammage: '150g' | '200g') => {
+      if (viewGender === 'all') {
+          return getQuantity('male', color, size, grammage) + getQuantity('female', color, size, grammage);
+      }
+      return getQuantity(viewGender, color, size, grammage);
+  };
+
+  // Helper for sub-total count in headers
+  const getSubTotal = (grammage: '150g' | '200g') => {
+      if (viewGender === 'all') {
+          if (grammage === '150g') return metrics.white150 + metrics.black150;
+          return metrics.white200 + metrics.black200;
+      }
+      
+      // Calculate specific subtotal from raw inventory if filtering
+      return inventory
+        .filter(i => i.gender === viewGender && i.grammage === grammage)
+        .reduce((acc, i) => acc + i.quantity, 0);
+  };
 
   if (isLoadingOrders || isLoadingInventory) return <div className="p-8 text-center">Cargando datos financieros e inventario...</div>;
 
@@ -270,10 +294,33 @@ export const AdminFinancial: React.FC = () => {
                             </div>
 
                             {/* SIZE BREAKDOWN SECTION */}
-                            <h3 className="font-bold text-lg mb-4 mt-8 flex items-center gap-2">
-                                <Ruler className="w-5 h-5 text-gray-500" />
-                                Disponibilidad por Gramaje y Talla
-                            </h3>
+                            <div className="flex flex-col sm:flex-row justify-between items-end mb-4 mt-8 gap-4 border-b border-gray-100 dark:border-gray-800 pb-2">
+                                <h3 className="font-bold text-lg flex items-center gap-2">
+                                    <Ruler className="w-5 h-5 text-gray-500" />
+                                    Disponibilidad por Gramaje y Talla
+                                </h3>
+                                
+                                <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg shrink-0">
+                                    <button 
+                                        onClick={() => setViewGender('all')} 
+                                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${viewGender === 'all' ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-500'}`}
+                                    >
+                                        Todos
+                                    </button>
+                                    <button 
+                                        onClick={() => setViewGender('male')} 
+                                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${viewGender === 'male' ? 'bg-white dark:bg-gray-700 shadow text-blue-600' : 'text-gray-500'}`}
+                                    >
+                                        Hombre
+                                    </button>
+                                    <button 
+                                        onClick={() => setViewGender('female')} 
+                                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${viewGender === 'female' ? 'bg-white dark:bg-gray-700 shadow text-pink-600' : 'text-gray-500'}`}
+                                    >
+                                        Mujer
+                                    </button>
+                                </div>
+                            </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Panel 1: 150g (Standard) */}
@@ -283,7 +330,7 @@ export const AdminFinancial: React.FC = () => {
                                             <Weight className="w-5 h-5 text-purple-600" />
                                             <h4 className="font-bold text-gray-900 dark:text-white">Gramaje 150g (Estándar)</h4>
                                         </div>
-                                        <span className="text-xs bg-white dark:bg-gray-800 px-2 py-1 rounded border border-purple-100 dark:border-purple-800 text-purple-600 font-bold">{metrics.white150 + metrics.black150} Unds</span>
+                                        <span className="text-xs bg-white dark:bg-gray-800 px-2 py-1 rounded border border-purple-100 dark:border-purple-800 text-purple-600 font-bold">{getSubTotal('150g')} Unds</span>
                                     </div>
                                     <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         {/* White 150g */}
@@ -294,7 +341,7 @@ export const AdminFinancial: React.FC = () => {
                                             </div>
                                             <div className="grid grid-cols-3 gap-2">
                                                 {SIZES.map(size => {
-                                                     const qty = getQuantity('male', 'white', size, '150g') + getQuantity('female', 'white', size, '150g');
+                                                     const qty = getDisplayedQty('white', size, '150g');
                                                      return (
                                                          <div key={size} className="text-center">
                                                              <div className="text-[10px] text-gray-400 uppercase font-bold">{size}</div>
@@ -312,7 +359,7 @@ export const AdminFinancial: React.FC = () => {
                                             </div>
                                              <div className="grid grid-cols-3 gap-2">
                                                 {SIZES.map(size => {
-                                                     const qty = getQuantity('male', 'black', size, '150g') + getQuantity('female', 'black', size, '150g');
+                                                     const qty = getDisplayedQty('black', size, '150g');
                                                      return (
                                                          <div key={size} className="text-center">
                                                              <div className="text-[10px] text-gray-400 uppercase font-bold">{size}</div>
@@ -332,7 +379,7 @@ export const AdminFinancial: React.FC = () => {
                                             <Weight className="w-5 h-5 text-pink-600" />
                                             <h4 className="font-bold text-gray-900 dark:text-white">Gramaje 200g (Premium)</h4>
                                         </div>
-                                        <span className="text-xs bg-white dark:bg-gray-800 px-2 py-1 rounded border border-pink-100 dark:border-pink-800 text-pink-600 font-bold">{metrics.white200 + metrics.black200} Unds</span>
+                                        <span className="text-xs bg-white dark:bg-gray-800 px-2 py-1 rounded border border-pink-100 dark:border-pink-800 text-pink-600 font-bold">{getSubTotal('200g')} Unds</span>
                                     </div>
                                     <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         {/* White 200g */}
@@ -343,7 +390,7 @@ export const AdminFinancial: React.FC = () => {
                                             </div>
                                             <div className="grid grid-cols-3 gap-2">
                                                 {SIZES.map(size => {
-                                                     const qty = getQuantity('male', 'white', size, '200g') + getQuantity('female', 'white', size, '200g');
+                                                     const qty = getDisplayedQty('white', size, '200g');
                                                      return (
                                                          <div key={size} className="text-center">
                                                              <div className="text-[10px] text-gray-400 uppercase font-bold">{size}</div>
@@ -361,7 +408,7 @@ export const AdminFinancial: React.FC = () => {
                                             </div>
                                              <div className="grid grid-cols-3 gap-2">
                                                 {SIZES.map(size => {
-                                                     const qty = getQuantity('male', 'black', size, '200g') + getQuantity('female', 'black', size, '200g');
+                                                     const qty = getDisplayedQty('black', size, '200g');
                                                      return (
                                                          <div key={size} className="text-center">
                                                              <div className="text-[10px] text-gray-400 uppercase font-bold">{size}</div>

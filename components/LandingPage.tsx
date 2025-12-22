@@ -11,15 +11,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewGallery
   return (
     <div className="flex flex-col min-h-[calc(100vh-80px)]">
       {/* Hero Section */}
-      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-12 md:py-20 bg-gradient-to-b from-transparent to-pink-50 dark:to-gray-900/50">
+      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-12 md:py-20 bg-gradient-to-b from-transparent to-pink-50 dark:to-gray-900/50 overflow-visible">
         
         {/* Main Brand Logo */}
-        <div className="mb-8 relative group">
-            <div className="absolute -inset-4 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full blur-xl opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+        <div className="mb-12 relative group z-10">
+            {/* Expanded inset and blur to prevent clipping edges during animation */}
+            <div className="absolute -inset-10 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition duration-1000"></div>
             <img 
                 src={`${APP_LANDING_LOGO_URL}?t=${new Date().getHours()}`}
                 alt="Inkfluencia Brand" 
-                className="relative w-96 h-96 md:w-[48rem] md:h-[48rem] object-contain animate-fade-in hover:scale-105 transition-transform duration-500"
+                className="relative w-80 h-80 md:w-[32rem] md:h-[32rem] object-contain animate-fade-in hover:scale-105 transition-transform duration-500 will-change-transform"
             />
         </div>
 

@@ -19,7 +19,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewGallery
             <img 
                 src={`${APP_LANDING_LOGO_URL}?t=${new Date().getHours()}`}
                 alt="Inkfluencia Brand" 
-                className="relative w-80 h-80 md:w-[32rem] md:h-[32rem] object-contain animate-fade-in hover:scale-105 transition-transform duration-500"
+                className="relative w-96 h-96 md:w-[48rem] md:h-[48rem] object-contain animate-fade-in hover:scale-105 transition-transform duration-500"
             />
         </div>
 

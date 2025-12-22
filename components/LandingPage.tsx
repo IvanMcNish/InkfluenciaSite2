@@ -1,6 +1,6 @@
 import React from 'react';
 import { Palette, Box, Sparkles, Grid } from 'lucide-react';
-import { APP_LOGO_URL } from '../lib/supabaseClient';
+import { APP_LANDING_LOGO_URL} from '../lib/supabaseClient';
 
 interface LandingPageProps {
   onStart: () => void;
@@ -17,7 +17,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewGallery
         <div className="mb-8 relative group">
             <div className="absolute -inset-4 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full blur-xl opacity-20 group-hover:opacity-40 transition duration-1000"></div>
             <img 
-                src={`${APP_LOGO_URL}?t=${new Date().getHours()}`}
+                src={`${APP_LANDING_LOGO_URL}?t=${new Date().getHours()}`}
                 alt="Inkfluencia Brand" 
                 className="relative w-80 h-80 md:w-[32rem] md:h-[32rem] object-contain animate-fade-in hover:scale-105 transition-transform duration-500"
             />

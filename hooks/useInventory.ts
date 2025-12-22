@@ -1,6 +1,7 @@
+
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getInventory } from '../services/inventoryService';
-import { InventoryItem } from '../types';
+import { InventoryItem, Gender } from '../types';
 import { PRICES } from '../constants';
 
 export const useInventory = () => {
@@ -26,33 +27,33 @@ export const useInventory = () => {
     refreshInventory();
   }, [refreshInventory]);
 
-  // Centralized Calculations (Memoized for performance)
+  // Centralized Calculations
   const metrics = useMemo(() => {
-    // 1. Basic Counts
     const totalStock = inventory.reduce((acc, item) => acc + item.quantity, 0);
     const lowStockItems = inventory.filter(i => i.quantity < 10).length;
 
-    // 2. White Breakdown
+    // Aggregates (Summing both genders for top-level stats if needed, or keeping them separate)
+    // White Breakdown
     const whiteTotal = inventory.filter(i => i.color === 'white').reduce((acc, i) => acc + i.quantity, 0);
     const white150 = inventory
-      .filter(i => i.color === 'white' && (i.grammage === '150g' || !i.grammage))
+      .filter(i => i.color === 'white' && i.grammage === '150g')
       .reduce((acc, i) => acc + i.quantity, 0);
     const white200 = inventory
       .filter(i => i.color === 'white' && i.grammage === '200g')
       .reduce((acc, i) => acc + i.quantity, 0);
 
-    // 3. Black Breakdown
+    // Black Breakdown
     const blackTotal = inventory.filter(i => i.color === 'black').reduce((acc, i) => acc + i.quantity, 0);
     const black150 = inventory
-      .filter(i => i.color === 'black' && (i.grammage === '150g' || !i.grammage))
+      .filter(i => i.color === 'black' && i.grammage === '150g')
       .reduce((acc, i) => acc + i.quantity, 0);
     const black200 = inventory
       .filter(i => i.color === 'black' && i.grammage === '200g')
       .reduce((acc, i) => acc + i.quantity, 0);
 
-    // 4. Financial Value
+    // Financial Value
     const estimatedValue = inventory.reduce((acc, item) => {
-      const price = PRICES[item.grammage || '150g'] || PRICES['150g'];
+      const price = PRICES[item.grammage || '150g'];
       return acc + (item.quantity * price);
     }, 0);
 
@@ -70,11 +71,12 @@ export const useInventory = () => {
   }, [inventory]);
 
   // Helper to get specific quantity
-  const getQuantity = (color: string, size: string, grammage: string) => {
+  const getQuantity = (gender: Gender, color: string, size: string, grammage: string) => {
       return inventory.find(i => 
+        i.gender === gender &&
         i.color === color && 
         i.size === size && 
-        (i.grammage === grammage || (!i.grammage && grammage === '150g'))
+        i.grammage === grammage
     )?.quantity || 0;
   };
 

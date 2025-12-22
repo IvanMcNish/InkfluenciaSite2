@@ -1,3 +1,4 @@
+
 import { supabase, uploadBase64Image } from '../lib/supabaseClient';
 import { Order, OrderStatus } from '../types';
 import { saveOrUpdateCustomer } from './customerService';
@@ -21,6 +22,7 @@ export const getOrders = async (): Promise<Order[]> => {
     phone: item.phone,
     address: item.address,
     size: item.size,
+    gender: item.gender || 'male', // Fallback for old records
     grammage: item.grammage,
     config: item.config,
     total: item.total,
@@ -48,6 +50,7 @@ export const getOrderById = async (id: string): Promise<Order | null> => {
         phone: data.phone,
         address: data.address,
         size: data.size,
+        gender: data.gender || 'male',
         grammage: data.grammage,
         config: data.config,
         total: data.total,
@@ -57,36 +60,39 @@ export const getOrderById = async (id: string): Promise<Order | null> => {
 };
 
 export const updateOrderStatus = async (orderId: string, newStatus: OrderStatus): Promise<boolean> => {
-  // 1. Obtener el pedido actual para saber su estado anterior y configuración (color/talla)
+  // 1. Obtener el pedido actual
   const currentOrder = await getOrderById(orderId);
   if (!currentOrder) return false;
 
   const oldStatus = currentOrder.status;
 
-  // 2. Lógica de Inventario Avanzada
-  
-  // Definimos qué estados consideran que la camiseta ha sido "tomada" del inventario.
-  // Tanto 'processing' como 'shipped' implican que la camiseta física ya no está disponible.
+  // 2. Lógica de Inventario
   const isConsumedState = (status: OrderStatus) => status === 'processing' || status === 'shipped';
-  const isSafeState = (status: OrderStatus) => status === 'pending';
 
   const wasConsumed = isConsumedState(oldStatus);
   const willBeConsumed = isConsumedState(newStatus);
 
-  // CASO 1: De Pendiente -> (Procesando O Enviado)
-  // Se descuenta del inventario.
+  // CASO 1: De Pendiente -> (Procesando O Enviado) => Restar
   if (!wasConsumed && willBeConsumed) {
-      await adjustInventoryQuantity(currentOrder.config.color, currentOrder.size, currentOrder.grammage, -1);
+      await adjustInventoryQuantity(
+          currentOrder.gender, 
+          currentOrder.config.color, 
+          currentOrder.size, 
+          currentOrder.grammage, 
+          -1
+      );
   }
   
-  // CASO 2: De (Procesando O Enviado) -> Pendiente
-  // Se devuelve al inventario (error administrativo o devolución).
+  // CASO 2: De (Procesando O Enviado) -> Pendiente => Sumar (Devolver)
   else if (wasConsumed && !willBeConsumed) {
-      await adjustInventoryQuantity(currentOrder.config.color, currentOrder.size, currentOrder.grammage, 1);
+      await adjustInventoryQuantity(
+          currentOrder.gender, 
+          currentOrder.config.color, 
+          currentOrder.size, 
+          currentOrder.grammage, 
+          1
+      );
   }
-
-  // CASO 3: Movimiento entre estados de consumo (ej. Procesando <-> Enviado)
-  // NO se hace nada, el inventario ya fue descontado y sigue ocupado.
 
   // 3. Actualizar estado en base de datos
   const { error } = await supabase
@@ -96,33 +102,30 @@ export const updateOrderStatus = async (orderId: string, newStatus: OrderStatus)
 
   if (error) {
       console.error('Error updating order:', error);
-      // Opcional: Podríamos revertir el inventario aquí si falla, pero mantenemos simple la lógica.
       return false;
   }
   return true;
 };
 
 export const submitOrder = async (orderData: Omit<Order, 'id' | 'date' | 'status'>): Promise<Order> => {
-    // 1. Process images if they are still base64 (e.g. direct purchase without saving to gallery)
+    // 1. Process images
     const processedConfig = { ...orderData.config };
     
-    // Upload Snapshot (The 3D Render)
     if (processedConfig.snapshotUrl && processedConfig.snapshotUrl.startsWith('data:')) {
-      const snapshotUrl = await uploadBase64Image(processedConfig.snapshotUrl, 'renders'); // Folder: renders
+      const snapshotUrl = await uploadBase64Image(processedConfig.snapshotUrl, 'renders');
       if (snapshotUrl) processedConfig.snapshotUrl = snapshotUrl;
     }
 
-    // Upload Layers (User uploaded images)
     const processedLayers = await Promise.all(processedConfig.layers.map(async (layer) => {
       if (layer.textureUrl.startsWith('data:')) {
-        const textureUrl = await uploadBase64Image(layer.textureUrl, 'uploads'); // Folder: uploads
+        const textureUrl = await uploadBase64Image(layer.textureUrl, 'uploads');
         return { ...layer, textureUrl: textureUrl || layer.textureUrl };
       }
       return layer;
     }));
     processedConfig.layers = processedLayers;
 
-    // 2. Save or Update Customer Data independently
+    // 2. Save Customer
     await saveOrUpdateCustomer(
         orderData.customerName,
         orderData.email,
@@ -132,7 +135,7 @@ export const submitOrder = async (orderData: Omit<Order, 'id' | 'date' | 'status
 
     const newOrderId = Math.random().toString(36).substr(2, 9).toUpperCase();
 
-    // 3. Insert into Supabase Orders Table
+    // 3. Insert Order
     const { data, error } = await supabase
       .from('orders')
       .insert([{
@@ -142,6 +145,7 @@ export const submitOrder = async (orderData: Omit<Order, 'id' | 'date' | 'status
         phone: orderData.phone,
         address: orderData.address,
         size: orderData.size,
+        gender: orderData.gender,
         grammage: orderData.grammage,
         config: processedConfig,
         total: orderData.total,
@@ -162,6 +166,7 @@ export const submitOrder = async (orderData: Omit<Order, 'id' | 'date' | 'status
         phone: data.phone,
         address: data.address,
         size: data.size,
+        gender: data.gender,
         grammage: data.grammage,
         config: data.config,
         total: data.total,

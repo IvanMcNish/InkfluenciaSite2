@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { ImageIcon, Smartphone, Monitor, Layout, Upload, Loader2, Database, Copy, Check, Trash2, AlertTriangle, Layers } from 'lucide-react';
 import { uploadAppLogo, APP_LOGO_URL, APP_DESKTOP_LOGO_URL, APP_LANDING_LOGO_URL } from '../../lib/supabaseClient';
@@ -11,6 +12,7 @@ export const AdminSettings: React.FC = () => {
   const [copiedStorage, setCopiedStorage] = useState(false);
   const [copiedGallery, setCopiedGallery] = useState(false);
   const [copiedInventory, setCopiedInventory] = useState(false);
+  const [copiedOrders, setCopiedOrders] = useState(false);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const desktopLogoInputRef = useRef<HTMLInputElement>(null);
@@ -52,19 +54,16 @@ export const AdminSettings: React.FC = () => {
       if (newLogoUrl) { alert('¡Logo Landing Page actualizado! Recarga para ver cambios.'); window.location.reload(); }
   };
 
-  const copyToClipboard = (text: string, type: 'storage' | 'gallery' | 'inventory') => {
+  const copyToClipboard = (text: string, type: 'storage' | 'gallery' | 'inventory' | 'orders') => {
     navigator.clipboard.writeText(text);
     if (type === 'storage') { setCopiedStorage(true); setTimeout(() => setCopiedStorage(false), 2000); }
     else if (type === 'gallery') { setCopiedGallery(true); setTimeout(() => setCopiedGallery(false), 2000); }
-    else { setCopiedInventory(true); setTimeout(() => setCopiedInventory(false), 2000); }
+    else if (type === 'inventory') { setCopiedInventory(true); setTimeout(() => setCopiedInventory(false), 2000); }
+    else { setCopiedOrders(true); setTimeout(() => setCopiedOrders(false), 2000); }
   };
 
-  const storageSQL = `-- SQL for Storage... (Same as before)`; // Shortened for brevity in thought, but full content below
-  const gallerySQL = `-- SQL for Gallery...`;
-  const inventorySQL = `-- SQL for Inventory...`;
-
   return (
-    <div className="max-w-6xl mx-auto animate-fade-in space-y-8">
+    <div className="max-w-6xl mx-auto animate-fade-in space-y-8 pb-10">
         
         {/* Logo Management Section */}
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
@@ -103,7 +102,7 @@ export const AdminSettings: React.FC = () => {
             </div>
         </div>
 
-        {/* SQL Settings Section - Simplified presentation for code block */}
+        {/* SQL Settings Section */}
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
             <h2 className="text-xl font-bold mb-4">Scripts de Configuración</h2>
             <p className="text-gray-500 mb-6">Usa estos scripts en el editor SQL de Supabase para configurar la base de datos.</p>
@@ -118,31 +117,49 @@ INSERT INTO storage.buckets (id, name, public) VALUES ('inkfluencia-images', 'in
 DROP POLICY IF EXISTS "Public Access Inkfluencia" ON storage.objects;
 -- 3. Crear política maestra
 CREATE POLICY "Public Access Inkfluencia" ON storage.objects FOR ALL TO public USING ( bucket_id = 'inkfluencia-images' ) WITH CHECK ( bucket_id = 'inkfluencia-images' );`, 'storage')} className="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 rounded text-xs">{copiedStorage ? 'Copiado' : 'Copiar'}</button>
-                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL Storage (ver contenido completo en versión anterior)</pre>
+                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL Storage...</pre>
                     </div>
                 </div>
                  <div>
-                    <h3 className="font-bold flex items-center gap-2"><Trash2 className="w-4 h-4" /> Galería</h3>
+                    <h3 className="font-bold flex items-center gap-2"><Layers className="w-4 h-4" /> Inventario (Actualizado con Género)</h3>
                     <div className="relative mt-2">
-                        <button onClick={() => copyToClipboard(`-- 1. Añadir columna 'approved'
-do $$ begin if not exists (select 1 from information_schema.columns where table_name='gallery' and column_name='approved') then alter table gallery add column approved boolean default false; end if; end $$;
--- 2. Reiniciar RLS y Políticas
-ALTER TABLE gallery ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Acceso Total Publico" ON gallery;
-CREATE POLICY "Acceso Total Publico" ON gallery FOR ALL TO public USING (true) WITH CHECK (true);`, 'gallery')} className="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 rounded text-xs">{copiedGallery ? 'Copiado' : 'Copiar'}</button>
-                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL Gallery (ver contenido completo en versión anterior)</pre>
-                    </div>
-                </div>
-                 <div>
-                    <h3 className="font-bold flex items-center gap-2"><Layers className="w-4 h-4" /> Inventario</h3>
-                    <div className="relative mt-2">
-                        <button onClick={() => copyToClipboard(`create table if not exists inventory ( id uuid default gen_random_uuid() primary key, color text check (color in ('white', 'black')), size text, grammage text check (grammage in ('150g', '200g')) default '150g', quantity integer default 0, created_at timestamp with time zone default timezone('utc'::text, now()) );
+                        <button onClick={() => copyToClipboard(`
+-- 1. Crear tabla si no existe
+create table if not exists inventory ( id uuid default gen_random_uuid() primary key, gender text check (gender in ('male', 'female')) default 'male', color text check (color in ('white', 'black')), size text, grammage text check (grammage in ('150g', '200g')) default '150g', quantity integer default 0, created_at timestamp with time zone default timezone('utc'::text, now()) );
+
+-- 2. Actualizar estructura si ya existe (Migration)
+do $$ begin
+  if not exists (select 1 from information_schema.columns where table_name='inventory' and column_name='gender') then
+    alter table inventory add column gender text check (gender in ('male', 'female')) default 'male';
+  end if;
+end $$;
+
+-- 3. Actualizar llave única
 alter table inventory drop constraint if exists inventory_color_size_grammage_key;
-alter table inventory add constraint inventory_color_size_grammage_key unique (color, size, grammage);
+alter table inventory drop constraint if exists inventory_gender_grammage_color_size_key;
+alter table inventory add constraint inventory_gender_grammage_color_size_key unique (gender, grammage, color, size);
+
+-- 4. Seguridad
 alter table inventory enable row level security;
-create policy "Public All Inventory" on inventory for all to public using (true) with check (true);`, 'inventory')} className="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 rounded text-xs">{copiedInventory ? 'Copiado' : 'Copiar'}</button>
-                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL Inventory (ver contenido completo en versión anterior)</pre>
+drop policy if exists "Public All Inventory" on inventory;
+create policy "Public All Inventory" on inventory for all to public using (true) with check (true);
+`, 'inventory')} className="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 rounded text-xs">{copiedInventory ? 'Copiado' : 'Copiar'}</button>
+                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL Inventory (Incluye migración de género)</pre>
                     </div>
+                </div>
+                <div>
+                     <h3 className="font-bold flex items-center gap-2"><Database className="w-4 h-4" /> Ordenes (Actualizado con Género)</h3>
+                     <div className="relative mt-2">
+                        <button onClick={() => copyToClipboard(`
+-- Agregar columna de género a pedidos si no existe
+do $$ begin
+  if not exists (select 1 from information_schema.columns where table_name='orders' and column_name='gender') then
+    alter table orders add column gender text default 'male';
+  end if;
+end $$;
+`, 'orders')} className="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 rounded text-xs">{copiedOrders ? 'Copiado' : 'Copiar'}</button>
+                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL Orders Migration</pre>
+                     </div>
                 </div>
             </div>
         </div>

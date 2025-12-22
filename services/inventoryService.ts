@@ -1,5 +1,6 @@
+
 import { supabase } from '../lib/supabaseClient';
-import { InventoryItem } from '../types';
+import { InventoryItem, Gender } from '../types';
 
 export const getInventory = async (): Promise<InventoryItem[]> => {
   const { data, error } = await supabase
@@ -7,8 +8,6 @@ export const getInventory = async (): Promise<InventoryItem[]> => {
     .select('*');
 
   if (error) {
-    // Si el error es que la tabla no existe (PGRST205), retornamos array vacío silenciosamente
-    // para que la UI no falle mientras el usuario crea la tabla.
     if (error.code === 'PGRST205') {
       console.warn('Tabla de inventario no encontrada. Usa el script SQL en Configuración.');
       return [];
@@ -20,12 +19,13 @@ export const getInventory = async (): Promise<InventoryItem[]> => {
   return data as InventoryItem[];
 };
 
-export const adjustInventoryQuantity = async (color: 'white' | 'black', size: string, grammage: string = '150g', amount: number): Promise<boolean> => {
+export const adjustInventoryQuantity = async (gender: Gender, color: 'white' | 'black', size: string, grammage: string = '150g', amount: number): Promise<boolean> => {
   try {
-    // 1. Obtener el ítem actual para saber su ID y cantidad actual
+    // 1. Obtener el ítem actual
     const { data: item, error: fetchError } = await supabase
       .from('inventory')
       .select('*')
+      .eq('gender', gender)
       .eq('color', color)
       .eq('size', size)
       .eq('grammage', grammage)
@@ -57,12 +57,12 @@ export const adjustInventoryQuantity = async (color: 'white' | 'black', size: st
   }
 };
 
-export const upsertInventoryBatch = async (items: {color: string, size: string, grammage: string, quantity: number}[]): Promise<{ success: boolean, error?: any }> => {
+export const upsertInventoryBatch = async (items: {gender: Gender, color: string, size: string, grammage: string, quantity: number}[]): Promise<{ success: boolean, error?: any }> => {
     try {
-        // Upsert using the composite unique key constraint (color, size, grammage)
+        // Upsert using the composite unique key constraint (gender, grammage, color, size)
         const { error } = await supabase
             .from('inventory')
-            .upsert(items, { onConflict: 'color, size, grammage' });
+            .upsert(items, { onConflict: 'gender, grammage, color, size' });
 
         if (error) {
             console.error("Error upserting inventory:", error);

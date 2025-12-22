@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { SIZES, PRICES, SHIPPING, formatCurrency } from '../constants';
-import { TShirtConfig, Order, InventoryItem } from '../types';
+import { TShirtConfig, Order, InventoryItem, Gender } from '../types';
 import { submitOrder } from '../services/orderService';
 import { getInventory } from '../services/inventoryService';
-import { CheckCircle2, Loader2, AlertCircle, Weight, Truck, Phone, Tag, MapPin } from 'lucide-react';
+import { CheckCircle2, Loader2, AlertCircle, Weight, Truck, Phone, Tag, MapPin, User, Users } from 'lucide-react';
 
 interface OrderFormProps {
   config: TShirtConfig;
@@ -31,8 +32,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
     name: '',
     email: '',
     phone: '',
-    address: '', // Will be auto-generated
+    address: '',
     size: '', 
+    gender: 'male' as Gender,
     grammage: '200g' as '150g' | '200g'
   });
 
@@ -46,43 +48,39 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
     loadInventory();
   }, []);
 
-  // 2. Calculate Available Sizes based on Config(Color) + Grammage + Inventory Quantity
+  // 2. Calculate Available Sizes based on Gender + Color + Grammage + Quantity
   const availableSizes = useMemo(() => {
     if (!inventoryLoaded) return [];
 
     return SIZES.filter(size => {
         const item = inventory.find(i => 
+            i.gender === formData.gender &&
             i.color === config.color && 
             i.size === size && 
-            (i.grammage === formData.grammage || (!i.grammage && formData.grammage === '150g'))
+            i.grammage === formData.grammage
         );
         return item ? item.quantity > 0 : false;
     });
-  }, [inventory, inventoryLoaded, config.color, formData.grammage]);
+  }, [inventory, inventoryLoaded, config.color, formData.grammage, formData.gender]);
 
-  // 3. Auto-select logic: If current size is invalid/unavailable, switch to first available
+  // 3. Auto-select logic
   useEffect(() => {
     if (inventoryLoaded) {
         if (availableSizes.length > 0) {
-            // If currently selected size is not in available list, pick the first one
             if (!availableSizes.includes(formData.size)) {
                 setFormData(prev => ({ ...prev, size: availableSizes[0] }));
             }
         } else {
-            // No sizes available at all
             setFormData(prev => ({ ...prev, size: '' }));
         }
     }
   }, [availableSizes, formData.size, inventoryLoaded]);
 
-  // 4. Update Full Address String when parts change
+  // 4. Update Full Address String
   useEffect(() => {
     const { type, n1, n2, n3, city, details } = addressParts;
-    // Format: Calle 123 # 45 - 67, Apto 101, Ciudad
-    // Only build string if we have at least n1 and city to maintain cleanness
     const mainAddress = `${type} ${n1} # ${n2} - ${n3}`.trim();
     const fullAddress = `${mainAddress}${details ? `, ${details}` : ''}${city ? `, ${city}` : ''}`;
-    
     setFormData(prev => ({ ...prev, address: fullAddress }));
   }, [addressParts]);
 
@@ -97,9 +95,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
   const handleGrammageSelect = (g: '150g' | '200g') => {
     setFormData(prev => ({ ...prev, grammage: g }));
   };
+  
+  const handleGenderSelect = (g: Gender) => {
+    setFormData(prev => ({ ...prev, gender: g }));
+  };
 
   const basePrice = PRICES[formData.grammage];
-  // Promotion: Free Shipping
   const shippingCost = SHIPPING;
   const shippingDiscount = SHIPPING; 
   const total = basePrice + shippingCost - shippingDiscount;
@@ -113,7 +114,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
     }
 
     if (!addressParts.n1 || !addressParts.n2 || !addressParts.city) {
-        setError("Por favor completa los campos obligatorios de la dirección (Vía, Números y Ciudad).");
+        setError("Por favor completa los campos obligatorios de la dirección.");
         return;
     }
 
@@ -127,6 +128,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
         phone: formData.phone,
         address: formData.address,
         size: formData.size,
+        gender: formData.gender,
         grammage: formData.grammage,
         config: config,
         total: total
@@ -139,7 +141,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
     }
   };
 
-  // Use snapshot if available, otherwise fall back to first layer or placeholder
   const displayImage = config.snapshotUrl || (config.layers.length > 0 ? config.layers[0].textureUrl : null);
 
   return (
@@ -170,6 +171,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                     <span className="font-medium text-gray-900 dark:text-white capitalize">{config.layers.length} imagen(es)</span>
                 </div>
                 <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                    <span>Género:</span>
+                    <span className="font-medium text-gray-900 dark:text-white capitalize">{formData.gender === 'male' ? 'Hombre' : 'Mujer'}</span>
+                </div>
+                <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                     <span>Color Base:</span>
                     <span className="font-medium text-gray-900 dark:text-white capitalize">{config.color === 'white' ? 'Blanca' : 'Negra'}</span>
                 </div>
@@ -186,18 +191,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
             </div>
 
             <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                    <span>Subtotal</span>
-                    <span>{formatCurrency(basePrice)}</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-500">
-                    <span className="flex items-center gap-1"><Truck className="w-3 h-3" /> Envío</span>
-                    <span className="line-through">{formatCurrency(shippingCost)}</span>
-                </div>
-                <div className="flex justify-between text-sm text-green-600 font-medium">
-                    <span className="flex items-center gap-1"><Tag className="w-3 h-3" /> Promoción Envío</span>
-                    <span>-{formatCurrency(shippingDiscount)}</span>
-                </div>
                 <div className="flex justify-between text-xl font-black text-pink-600 pt-2 border-t border-dashed border-gray-200 dark:border-gray-700 mt-2">
                     <span>Total</span>
                     <span>{formatCurrency(total)}</span>
@@ -213,28 +206,36 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
             <div className="space-y-4">
                 <h3 className="text-lg font-bold border-b border-gray-100 dark:border-gray-800 pb-2">1. Detalles de la Prenda</h3>
                 
-                {/* LOGIC CHANGE: Size selector dependent on Inventory */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium mb-2">
-                            Talla {availableSizes.length === 0 && inventoryLoaded && <span className="text-red-500 text-xs ml-2">(Agotado en este gramaje)</span>}
-                        </label>
-                        <select
-                            name="size"
-                            value={formData.size}
-                            onChange={handleChange}
-                            disabled={availableSizes.length === 0}
-                            className={`w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all ${availableSizes.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                {/* Gender Selector */}
+                <div>
+                     <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+                        <User className="w-4 h-4" /> Género
+                    </label>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div 
+                            onClick={() => handleGenderSelect('male')}
+                            className={`cursor-pointer p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
+                                formData.gender === 'male' 
+                                ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600' 
+                                : 'border-gray-200 dark:border-gray-700 hover:border-pink-300'
+                            }`}
                         >
-                            {availableSizes.length > 0 ? (
-                                availableSizes.map(s => <option key={s} value={s}>{s}</option>)
-                            ) : (
-                                <option value="">Sin Stock</option>
-                            )}
-                        </select>
+                            <span className="font-bold">Hombre</span>
+                        </div>
+                        <div 
+                            onClick={() => handleGenderSelect('female')}
+                            className={`cursor-pointer p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
+                                formData.gender === 'female' 
+                                ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600' 
+                                : 'border-gray-200 dark:border-gray-700 hover:border-pink-300'
+                            }`}
+                        >
+                            <span className="font-bold">Mujer</span>
+                        </div>
                     </div>
                 </div>
 
+                {/* Grammage Selector */}
                 <div>
                     <label className="block text-sm font-medium mb-3 flex items-center gap-2">
                         <Weight className="w-4 h-4" /> Gramaje de la Tela
@@ -252,7 +253,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                                 <span>Estándar (150g)</span>
                                 <span className="text-pink-600">{formatCurrency(PRICES['150g'])}</span>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">Fresca y ligera. Ideal para climas cálidos.</p>
+                            <p className="text-xs text-gray-500 mt-1">Fresca y ligera.</p>
                         </div>
 
                         <div 
@@ -270,9 +271,29 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                                 <span>Premium (200g)</span>
                                 <span className="text-pink-600">{formatCurrency(PRICES['200g'])}</span>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">Mayor espesor y durabilidad. Acabado superior.</p>
+                            <p className="text-xs text-gray-500 mt-1">Mayor espesor y calidad.</p>
                         </div>
                     </div>
+                </div>
+
+                {/* Size Selector */}
+                <div>
+                     <label className="block text-sm font-medium mb-2">
+                        Talla {availableSizes.length === 0 && inventoryLoaded && <span className="text-red-500 text-xs ml-2">(Agotado en esta combinación)</span>}
+                    </label>
+                    <select
+                        name="size"
+                        value={formData.size}
+                        onChange={handleChange}
+                        disabled={availableSizes.length === 0}
+                        className={`w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all ${availableSizes.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        {availableSizes.length > 0 ? (
+                            availableSizes.map(s => <option key={s} value={s}>{s}</option>)
+                        ) : (
+                            <option value="">Sin Stock</option>
+                        )}
+                    </select>
                 </div>
             </div>
 
@@ -281,27 +302,11 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-1">Nombre Completo</label>
-                        <input 
-                        required
-                        name="name"
-                        type="text" 
-                        value={formData.name}
-                        onChange={handleChange}
-                        className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all"
-                        placeholder="Juan Pérez"
-                        />
+                        <input required name="name" type="text" value={formData.name} onChange={handleChange} className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none" placeholder="Juan Pérez" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">Email</label>
-                        <input 
-                        required
-                        name="email"
-                        type="email" 
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all"
-                        placeholder="juan@ejemplo.com"
-                        />
+                        <input required name="email" type="email" value={formData.email} onChange={handleChange} className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none" placeholder="juan@ejemplo.com" />
                     </div>
                 </div>
 
@@ -310,145 +315,35 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                         <label className="block text-sm font-medium mb-1">Teléfono</label>
                         <div className="relative">
                             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input 
-                                required
-                                name="phone"
-                                type="tel" 
-                                value={formData.phone}
-                                onChange={handleChange}
-                                className="w-full pl-10 pr-3 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all"
-                                placeholder="300 123 4567"
-                            />
+                            <input required name="phone" type="tel" value={formData.phone} onChange={handleChange} className="w-full pl-10 pr-3 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none" placeholder="300 123 4567" />
                         </div>
                     </div>
                 </div>
 
-                {/* STRUCTURED ADDRESS FIELDS */}
+                {/* Structured Address Fields */}
                 <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
-                    <label className="block text-sm font-bold flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                        <MapPin className="w-4 h-4 text-pink-500" /> Dirección de Entrega
-                    </label>
-                    
+                    <label className="block text-sm font-bold flex items-center gap-2 text-gray-700 dark:text-gray-200"><MapPin className="w-4 h-4 text-pink-500" /> Dirección de Entrega</label>
                     <div className="grid grid-cols-12 gap-2 items-center">
-                         {/* Type */}
-                        <div className="col-span-5 sm:col-span-4">
-                            <label className="text-[10px] uppercase text-gray-400 font-bold ml-1">Vía</label>
-                            <select 
-                                name="type" 
-                                value={addressParts.type}
-                                onChange={handleAddressChange}
-                                className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm"
-                            >
-                                <option value="Calle">Calle</option>
-                                <option value="Carrera">Carrera</option>
-                                <option value="Diagonal">Diagonal</option>
-                                <option value="Transversal">Transversal</option>
-                                <option value="Avenida">Avenida</option>
-                                <option value="Circular">Circular</option>
-                            </select>
-                        </div>
-                        
-                        {/* Num 1 */}
-                        <div className="col-span-3 sm:col-span-3">
-                             <label className="text-[10px] uppercase text-gray-400 font-bold ml-1">Num</label>
-                             <input 
-                                type="text"
-                                name="n1"
-                                value={addressParts.n1}
-                                onChange={handleAddressChange}
-                                placeholder="12A"
-                                className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm"
-                             />
-                        </div>
-
+                        <div className="col-span-5 sm:col-span-4"><select name="type" value={addressParts.type} onChange={handleAddressChange} className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm"><option value="Calle">Calle</option><option value="Carrera">Carrera</option><option value="Diagonal">Diagonal</option><option value="Transversal">Transversal</option><option value="Avenida">Avenida</option><option value="Circular">Circular</option></select></div>
+                        <div className="col-span-3 sm:col-span-3"><input type="text" name="n1" value={addressParts.n1} onChange={handleAddressChange} placeholder="12A" className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" /></div>
                         <div className="col-span-1 text-center font-bold text-gray-400 mt-4">#</div>
-
-                        {/* Num 2 */}
-                        <div className="col-span-3 sm:col-span-4">
-                             <label className="text-[10px] uppercase text-gray-400 font-bold ml-1">Num</label>
-                             <input 
-                                type="text"
-                                name="n2"
-                                value={addressParts.n2}
-                                onChange={handleAddressChange}
-                                placeholder="45"
-                                className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm"
-                             />
-                        </div>
+                        <div className="col-span-3 sm:col-span-4"><input type="text" name="n2" value={addressParts.n2} onChange={handleAddressChange} placeholder="45" className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" /></div>
                     </div>
-
                     <div className="grid grid-cols-12 gap-2 items-center">
                         <div className="col-span-1 text-center font-bold text-gray-400 pt-4">-</div>
-                         
-                         {/* Num 3 (Plate) */}
-                         <div className="col-span-4 sm:col-span-3">
-                             <label className="text-[10px] uppercase text-gray-400 font-bold ml-1">Placa</label>
-                             <input 
-                                type="text"
-                                name="n3"
-                                value={addressParts.n3}
-                                onChange={handleAddressChange}
-                                placeholder="67"
-                                className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm"
-                             />
-                        </div>
-
-                        {/* City */}
-                         <div className="col-span-7 sm:col-span-8">
-                             <label className="text-[10px] uppercase text-gray-400 font-bold ml-1">Ciudad / Municipio</label>
-                             <input 
-                                type="text"
-                                name="city"
-                                value={addressParts.city}
-                                onChange={handleAddressChange}
-                                placeholder="Bucaramanga, Santander"
-                                className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm"
-                             />
-                        </div>
+                         <div className="col-span-4 sm:col-span-3"><input type="text" name="n3" value={addressParts.n3} onChange={handleAddressChange} placeholder="67" className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" /></div>
+                         <div className="col-span-7 sm:col-span-8"><input type="text" name="city" value={addressParts.city} onChange={handleAddressChange} placeholder="Bucaramanga, Santander" className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" /></div>
                     </div>
-
-                    {/* Additional Details */}
-                    <div>
-                         <label className="text-[10px] uppercase text-gray-400 font-bold ml-1">Complemento (Opcional)</label>
-                         <input 
-                            type="text"
-                            name="details"
-                            value={addressParts.details}
-                            onChange={handleAddressChange}
-                            placeholder="Torre 1 Apto 502, Barrio Centro, Conjunto..."
-                            className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm"
-                         />
-                    </div>
-                    
-                    {/* Live Preview of Address */}
-                    <div className="text-xs text-gray-500 pt-1 px-1">
-                        Resultado: <span className="font-medium text-gray-800 dark:text-gray-300">{formData.address || '...'}</span>
-                    </div>
+                    <div><input type="text" name="details" value={addressParts.details} onChange={handleAddressChange} placeholder="Torre 1 Apto 502, Barrio Centro..." className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" /></div>
+                    <div className="text-xs text-gray-500 pt-1 px-1">Resultado: <span className="font-medium text-gray-800 dark:text-gray-300">{formData.address || '...'}</span></div>
                 </div>
             </div>
 
-            {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative flex items-center gap-2 text-sm">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>{error}</span>
-                </div>
-            )}
+            {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative flex items-center gap-2 text-sm"><AlertCircle className="w-4 h-4" /><span>{error}</span></div>}
 
             <div className="flex gap-4 pt-4">
-                <button 
-                    type="button" 
-                    onClick={onBack}
-                    className="w-1/3 py-4 px-4 border border-gray-300 dark:border-gray-600 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                    Volver
-                </button>
-                <button 
-                    type="submit" 
-                    disabled={loading || availableSizes.length === 0}
-                    className="w-2/3 py-4 px-4 bg-gradient-to-r from-pink-600 to-orange-500 text-white rounded-xl font-bold hover:shadow-lg hover:from-pink-500 hover:to-orange-400 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : availableSizes.length === 0 ? 'Sin Stock' : `Pagar ${formatCurrency(total)}`}
-                </button>
+                <button type="button" onClick={onBack} className="w-1/3 py-4 px-4 border border-gray-300 dark:border-gray-600 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Volver</button>
+                <button type="submit" disabled={loading || availableSizes.length === 0} className="w-2/3 py-4 px-4 bg-gradient-to-r from-pink-600 to-orange-500 text-white rounded-xl font-bold hover:shadow-lg hover:from-pink-500 hover:to-orange-400 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">{loading ? <Loader2 className="w-5 h-5 animate-spin" /> : availableSizes.length === 0 ? 'Sin Stock' : `Pagar ${formatCurrency(total)}`}</button>
             </div>
           </form>
       </div>

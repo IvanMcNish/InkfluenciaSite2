@@ -1,3 +1,4 @@
+
 export interface Position {
   x: number;
   y: number;
@@ -17,6 +18,7 @@ export interface TShirtConfig {
 }
 
 export type OrderStatus = 'pending' | 'processing' | 'shipped';
+export type Gender = 'male' | 'female';
 
 export interface Order {
   id: string;
@@ -25,6 +27,7 @@ export interface Order {
   phone: string;
   address: string;
   size: string;
+  gender: Gender;
   grammage: '150g' | '200g';
   config: TShirtConfig;
   total: number;
@@ -44,9 +47,10 @@ export interface Customer {
 
 export interface InventoryItem {
   id: string;
+  gender: Gender;
   color: 'white' | 'black';
   size: string;
-  grammage?: '150g' | '200g';
+  grammage: '150g' | '200g';
   quantity: number;
 }
 

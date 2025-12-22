@@ -294,7 +294,7 @@ export const AdminFinancial: React.FC = () => {
                                             </div>
                                             <div className="grid grid-cols-3 gap-2">
                                                 {SIZES.map(size => {
-                                                     const qty = getQuantity('white', size, '150g');
+                                                     const qty = getQuantity('male', 'white', size, '150g') + getQuantity('female', 'white', size, '150g');
                                                      return (
                                                          <div key={size} className="text-center">
                                                              <div className="text-[10px] text-gray-400 uppercase font-bold">{size}</div>
@@ -312,7 +312,7 @@ export const AdminFinancial: React.FC = () => {
                                             </div>
                                              <div className="grid grid-cols-3 gap-2">
                                                 {SIZES.map(size => {
-                                                     const qty = getQuantity('black', size, '150g');
+                                                     const qty = getQuantity('male', 'black', size, '150g') + getQuantity('female', 'black', size, '150g');
                                                      return (
                                                          <div key={size} className="text-center">
                                                              <div className="text-[10px] text-gray-400 uppercase font-bold">{size}</div>
@@ -343,7 +343,7 @@ export const AdminFinancial: React.FC = () => {
                                             </div>
                                             <div className="grid grid-cols-3 gap-2">
                                                 {SIZES.map(size => {
-                                                     const qty = getQuantity('white', size, '200g');
+                                                     const qty = getQuantity('male', 'white', size, '200g') + getQuantity('female', 'white', size, '200g');
                                                      return (
                                                          <div key={size} className="text-center">
                                                              <div className="text-[10px] text-gray-400 uppercase font-bold">{size}</div>
@@ -361,7 +361,7 @@ export const AdminFinancial: React.FC = () => {
                                             </div>
                                              <div className="grid grid-cols-3 gap-2">
                                                 {SIZES.map(size => {
-                                                     const qty = getQuantity('black', size, '200g');
+                                                     const qty = getQuantity('male', 'black', size, '200g') + getQuantity('female', 'black', size, '200g');
                                                      return (
                                                          <div key={size} className="text-center">
                                                              <div className="text-[10px] text-gray-400 uppercase font-bold">{size}</div>

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Package, Search, Calendar, Eye, ChevronDown, Check, X, User, Phone, MapPin, Navigation, Box, Download, CreditCard } from 'lucide-react';
 import { getOrders, updateOrderStatus } from '../../services/orderService';
@@ -131,35 +132,6 @@ export const AdminOrders: React.FC = () => {
                                     <span>{selectedOrder.address}</span>
                                 </div>
                             </div>
-
-                            <div className="mt-4 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
-                                <div className="bg-gray-200 dark:bg-gray-700 px-3 py-1 text-[10px] font-bold uppercase text-gray-500 dark:text-gray-300 flex justify-between items-center">
-                                    <span>Ruta de Entrega</span>
-                                    <span>HQ ➝ Cliente</span>
-                                </div>
-                                <iframe
-                                    width="100%"
-                                    height="250"
-                                    style={{ border: 0 }}
-                                    loading="lazy"
-                                    allowFullScreen
-                                    referrerPolicy="no-referrer-when-downgrade"
-                                    src={`https://maps.google.com/maps?saddr=${encodeURIComponent(hqAddress)}&daddr=${encodeURIComponent(selectedOrder.address)}&output=embed`}
-                                    title="Ruta de Entrega"
-                                    className="grayscale hover:grayscale-0 transition-all duration-500"
-                                ></iframe>
-                                <div className="bg-white dark:bg-gray-900 p-2 text-xs text-center border-t border-gray-200 dark:border-gray-700">
-                                    <a 
-                                        href={`https://www.google.com/maps/dir/${encodeURIComponent(hqAddress)}/${encodeURIComponent(selectedOrder.address)}`} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 font-bold flex items-center justify-center gap-1"
-                                    >
-                                        <Navigation className="w-3 h-3" />
-                                        Ver Ruta Completa en Google Maps
-                                    </a>
-                                </div>
-                            </div>
                         </div>
 
                         <div>
@@ -168,8 +140,8 @@ export const AdminOrders: React.FC = () => {
                             </h3>
                             <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                                 <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                    <span className="block text-gray-500 text-xs uppercase">Talla</span>
-                                    <span className="font-bold text-lg">{selectedOrder.size}</span>
+                                    <span className="block text-gray-500 text-xs uppercase">Género / Talla</span>
+                                    <span className="font-bold text-lg capitalize">{selectedOrder.gender === 'male' ? 'H' : 'M'} - {selectedOrder.size}</span>
                                 </div>
                                 <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                                     <span className="block text-gray-500 text-xs uppercase">Color Base</span>
@@ -191,9 +163,6 @@ export const AdminOrders: React.FC = () => {
                                             </div>
                                             <div>
                                                 <div className="font-medium text-sm">Diseño #{idx + 1}</div>
-                                                <div className="text-xs text-gray-500">
-                                                    {layer.textureUrl.includes('supabase') ? 'Cloud Stored' : 'Local File'}
-                                                </div>
                                             </div>
                                         </div>
                                         <a 
@@ -202,7 +171,6 @@ export const AdminOrders: React.FC = () => {
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="p-2 text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-900/30 rounded-lg transition-colors"
-                                            title="Descargar Original"
                                         >
                                             <Download className="w-5 h-5" />
                                         </a>
@@ -248,6 +216,7 @@ export const AdminOrders: React.FC = () => {
             </div>
         ) : (
             <>
+                {/* Mobile View */}
                 <div className="grid grid-cols-1 gap-4 md:hidden">
                     {orders.filter(order => 
                         order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -266,20 +235,6 @@ export const AdminOrders: React.FC = () => {
                                     {order.status === 'shipped' && 'Enviado'}
                                 </span>
                             </div>
-                            <div className="space-y-1 mb-4 text-sm text-gray-600 dark:text-gray-300">
-                                <div className="flex justify-between">
-                                    <span>Fecha:</span>
-                                    <span>{formatDate(order.date)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Email:</span>
-                                    <span className="truncate max-w-[150px]">{order.email}</span>
-                                </div>
-                                <div className="flex justify-between font-bold text-gray-900 dark:text-white border-t border-gray-100 dark:border-gray-800 pt-2 mt-2">
-                                    <span>Total:</span>
-                                    <span className="text-pink-600">{formatCurrency(order.total)}</span>
-                                </div>
-                            </div>
                             <button 
                                 onClick={() => setSelectedOrder(order)}
                                 className="w-full flex items-center justify-center gap-2 text-sm font-bold text-white bg-pink-600 hover:bg-pink-700 py-2.5 rounded-lg transition-colors"
@@ -291,6 +246,7 @@ export const AdminOrders: React.FC = () => {
                     ))}
                 </div>
 
+                {/* Desktop View */}
                 <div className="hidden md:block bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
@@ -298,6 +254,7 @@ export const AdminOrders: React.FC = () => {
                                 <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 text-xs uppercase tracking-wider text-gray-500 font-semibold">
                                     <th className="p-4">ID / Fecha</th>
                                     <th className="p-4">Cliente</th>
+                                    <th className="p-4">Detalle</th>
                                     <th className="p-4">Total</th>
                                     <th className="p-4 text-center">Estado</th>
                                     <th className="p-4 text-center">Acciones</th>
@@ -312,14 +269,14 @@ export const AdminOrders: React.FC = () => {
                                     <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                                         <td className="p-4">
                                             <div className="font-mono text-sm font-bold text-pink-600">#{order.id}</div>
-                                            <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                                                <Calendar className="w-3 h-3" />
-                                                {formatDate(order.date)}
-                                            </div>
+                                            <div className="text-xs text-gray-400 mt-1">{formatDate(order.date)}</div>
                                         </td>
                                         <td className="p-4">
                                             <div className="font-medium text-gray-900 dark:text-white">{order.customerName}</div>
                                             <div className="text-sm text-gray-500">{order.email}</div>
+                                        </td>
+                                        <td className="p-4 text-sm">
+                                            {order.gender === 'male' ? 'Hombre' : 'Mujer'} / {order.size}
                                         </td>
                                         <td className="p-4 font-bold text-gray-900 dark:text-white">
                                             {formatCurrency(order.total)}
@@ -337,7 +294,7 @@ export const AdminOrders: React.FC = () => {
                                                 className="inline-flex items-center gap-1 text-sm font-bold text-pink-600 hover:text-pink-700 bg-pink-50 hover:bg-pink-100 dark:bg-pink-900/20 dark:hover:bg-pink-900/40 px-3 py-1.5 rounded-lg transition-colors"
                                             >
                                                 <Eye className="w-4 h-4" />
-                                                Ver Detalles
+                                                Ver
                                             </button>
                                         </td>
                                     </tr>

@@ -72,4 +72,10 @@ export interface InstagramPost {
   timestamp: string;
 }
 
+export interface CustomizerConstraints {
+    x: { min: number, max: number };
+    y: { min: number, max: number };
+    scale: { min: number, max: number };
+}
+
 export type ViewState = 'landing' | 'customizer' | 'checkout' | 'success' | 'admin' | 'designer' | 'gallery' | 'track-order' | 'community' | 'contact';

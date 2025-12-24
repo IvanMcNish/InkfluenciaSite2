@@ -1,8 +1,10 @@
-import React, { useRef, useState } from 'react';
-import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, ImageIcon, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Users, Loader2, Info } from 'lucide-react';
-import { TShirtConfig } from '../types';
+
+import React, { useRef, useState, useEffect } from 'react';
+import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info } from 'lucide-react';
+import { TShirtConfig, CustomizerConstraints } from '../types';
 import { Scene } from './Scene';
 import { PRICES, formatCurrency } from '../constants';
+import { getCustomizerConstraints, DEFAULT_CONSTRAINTS } from '../services/settingsService';
 
 interface CustomizerProps {
   config: TShirtConfig;
@@ -21,6 +23,19 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const [designName, setDesignName] = useState('');
   const [saveError, setSaveError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Dynamic Constraints State (Printable Area Boundaries)
+  const [constraints, setConstraints] = useState<CustomizerConstraints>(DEFAULT_CONSTRAINTS);
+  const [constraintsLoaded, setConstraintsLoaded] = useState(false);
+
+  useEffect(() => {
+      const loadConstraints = async () => {
+          const data = await getCustomizerConstraints();
+          setConstraints(data);
+          setConstraintsLoaded(true);
+      };
+      loadConstraints();
+  }, []);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, slotIndex: number) => {
     const file = e.target.files?.[0];
@@ -63,7 +78,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 const newLayer = {
                     id: `layer-${Date.now()}`,
                     textureUrl: url,
-                    position: { x: 0, y: 0.2, scale: 1.0 }
+                    position: { x: 0, y: 0.1, scale: 0.25 } // Default safe position
                 };
                 
                 if (newLayers[slotIndex]) {
@@ -96,16 +111,41 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
     setConfig(prev => ({ ...prev, color }));
   };
 
+  // Helper: Calculate valid range for center position based on image size (scale)
+  // Logic: The center cannot be closer to the edge than half the image size
+  const getDynamicBounds = (scale: number, axis: 'x' | 'y') => {
+      // We assume 'scale' roughly represents the width/diameter in UV space.
+      // Dividing by 2 gives the radius.
+      const halfSize = scale / 2;
+      
+      const min = constraints[axis].min + halfSize;
+      const max = constraints[axis].max - halfSize;
+
+      // If image is bigger than print area, clamp to center (0)
+      if (min > max) return { min: 0, max: 0 };
+      
+      return { min, max };
+  };
+
   const adjustPosition = (axis: 'x' | 'y', delta: number) => {
     setConfig(prev => {
         const newLayers = [...prev.layers];
         if (!newLayers[activeLayerIndex]) return prev;
 
+        const currentLayer = newLayers[activeLayerIndex];
+        let newValue = currentLayer.position[axis] + delta;
+        
+        // Calculate dynamic limits based on current scale
+        const { min, max } = getDynamicBounds(currentLayer.position.scale, axis);
+
+        // Clamp
+        newValue = Math.max(min, Math.min(newValue, max));
+
         newLayers[activeLayerIndex] = {
-            ...newLayers[activeLayerIndex],
+            ...currentLayer,
             position: {
-                ...newLayers[activeLayerIndex].position,
-                [axis]: newLayers[activeLayerIndex].position[axis] + delta
+                ...currentLayer.position,
+                [axis]: newValue
             }
         };
         return { ...prev, layers: newLayers };
@@ -117,11 +157,27 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         const newLayers = [...prev.layers];
         if (!newLayers[activeLayerIndex]) return prev;
 
+        const currentLayer = newLayers[activeLayerIndex];
+        let newScale = currentLayer.position.scale + delta;
+        
+        // Clamp scale to absolute limits
+        newScale = Math.max(constraints.scale.min, Math.min(newScale, constraints.scale.max));
+
+        // When scale changes, the image might grow outside the bounds.
+        // We need to re-clamp the X and Y positions with the NEW scale.
+        const xBounds = getDynamicBounds(newScale, 'x');
+        const yBounds = getDynamicBounds(newScale, 'y');
+
+        const correctedX = Math.max(xBounds.min, Math.min(currentLayer.position.x, xBounds.max));
+        const correctedY = Math.max(yBounds.min, Math.min(currentLayer.position.y, yBounds.max));
+
         newLayers[activeLayerIndex] = {
-            ...newLayers[activeLayerIndex],
+            ...currentLayer,
             position: {
-                ...newLayers[activeLayerIndex].position,
-                scale: Math.max(0.2, newLayers[activeLayerIndex].position.scale + delta)
+                ...currentLayer.position,
+                scale: newScale,
+                x: correctedX,
+                y: correctedY
             }
         };
         return { ...prev, layers: newLayers };
@@ -133,11 +189,23 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         const newLayers = [...prev.layers];
         if (!newLayers[activeLayerIndex]) return prev;
 
+        const currentLayer = newLayers[activeLayerIndex];
+        const newScale = Math.max(constraints.scale.min, Math.min(value, constraints.scale.max));
+
+        // Re-clamp positions for new scale
+        const xBounds = getDynamicBounds(newScale, 'x');
+        const yBounds = getDynamicBounds(newScale, 'y');
+
+        const correctedX = Math.max(xBounds.min, Math.min(currentLayer.position.x, xBounds.max));
+        const correctedY = Math.max(yBounds.min, Math.min(currentLayer.position.y, yBounds.max));
+
         newLayers[activeLayerIndex] = {
-            ...newLayers[activeLayerIndex],
+            ...currentLayer,
             position: {
-                ...newLayers[activeLayerIndex].position,
-                scale: value
+                ...currentLayer.position,
+                scale: newScale,
+                x: correctedX,
+                y: correctedY
             }
         };
         return { ...prev, layers: newLayers };
@@ -151,7 +219,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
 
         newLayers[activeLayerIndex] = {
             ...newLayers[activeLayerIndex],
-            position: { x: 0, y: 0.2, scale: 1.0 }
+            position: { x: 0, y: 0.1, scale: 0.25 }
         };
         return { ...prev, layers: newLayers };
     });
@@ -321,15 +389,15 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
               <div className="grid grid-cols-3 gap-1 w-28 mx-auto">
                 <div />
                 <button 
-                  onClick={() => adjustPosition('y', 0.1)}
-                  className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-pink-100 dark:hover:bg-pink-900/30 text-gray-600 dark:text-gray-300 hover:text-pink-600"
+                  onClick={() => adjustPosition('y', 0.05)}
+                  className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-pink-100 dark:hover:bg-pink-900/30 text-gray-600 dark:text-gray-300 hover:text-pink-600 active:scale-95 transition-transform"
                 >
                   <ArrowUp className="w-4 h-4 mx-auto" />
                 </button>
                 <div />
                 <button 
-                  onClick={() => adjustPosition('x', -0.1)}
-                  className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-pink-100 dark:hover:bg-pink-900/30 text-gray-600 dark:text-gray-300 hover:text-pink-600"
+                  onClick={() => adjustPosition('x', -0.05)}
+                  className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-pink-100 dark:hover:bg-pink-900/30 text-gray-600 dark:text-gray-300 hover:text-pink-600 active:scale-95 transition-transform"
                 >
                   <ArrowLeft className="w-4 h-4 mx-auto" />
                 </button>
@@ -337,15 +405,15 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                     <LayoutTemplate className="w-4 h-4 text-gray-400" />
                 </div>
                 <button 
-                  onClick={() => adjustPosition('x', 0.1)}
-                  className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-pink-100 dark:hover:bg-pink-900/30 text-gray-600 dark:text-gray-300 hover:text-pink-600"
+                  onClick={() => adjustPosition('x', 0.05)}
+                  className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-pink-100 dark:hover:bg-pink-900/30 text-gray-600 dark:text-gray-300 hover:text-pink-600 active:scale-95 transition-transform"
                 >
                   <ArrowRight className="w-4 h-4 mx-auto" />
                 </button>
                 <div />
                 <button 
-                  onClick={() => adjustPosition('y', -0.1)}
-                  className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-pink-100 dark:hover:bg-pink-900/30 text-gray-600 dark:text-gray-300 hover:text-pink-600"
+                  onClick={() => adjustPosition('y', -0.05)}
+                  className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-pink-100 dark:hover:bg-pink-900/30 text-gray-600 dark:text-gray-300 hover:text-pink-600 active:scale-95 transition-transform"
                 >
                   <ArrowDown className="w-4 h-4 mx-auto" />
                 </button>
@@ -355,27 +423,27 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
 
             <div className="space-y-2">
               <label className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2 uppercase tracking-wide">
-                <ZoomIn className="w-4 h-4" /> Tamaño
+                <ZoomIn className="w-4 h-4" /> Tamaño {constraintsLoaded && <span className="text-[10px] normal-case text-gray-300">(Mín: {constraints.scale.min.toFixed(2)}, Máx: {constraints.scale.max.toFixed(2)})</span>}
               </label>
               <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
                 <button 
-                  onClick={() => adjustScale(-0.1)}
-                  className="p-1 text-gray-500 hover:text-pink-500"
+                  onClick={() => adjustScale(-0.05)}
+                  className="p-1 text-gray-500 hover:text-pink-500 active:scale-95 transition-transform"
                 >
                   <ZoomOut className="w-4 h-4" />
                 </button>
                 <input 
                   type="range" 
-                  min="0.2" 
-                  max="2.5" 
-                  step="0.1" 
+                  min={constraints.scale.min} 
+                  max={constraints.scale.max} 
+                  step="0.01" 
                   value={activeLayer.position.scale}
                   onChange={(e) => setScaleValue(parseFloat(e.target.value))}
                   className="w-full accent-pink-500 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
                 />
                 <button 
-                  onClick={() => adjustScale(0.1)}
-                  className="p-1 text-gray-500 hover:text-pink-500"
+                  onClick={() => adjustScale(0.05)}
+                  className="p-1 text-gray-500 hover:text-pink-500 active:scale-95 transition-transform"
                 >
                   <ZoomIn className="w-4 h-4" />
                 </button>

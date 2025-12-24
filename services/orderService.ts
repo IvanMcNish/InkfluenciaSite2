@@ -22,7 +22,7 @@ export const getOrders = async (): Promise<Order[]> => {
     phone: item.phone,
     address: item.address,
     size: item.size,
-    gender: item.gender || 'male', // Fallback for old records
+    gender: item.gender || 'male',
     grammage: item.grammage,
     config: item.config,
     total: item.total,

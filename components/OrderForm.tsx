@@ -4,7 +4,7 @@ import { SIZES, PRICES, SHIPPING, formatCurrency } from '../constants';
 import { TShirtConfig, Order, InventoryItem, Gender } from '../types';
 import { submitOrder } from '../services/orderService';
 import { getInventory } from '../services/inventoryService';
-import { CheckCircle2, Loader2, AlertCircle, Weight, Truck, Phone, Tag, MapPin, User, Users } from 'lucide-react';
+import { CheckCircle2, Loader2, AlertCircle, Weight, Phone, MapPin, User } from 'lucide-react';
 
 interface OrderFormProps {
   config: TShirtConfig;
@@ -48,7 +48,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
     loadInventory();
   }, []);
 
-  // 2. Calculate Available Sizes based on Gender + Color + Grammage + Quantity
+  // 2. Calculate Available Sizes
   const availableSizes = useMemo(() => {
     if (!inventoryLoaded) return [];
 
@@ -87,7 +87,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
+  
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       setAddressParts({ ...addressParts, [e.target.name]: e.target.value });
   };
@@ -144,16 +144,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
   const displayImage = config.snapshotUrl || (config.layers.length > 0 ? config.layers[0].textureUrl : null);
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl mt-4 border border-gray-100 dark:border-gray-800 flex flex-col md:flex-row gap-8">
+    <div className="max-w-5xl mx-auto p-4 md:p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl mt-4 border border-gray-100 dark:border-gray-800 flex flex-col lg:flex-row gap-8">
       
       {/* Left Column: Summary */}
-      <div className="md:w-1/3 space-y-6">
+      <div className="lg:w-1/3 space-y-6">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <CheckCircle2 className="text-pink-500" />
           Resumen
         </h2>
 
-        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 sticky top-24">
             {displayImage ? (
             <img 
                 src={displayImage} 
@@ -200,11 +200,15 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
       </div>
 
       {/* Right Column: Form */}
-      <div className="md:w-2/3">
-          <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="lg:w-2/3">
+          <form onSubmit={handleSubmit} className="space-y-8">
             
+            {/* Step 1 */}
             <div className="space-y-4">
-                <h3 className="text-lg font-bold border-b border-gray-100 dark:border-gray-800 pb-2">1. Detalles de la Prenda</h3>
+                <h3 className="text-lg font-bold border-b border-gray-100 dark:border-gray-800 pb-2 flex items-center gap-2">
+                    <span className="bg-gray-100 dark:bg-gray-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span> 
+                    Detalles de la Prenda
+                </h3>
                 
                 {/* Gender Selector */}
                 <div>
@@ -297,8 +301,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                 </div>
             </div>
 
+            {/* Step 2 */}
             <div className="space-y-4">
-                <h3 className="text-lg font-bold border-b border-gray-100 dark:border-gray-800 pb-2 mt-8">2. Datos de Envío</h3>
+                <h3 className="text-lg font-bold border-b border-gray-100 dark:border-gray-800 pb-2 flex items-center gap-2">
+                    <span className="bg-gray-100 dark:bg-gray-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+                    Datos de Envío
+                </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-1">Nombre Completo</label>
@@ -342,9 +350,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
             {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative flex items-center gap-2 text-sm"><AlertCircle className="w-4 h-4" /><span>{error}</span></div>}
 
             <div className="flex gap-4 pt-4">
-                <button type="button" onClick={onBack} className="w-1/3 py-4 px-4 border border-gray-300 dark:border-gray-600 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Volver</button>
-                <button type="submit" disabled={loading || availableSizes.length === 0} className="w-2/3 py-4 px-4 bg-gradient-to-r from-pink-600 to-orange-500 text-white rounded-xl font-bold hover:shadow-lg hover:from-pink-500 hover:to-orange-400 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">{loading ? <Loader2 className="w-5 h-5 animate-spin" /> : availableSizes.length === 0 ? 'Sin Stock' : `Pagar ${formatCurrency(total)}`}</button>
+                <button type="button" onClick={onBack} disabled={loading} className="w-1/3 py-4 px-4 border border-gray-300 dark:border-gray-600 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">Volver</button>
+                <button 
+                    type="submit" 
+                    disabled={loading || availableSizes.length === 0} 
+                    className={`w-2/3 py-4 px-4 bg-gradient-to-r from-pink-600 to-orange-500 text-white rounded-xl font-bold hover:shadow-lg hover:from-pink-500 hover:to-orange-400 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed`}
+                >
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : availableSizes.length === 0 ? 'Sin Stock' : 'Confirmar Pedido'}
+                </button>
             </div>
+            
           </form>
       </div>
     </div>

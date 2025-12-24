@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Package, Search, Calendar, Eye, ChevronDown, Check, X, User, Phone, MapPin, Navigation, Box, Download, CreditCard } from 'lucide-react';
+import { Package, Search, Calendar, Eye, ChevronDown, Check, X, User, Phone, MapPin, Box, Download, CreditCard } from 'lucide-react';
 import { getOrders, updateOrderStatus } from '../../services/orderService';
 import { Order, OrderStatus } from '../../types';
 import { formatCurrency } from '../../constants';
@@ -54,7 +54,6 @@ export const AdminOrders: React.FC = () => {
 
   const OrderDetailModal = () => {
     if (!selectedOrder) return null;
-    const hqAddress = "Carrera 31 # 20 - 26, Bucaramanga";
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in overflow-y-auto md:overflow-hidden">
@@ -180,11 +179,13 @@ export const AdminOrders: React.FC = () => {
                         </div>
 
                         <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
-                            <h3 className="text-sm font-bold uppercase text-gray-400 mb-2 flex items-center gap-2">
+                            <h3 className="text-sm font-bold uppercase text-gray-400 mb-4 flex items-center gap-2">
                                 <CreditCard className="w-4 h-4" /> Total
                             </h3>
-                            <div className="text-3xl font-black text-gray-900 dark:text-white">
-                                {formatCurrency(selectedOrder.total)}
+                            <div className="flex justify-between items-center mb-4">
+                                <div className="text-3xl font-black text-gray-900 dark:text-white">
+                                    {formatCurrency(selectedOrder.total)}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -278,8 +279,10 @@ export const AdminOrders: React.FC = () => {
                                         <td className="p-4 text-sm">
                                             {order.gender === 'male' ? 'Hombre' : 'Mujer'} / {order.size}
                                         </td>
-                                        <td className="p-4 font-bold text-gray-900 dark:text-white">
-                                            {formatCurrency(order.total)}
+                                        <td className="p-4">
+                                            <div className="font-bold text-gray-900 dark:text-white">
+                                                {formatCurrency(order.total)}
+                                            </div>
                                         </td>
                                         <td className="p-4 text-center">
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>

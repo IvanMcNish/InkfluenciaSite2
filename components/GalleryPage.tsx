@@ -1,8 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { CollectionItem, TShirtConfig } from '../types';
 import { getCollection } from '../services/galleryService';
-import { Palette, Eye, Grid, X, ShoppingBag, Calendar, CheckCircle2, Loader2 } from 'lucide-react';
+import { Palette, Eye, Grid, X, ShoppingBag, Calendar, CheckCircle2, Loader2, Rotate3d } from 'lucide-react';
 import { formatCurrency, PRICES } from '../constants';
+import { Scene } from './Scene';
 
 interface GalleryPageProps {
   onUseDesign: (config: TShirtConfig) => void;
@@ -35,6 +37,9 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
   const DesignModal = () => {
     if (!selectedItem) return null;
 
+    // Determine initial side based on first layer to orient camera correctly
+    const initialSide = selectedItem.config.layers.length > 0 ? selectedItem.config.layers[0].side : 'front';
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
             {/* Added max-h-[90vh] and overflow-y-auto for mobile scrolling. md:overflow-hidden keeps desktop clean. */}
@@ -46,22 +51,15 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
                     <X className="w-6 h-6 text-gray-800 dark:text-gray-200" />
                 </button>
 
-                {/* Left: Image */}
-                <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-800 flex items-center justify-center p-8 relative shrink-0 min-h-[300px]">
-                    {selectedItem.config.snapshotUrl ? (
-                        <img 
-                            src={selectedItem.config.snapshotUrl} 
-                            alt={selectedItem.name} 
-                            className="w-full h-auto object-contain drop-shadow-2xl transform hover:scale-105 transition-transform duration-500 max-h-[40vh] md:max-h-full"
-                        />
-                    ) : (
-                         <div className="flex flex-col items-center text-gray-400">
-                            <Palette className="w-16 h-16 mb-2" />
-                            <span>Sin vista previa</span>
-                         </div>
-                    )}
-                    <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-black/90 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">
-                        Vista Previa
+                {/* Left: 3D Scene instead of Image */}
+                <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-800 relative shrink-0 min-h-[350px] overflow-hidden border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800">
+                     <Scene 
+                        config={selectedItem.config} 
+                        activeLayerSide={initialSide || 'front'}
+                     />
+                    <div className="absolute top-4 left-4 z-10 bg-white/80 dark:bg-black/80 backdrop-blur px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm flex items-center gap-1">
+                        <Rotate3d className="w-3 h-3" />
+                        Vista 3D Interactiva
                     </div>
                 </div>
 

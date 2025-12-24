@@ -1,7 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
-import { Grid, Search, Eye, Check, Trash2, CheckCircle2, AlertCircle, Loader2, Calendar, Layers, X } from 'lucide-react';
+import { Grid, Search, Eye, Check, Trash2, CheckCircle2, AlertCircle, Loader2, Calendar, Layers, X, Rotate3d } from 'lucide-react';
 import { getAdminCollection, deleteDesignFromCollection, approveDesign } from '../../services/galleryService';
 import { CollectionItem } from '../../types';
+import { Scene } from '../Scene';
 
 export const AdminGallery: React.FC = () => {
   const [galleryItems, setGalleryItems] = useState<CollectionItem[]>([]);
@@ -91,18 +93,34 @@ export const AdminGallery: React.FC = () => {
 
   const GalleryPreviewModal = () => {
       if (!previewDesign) return null;
+      
+      // Determine initial side based on first layer to orient camera correctly
+      const initialSide = previewDesign.config.layers.length > 0 ? previewDesign.config.layers[0].side : 'front';
+
       return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in overflow-y-auto">
             <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl shadow-2xl p-0 overflow-hidden border border-gray-200 dark:border-gray-800 relative">
                 <button onClick={() => setPreviewDesign(null)} className="absolute top-4 right-4 z-10 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors backdrop-blur-md"><X className="w-5 h-5" /></button>
-                <div className="bg-gray-100 dark:bg-gray-800 aspect-square flex items-center justify-center relative">
-                    {previewDesign.config.snapshotUrl ? (
-                        <img src={previewDesign.config.snapshotUrl} alt={previewDesign.name} className="w-full h-full object-cover" />
-                    ) : <div className="text-gray-400 text-sm">Sin vista previa</div>}
+                
+                {/* 3D Scene Viewport */}
+                <div className="bg-gray-100 dark:bg-gray-800 aspect-square relative overflow-hidden border-b border-gray-200 dark:border-gray-700">
+                     <Scene 
+                        config={previewDesign.config} 
+                        activeLayerSide={initialSide || 'front'}
+                     />
+                     
+                     <div className="absolute top-4 left-4 z-10 bg-white/80 dark:bg-black/80 backdrop-blur px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm flex items-center gap-1">
+                        <Rotate3d className="w-3 h-3" />
+                        Vista 3D Interactiva
+                     </div>
+
                     {!previewDesign.approved && (
-                        <div className="absolute top-4 left-4 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold uppercase shadow-sm">Pendiente de Aprobación</div>
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold uppercase shadow-lg">
+                            Pendiente de Aprobación
+                        </div>
                     )}
                 </div>
+
                 <div className="p-6">
                     <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{previewDesign.name}</h3>
                     <div className="flex gap-4 text-sm text-gray-500 mb-6">

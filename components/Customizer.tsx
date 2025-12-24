@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info } from 'lucide-react';
+import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt } from 'lucide-react';
 import { TShirtConfig, CustomizerConstraints } from '../types';
 import { Scene } from './Scene';
 import { PRICES, formatCurrency } from '../constants';
@@ -78,7 +78,8 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 const newLayer = {
                     id: `layer-${Date.now()}`,
                     textureUrl: url,
-                    position: { x: 0, y: 0.1, scale: 0.25 } // Default safe position
+                    side: 'front' as const, // Default side
+                    position: { x: 0, y: 0.1, scale: 0.25 }
                 };
                 
                 if (newLayers[slotIndex]) {
@@ -111,17 +112,28 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
     setConfig(prev => ({ ...prev, color }));
   };
 
+  // Toggle between Front and Back for the active layer
+  const toggleLayerSide = () => {
+      setConfig(prev => {
+          const newLayers = [...prev.layers];
+          if (!newLayers[activeLayerIndex]) return prev;
+
+          const currentSide = newLayers[activeLayerIndex].side || 'front';
+          newLayers[activeLayerIndex] = {
+              ...newLayers[activeLayerIndex],
+              side: currentSide === 'front' ? 'back' : 'front'
+          };
+          return { ...prev, layers: newLayers };
+      });
+  };
+
   // Helper: Calculate valid range for center position based on image size (scale)
-  // Logic: The center cannot be closer to the edge than half the image size
   const getDynamicBounds = (scale: number, axis: 'x' | 'y') => {
-      // We assume 'scale' roughly represents the width/diameter in UV space.
-      // Dividing by 2 gives the radius.
       const halfSize = scale / 2;
       
       const min = constraints[axis].min + halfSize;
       const max = constraints[axis].max - halfSize;
 
-      // If image is bigger than print area, clamp to center (0)
       if (min > max) return { min: 0, max: 0 };
       
       return { min, max };
@@ -280,7 +292,11 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
       
       {/* 3D Scene Area */}
       <div className="w-full sm:w-1/2 lg:w-auto lg:col-span-2 h-[35vh] sm:h-full lg:h-full min-h-[250px] border-2 lg:border-4 border-white dark:border-gray-800 rounded-2xl shadow-lg lg:shadow-2xl overflow-hidden relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 shrink-0">
-        <Scene config={config} captureRef={captureRef} />
+        <Scene 
+            config={config} 
+            captureRef={captureRef} 
+            activeLayerSide={activeLayer?.side || 'front'} 
+        />
       </div>
 
       {/* Controls Panel */}
@@ -362,6 +378,26 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                     )}
                 </div>
             </div>
+            
+            {/* Front/Back Toggle Button - Added here */}
+            {activeLayer && (
+                <div className="mt-2">
+                     <button
+                        onClick={toggleLayerSide}
+                        className="w-full flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-pink-500 dark:hover:border-pink-500 transition-colors group"
+                     >
+                        <div className="flex items-center gap-2">
+                            <Shirt className="w-4 h-4 text-gray-500 group-hover:text-pink-500 transition-colors" />
+                            <span className="text-xs font-bold uppercase text-gray-600 dark:text-gray-300">Ubicación:</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded transition-all ${activeLayer.side === 'front' || !activeLayer.side ? 'bg-pink-500 text-white' : 'text-gray-400'}`}>Frente</span>
+                            <RefreshCw className="w-3 h-3 text-gray-400" />
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded transition-all ${activeLayer.side === 'back' ? 'bg-pink-500 text-white' : 'text-gray-400'}`}>Espalda</span>
+                        </div>
+                     </button>
+                </div>
+            )}
             
             {config.layers.length > 0 && !activeLayer && (
                 <div className="text-xs text-center text-gray-400 italic">

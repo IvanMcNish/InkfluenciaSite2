@@ -1,3 +1,4 @@
+
 import React, { useMemo, Suspense, useEffect, useRef } from 'react';
 import { Canvas, useLoader, useThree } from '@react-three/fiber';
 import { OrbitControls, Decal, Environment, Center, useTexture, Html, useProgress } from '@react-three/drei';
@@ -7,7 +8,6 @@ import { TSHIRT_OBJ_URL } from '../constants';
 import { TShirtConfig as ConfigType, Position } from '../types';
 
 // Add type definitions for R3F elements to satisfy TypeScript
-// We augment both global JSX and React.JSX to handle different TypeScript/React version configurations
 declare global {
   namespace JSX {
     interface IntrinsicElements {
@@ -35,6 +35,7 @@ declare module 'react' {
 interface SceneProps {
   config: ConfigType;
   captureRef?: React.MutableRefObject<(() => string) | null>;
+  activeLayerSide?: 'front' | 'back'; // New Prop to control camera
 }
 
 function Loader() {
@@ -98,7 +99,6 @@ const SnapshotHandler = ({
         try {
             const screenshotCanvas = document.createElement('canvas');
             // Reduce resolution for snapshots to save memory/storage
-            // 500px is enough for gallery cards
             const targetWidth = 500; 
             const aspect = gl.domElement.width / gl.domElement.height;
             const targetHeight = targetWidth / aspect;
@@ -145,7 +145,7 @@ const SnapshotHandler = ({
 };
 
 // Separate component for the decal
-const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: number }> = ({ textureUrl, position, zPos }) => {
+const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: number; side: 'front' | 'back' }> = ({ textureUrl, position, zPos, side }) => {
   const texture = useTexture(textureUrl);
   
   useEffect(() => {
@@ -166,11 +166,19 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
   } else {
     scaleX = position.scale * ratio;
   }
+
+  // Back side Logic
+  // 1. Z Position is negative (passed as prop if backend logic calculates it, or we simply negate it here if we assume symmetric thickness, but passing distinct Z is safer)
+  // 2. Rotation: 180 deg around Y to face "backwards"
+  // 3. X Position: Invert X so that "Right" controls move the decal to the "Right" of the screen when looking at the back
+  const finalZ = side === 'back' ? -zPos : zPos;
+  const rotation: [number, number, number] = side === 'back' ? [0, Math.PI, 0] : [0, 0, 0];
+  const finalX = side === 'back' ? -position.x : position.x;
   
   return (
     <Decal 
-      position={[position.x, position.y, zPos]} 
-      rotation={[0, 0, 0]} 
+      position={[finalX, position.y, finalZ]} 
+      rotation={rotation} 
       scale={[scaleX, scaleY, 2]} // Deep Z projection to avoid clipping
       debug={false}
     >
@@ -189,7 +197,7 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
 const TShirtMesh: React.FC<{ config: ConfigType }> = ({ config }) => {
   const obj = useLoader(OBJLoader, TSHIRT_OBJ_URL);
   
-  const { geometry, zFront } = useMemo(() => {
+  const { geometry, zFront, zBack } = useMemo(() => {
     let foundGeom: THREE.BufferGeometry | null = null;
     obj.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && !foundGeom) {
@@ -197,7 +205,7 @@ const TShirtMesh: React.FC<{ config: ConfigType }> = ({ config }) => {
       }
     });
 
-    if (!foundGeom) return { geometry: null, zFront: 0 };
+    if (!foundGeom) return { geometry: null, zFront: 0, zBack: 0 };
 
     const geo = foundGeom.clone();
     geo.center(); 
@@ -211,8 +219,10 @@ const TShirtMesh: React.FC<{ config: ConfigType }> = ({ config }) => {
     
     geo.computeBoundingBox();
     const zFront = geo.boundingBox!.max.z;
+    // We use the absolute value of min Z to handle the depth for the back projection similarly
+    const zBack = Math.abs(geo.boundingBox!.min.z);
 
-    return { geometry: geo, zFront };
+    return { geometry: geo, zFront, zBack };
   }, [obj]);
 
   if (!geometry) return null;
@@ -231,16 +241,31 @@ const TShirtMesh: React.FC<{ config: ConfigType }> = ({ config }) => {
             key={layer.id} 
             textureUrl={layer.textureUrl} 
             position={layer.position} 
-            // Add a tiny Z offset based on index to handle overlapping properly
-            zPos={zFront + (index * 0.001)}
+            side={layer.side || 'front'} // Default to front if legacy
+            // Use zFront for Front, zBack for Back. 
+            // Add a tiny index offset to Z to handle overlapping layers on the same side
+            zPos={(layer.side === 'back' ? zBack : zFront) + (index * 0.001)}
         />
       ))}
     </mesh>
   );
 };
 
-export const Scene: React.FC<SceneProps> = ({ config, captureRef }) => {
+export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front' }) => {
   const controlsRef = useRef<any>(null);
+
+  // Auto-Rotate Camera based on active layer side
+  useEffect(() => {
+    if (controlsRef.current) {
+        // Front: Azimuth 0, Back: Azimuth PI
+        const targetAzimuth = activeLayerSide === 'front' ? 0 : Math.PI;
+        
+        // Smoothly move camera
+        // We set both min and max to force the angle, then reset them to allow movement
+        controlsRef.current.setAzimuthalAngle(targetAzimuth);
+        controlsRef.current.update();
+    }
+  }, [activeLayerSide]);
 
   return (
     // Changed min-h-[400px] to min-h-[250px] md:min-h-[400px] for better mobile adaptability in modals
@@ -257,6 +282,8 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef }) => {
         <ambientLight intensity={0.5} />
         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} shadow-mapSize={2048} castShadow />
         <spotLight position={[-10, 5, 10]} intensity={0.5} />
+        {/* Back Light to illuminate the back of the shirt */}
+        <spotLight position={[0, 5, -10]} intensity={0.5} />
         
         {captureRef && <SnapshotHandler captureRef={captureRef} controlsRef={controlsRef} />}
 

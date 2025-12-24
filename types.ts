@@ -9,6 +9,7 @@ export interface DesignLayer {
   id: string;
   textureUrl: string;
   position: Position;
+  side: 'front' | 'back'; // New property
 }
 
 export interface TShirtConfig {

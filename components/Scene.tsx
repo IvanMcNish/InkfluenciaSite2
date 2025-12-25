@@ -1,11 +1,14 @@
 
 import React, { useMemo, Suspense, useEffect, useRef } from 'react';
 import { Canvas, useLoader, useThree } from '@react-three/fiber';
-import { OrbitControls, Decal, Environment, Center, useTexture, Html, useProgress } from '@react-three/drei';
+import { OrbitControls, Decal, Environment, Center, useTexture, Html, useProgress, Text, Line } from '@react-three/drei';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import * as THREE from 'three';
 import { TSHIRT_OBJ_URL } from '../constants';
 import { TShirtConfig as ConfigType, Position } from '../types';
+
+// Conversion factor: 1 Three.js unit ~= 50 cm of physical width
+const UNIT_TO_CM = 50;
 
 // Add type definitions for R3F elements to satisfy TypeScript
 declare global {
@@ -16,6 +19,7 @@ declare global {
       meshBasicMaterial: any;
       ambientLight: any;
       spotLight: any;
+      group: any;
     }
   }
 }
@@ -28,6 +32,7 @@ declare module 'react' {
       meshBasicMaterial: any;
       ambientLight: any;
       spotLight: any;
+      group: any;
     }
   }
 }
@@ -37,6 +42,7 @@ interface SceneProps {
   captureRef?: React.MutableRefObject<(() => string) | null>;
   activeLayerSide?: 'front' | 'back'; // New Prop to control camera
   lockView?: boolean; // Prop to disable interaction and lock view
+  showMeasurements?: boolean; // Toggle measurement guides
 }
 
 function Loader() {
@@ -145,8 +151,43 @@ const SnapshotHandler = ({
   return null;
 };
 
+// Component to draw measurement lines
+const MeasurementGuides: React.FC<{ width: number; height: number; position: [number, number, number]; rotation: [number, number, number] }> = ({ width, height, position, rotation }) => {
+    const widthCm = Math.round(width * UNIT_TO_CM);
+    const heightCm = Math.round(height * UNIT_TO_CM);
+    
+    // Slight offset from the image edge
+    const margin = 0.05;
+    const lineProps = { color: "#ec4899", lineWidth: 1 };
+    const textProps = { fontSize: 0.06, color: "#ec4899", anchorX: 'center' as const, anchorY: 'middle' as const, outlineWidth: 0.01, outlineColor: "#ffffff" };
+
+    return (
+        <group position={position} rotation={rotation}>
+             {/* Horizontal Line (Bottom) */}
+            <group position={[0, -height/2 - margin, 0]}>
+                <Line points={[[-width/2, 0, 0], [width/2, 0, 0]]} {...lineProps} />
+                <Line points={[[-width/2, 0.02, 0], [-width/2, -0.02, 0]]} {...lineProps} /> {/* Left tick */}
+                <Line points={[[width/2, 0.02, 0], [width/2, -0.02, 0]]} {...lineProps} /> {/* Right tick */}
+                <Text position={[0, -0.08, 0]} {...textProps}>
+                    {widthCm} cm
+                </Text>
+            </group>
+
+            {/* Vertical Line (Right) */}
+            <group position={[width/2 + margin, 0, 0]}>
+                <Line points={[[0, -height/2, 0], [0, height/2, 0]]} {...lineProps} />
+                <Line points={[[-0.02, -height/2, 0], [0.02, -height/2, 0]]} {...lineProps} /> {/* Bottom tick */}
+                <Line points={[[-0.02, height/2, 0], [0.02, height/2, 0]]} {...lineProps} /> {/* Top tick */}
+                <Text position={[0.08, 0, 0]} rotation={[0, 0, -Math.PI / 2]} {...textProps}>
+                    {heightCm} cm
+                </Text>
+            </group>
+        </group>
+    );
+};
+
 // Separate component for the decal
-const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: number; side: 'front' | 'back' }> = ({ textureUrl, position, zPos, side }) => {
+const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: number; side: 'front' | 'back'; showMeasurements?: boolean }> = ({ textureUrl, position, zPos, side, showMeasurements }) => {
   const texture = useTexture(textureUrl);
   
   useEffect(() => {
@@ -174,25 +215,35 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
   const finalX = side === 'back' ? -position.x : position.x;
   
   return (
-    <Decal 
-      position={[finalX, position.y, finalZ]} 
-      rotation={rotation} 
-      scale={[scaleX, scaleY, 2]} // Deep Z projection to avoid clipping
-      debug={false}
-    >
-      <meshBasicMaterial 
-        map={texture} 
-        transparent 
-        polygonOffset 
-        polygonOffsetFactor={-4}
-        depthTest={true}
-        depthWrite={false}
-      />
-    </Decal>
+    <>
+        <Decal 
+        position={[finalX, position.y, finalZ]} 
+        rotation={rotation} 
+        scale={[scaleX, scaleY, 2]} // Deep Z projection to avoid clipping
+        debug={false}
+        >
+        <meshBasicMaterial 
+            map={texture} 
+            transparent 
+            polygonOffset 
+            polygonOffsetFactor={-4}
+            depthTest={true}
+            depthWrite={false}
+        />
+        </Decal>
+        {showMeasurements && (
+            <MeasurementGuides 
+                width={scaleX} 
+                height={scaleY} 
+                position={[finalX, position.y, finalZ + 0.1]} // Float slightly above decal
+                rotation={rotation}
+            />
+        )}
+    </>
   );
 };
 
-const TShirtMesh: React.FC<{ config: ConfigType }> = ({ config }) => {
+const TShirtMesh: React.FC<{ config: ConfigType; showMeasurements?: boolean }> = ({ config, showMeasurements }) => {
   const obj = useLoader(OBJLoader, TSHIRT_OBJ_URL);
   
   const { geometry, zFront, zBack } = useMemo(() => {
@@ -243,13 +294,14 @@ const TShirtMesh: React.FC<{ config: ConfigType }> = ({ config }) => {
             // Use zFront for Front, zBack for Back. 
             // Add a tiny index offset to Z to handle overlapping layers on the same side
             zPos={(layer.side === 'back' ? zBack : zFront) + (index * 0.001)}
+            showMeasurements={showMeasurements}
         />
       ))}
     </mesh>
   );
 };
 
-export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front', lockView = false }) => {
+export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front', lockView = false, showMeasurements = false }) => {
   const controlsRef = useRef<any>(null);
 
   // Initial camera position depends on which side we want to show first.
@@ -289,7 +341,7 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
 
         <Suspense fallback={<Loader />}>
             <Center>
-                <TShirtMesh config={config} />
+                <TShirtMesh config={config} showMeasurements={showMeasurements} />
             </Center>
             <Environment preset="city" />
         </Suspense>

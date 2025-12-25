@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt } from 'lucide-react';
+import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt, Ruler } from 'lucide-react';
 import { TShirtConfig, CustomizerConstraints } from '../types';
 import { Scene } from './Scene';
 import { PRICES, formatCurrency } from '../constants';
@@ -23,6 +23,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const [designName, setDesignName] = useState('');
   const [saveError, setSaveError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showGuides, setShowGuides] = useState(true);
   
   // Dynamic Constraints State (Printable Area Boundaries)
   const [constraints, setConstraints] = useState<CustomizerConstraints>(DEFAULT_CONSTRAINTS);
@@ -240,8 +241,13 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const handleAction = async () => {
     setIsProcessing(true);
     setSaveError('');
-
-    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    // Temporarily hide guides for the snapshot
+    const wasShowingGuides = showGuides;
+    if (wasShowingGuides) setShowGuides(false);
+    
+    // Allow React to re-render the scene without guides before capturing
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
         let snapshot = '';
@@ -252,6 +258,9 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 console.error("Failed to capture snapshot:", e);
             }
         }
+        
+        // Restore guides state
+        if (wasShowingGuides) setShowGuides(true);
 
         const configWithSnapshot = { ...config, snapshotUrl: snapshot };
         setConfig(configWithSnapshot);
@@ -280,6 +289,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
     } catch (error) {
         console.error("Error processing action:", error);
         setSaveError("Ocurrió un error inesperado.");
+        if (wasShowingGuides) setShowGuides(true);
     } finally {
         setIsProcessing(false);
     }
@@ -291,12 +301,22 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
     <div className="flex flex-col sm:flex-row lg:grid lg:grid-cols-3 gap-4 lg:gap-8 p-4 lg:p-6 max-w-7xl mx-auto h-[calc(100vh-65px)] lg:h-[calc(100vh-80px)]">
       
       {/* 3D Scene Area */}
-      <div className="w-full sm:w-1/2 lg:w-auto lg:col-span-2 h-[35vh] sm:h-full lg:h-full min-h-[250px] border-2 lg:border-4 border-white dark:border-gray-800 rounded-2xl shadow-lg lg:shadow-2xl overflow-hidden relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 shrink-0">
+      <div className="w-full sm:w-1/2 lg:w-auto lg:col-span-2 h-[35vh] sm:h-full lg:h-full min-h-[250px] border-2 lg:border-4 border-white dark:border-gray-800 rounded-2xl shadow-lg lg:shadow-2xl overflow-hidden relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 shrink-0 group">
         <Scene 
             config={config} 
             captureRef={captureRef} 
             activeLayerSide={activeLayer?.side || 'front'} 
+            showMeasurements={showGuides}
         />
+        
+        {/* Toggle Guides Button - Floating */}
+        <button
+            onClick={() => setShowGuides(!showGuides)}
+            className={`absolute top-4 right-4 p-2.5 rounded-full shadow-lg transition-all z-10 ${showGuides ? 'bg-pink-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-400 hover:text-pink-500'}`}
+            title="Mostrar/Ocultar Medidas"
+        >
+            <Ruler className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Controls Panel */}
@@ -325,9 +345,11 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
 
         {/* Upload Image Layers */}
         <div className="space-y-2 lg:space-y-3">
-            <label className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-2">
-                <Layers className="w-4 h-4" /> Capas (Máx 2)
-            </label>
+            <div className="flex justify-between items-center">
+                <label className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-2">
+                    <Layers className="w-4 h-4" /> Capas (Máx 2)
+                </label>
+            </div>
             
             <div className="grid grid-cols-2 gap-3">
                 {/* Slot 1 */}
@@ -379,7 +401,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 </div>
             </div>
             
-            {/* Front/Back Toggle Button - Added here */}
+            {/* Front/Back Toggle Button */}
             {activeLayer && (
                 <div className="mt-2">
                      <button

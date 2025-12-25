@@ -25,7 +25,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const [isProcessing, setIsProcessing] = useState(false);
   const [showGuides, setShowGuides] = useState(true);
   
-  // Dynamic Constraints State (Printable Area Boundaries)
   const [constraints, setConstraints] = useState<CustomizerConstraints>(DEFAULT_CONSTRAINTS);
   const [constraintsLoaded, setConstraintsLoaded] = useState(false);
 
@@ -79,7 +78,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 const newLayer = {
                     id: `layer-${Date.now()}`,
                     textureUrl: url,
-                    side: 'front' as const, // Default side
+                    side: 'front' as const, 
                     position: { x: 0, y: 0.1, scale: 0.25 }
                 };
                 
@@ -113,7 +112,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
     setConfig(prev => ({ ...prev, color }));
   };
 
-  // Toggle between Front and Back for the active layer
   const toggleLayerSide = () => {
       setConfig(prev => {
           const newLayers = [...prev.layers];
@@ -128,15 +126,11 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
       });
   };
 
-  // Helper: Calculate valid range for center position based on image size (scale)
   const getDynamicBounds = (scale: number, axis: 'x' | 'y') => {
       const halfSize = scale / 2;
-      
       const min = constraints[axis].min + halfSize;
       const max = constraints[axis].max - halfSize;
-
       if (min > max) return { min: 0, max: 0 };
-      
       return { min, max };
   };
 
@@ -147,11 +141,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
 
         const currentLayer = newLayers[activeLayerIndex];
         let newValue = currentLayer.position[axis] + delta;
-        
-        // Calculate dynamic limits based on current scale
         const { min, max } = getDynamicBounds(currentLayer.position.scale, axis);
-
-        // Clamp
         newValue = Math.max(min, Math.min(newValue, max));
 
         newLayers[activeLayerIndex] = {
@@ -172,12 +162,8 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
 
         const currentLayer = newLayers[activeLayerIndex];
         let newScale = currentLayer.position.scale + delta;
-        
-        // Clamp scale to absolute limits
         newScale = Math.max(constraints.scale.min, Math.min(newScale, constraints.scale.max));
 
-        // When scale changes, the image might grow outside the bounds.
-        // We need to re-clamp the X and Y positions with the NEW scale.
         const xBounds = getDynamicBounds(newScale, 'x');
         const yBounds = getDynamicBounds(newScale, 'y');
 
@@ -205,7 +191,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         const currentLayer = newLayers[activeLayerIndex];
         const newScale = Math.max(constraints.scale.min, Math.min(value, constraints.scale.max));
 
-        // Re-clamp positions for new scale
         const xBounds = getDynamicBounds(newScale, 'x');
         const yBounds = getDynamicBounds(newScale, 'y');
 
@@ -242,11 +227,9 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
     setIsProcessing(true);
     setSaveError('');
     
-    // Temporarily hide guides for the snapshot
     const wasShowingGuides = showGuides;
     if (wasShowingGuides) setShowGuides(false);
     
-    // Allow React to re-render the scene without guides before capturing
     await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
@@ -259,7 +242,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
             }
         }
         
-        // Restore guides state
         if (wasShowingGuides) setShowGuides(true);
 
         const configWithSnapshot = { ...config, snapshotUrl: snapshot };
@@ -300,7 +282,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   return (
     <div className="flex flex-col sm:flex-row lg:grid lg:grid-cols-3 gap-4 lg:gap-8 p-4 lg:p-6 max-w-7xl mx-auto h-[calc(100vh-65px)] lg:h-[calc(100vh-80px)]">
       
-      {/* 3D Scene Area */}
       <div className="w-full sm:w-1/2 lg:w-auto lg:col-span-2 h-[35vh] sm:h-full lg:h-full min-h-[250px] border-2 lg:border-4 border-white dark:border-gray-800 rounded-2xl shadow-lg lg:shadow-2xl overflow-hidden relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 shrink-0 group">
         <Scene 
             config={config} 
@@ -309,7 +290,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
             showMeasurements={showGuides}
         />
         
-        {/* Toggle Guides Button - Floating */}
         <button
             onClick={() => setShowGuides(!showGuides)}
             className={`absolute top-4 right-4 p-2.5 rounded-full shadow-lg transition-all z-10 ${showGuides ? 'bg-pink-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-400 hover:text-pink-500'}`}
@@ -319,10 +299,8 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         </button>
       </div>
 
-      {/* Controls Panel */}
       <div className="w-full sm:w-1/2 lg:w-auto bg-white dark:bg-gray-900 p-4 lg:p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 flex flex-col gap-4 lg:gap-6 overflow-y-auto flex-1">
         
-        {/* Header with Title and Color Picker */}
         <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
             <div className="flex items-center gap-2">
                 <div className={`h-6 lg:h-8 w-1 bg-gradient-to-b rounded-full ${isDesignerMode ? 'from-purple-500 to-indigo-500' : 'from-pink-500 to-orange-500'}`}></div>
@@ -343,7 +321,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
             </div>
         </div>
 
-        {/* Upload Image Layers */}
         <div className="space-y-2 lg:space-y-3">
             <div className="flex justify-between items-center">
                 <label className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-2">
@@ -352,7 +329,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
             </div>
             
             <div className="grid grid-cols-2 gap-3">
-                {/* Slot 1 */}
                 <div 
                     className={`border-2 rounded-xl p-2 relative transition-all cursor-pointer ${activeLayerIndex === 0 && config.layers[0] ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20' : 'border-gray-200 dark:border-gray-700'}`}
                     onClick={() => config.layers[0] && setActiveLayerIndex(0)}
@@ -374,7 +350,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                     )}
                 </div>
 
-                {/* Slot 2 */}
                 <div 
                     className={`border-2 rounded-xl p-2 relative transition-all cursor-pointer ${activeLayerIndex === 1 && config.layers[1] ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20' : 'border-gray-200 dark:border-gray-700'}`}
                     onClick={() => config.layers[1] && setActiveLayerIndex(1)}
@@ -401,7 +376,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 </div>
             </div>
             
-            {/* Front/Back Toggle Button */}
             {activeLayer && (
                 <div className="mt-2">
                      <button
@@ -428,7 +402,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
             )}
         </div>
 
-        {/* Adjustments */}
         {activeLayer && (
           <div className="space-y-4 lg:space-y-6 animate-fade-in border-t border-gray-100 dark:border-gray-800 pt-2 lg:pt-4">
             <div className="space-y-2">
@@ -510,7 +483,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
           </div>
         )}
 
-        {/* Footer Actions */}
         <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
           {isDesignerMode ? (
             <div className="space-y-3">

@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { TSHIRT_OBJ_URL } from '../constants';
 import { TShirtConfig as ConfigType, Position } from '../types';
 
-// Conversion factor: 1 Three.js unit ~= 50 cm of physical width
+// Conversion factor: 1 Three.js unit ~= 50 cm of physical width (Approximation for T-shirt scaling)
 const UNIT_TO_CM = 50;
 
 // Add type definitions for R3F elements to satisfy TypeScript
@@ -24,25 +24,12 @@ declare global {
   }
 }
 
-declare module 'react' {
-  namespace JSX {
-    interface IntrinsicElements {
-      mesh: any;
-      meshStandardMaterial: any;
-      meshBasicMaterial: any;
-      ambientLight: any;
-      spotLight: any;
-      group: any;
-    }
-  }
-}
-
 interface SceneProps {
   config: ConfigType;
   captureRef?: React.MutableRefObject<(() => string) | null>;
-  activeLayerSide?: 'front' | 'back'; // New Prop to control camera
-  lockView?: boolean; // Prop to disable interaction and lock view
-  showMeasurements?: boolean; // Toggle measurement guides
+  activeLayerSide?: 'front' | 'back'; 
+  lockView?: boolean; 
+  showMeasurements?: boolean; // New prop for toggling rulers
 }
 
 function Loader() {
@@ -50,7 +37,6 @@ function Loader() {
   return <Html center><div className="text-gray-500 font-mono text-sm">{progress.toFixed(0)}%</div></Html>;
 }
 
-// Component to handle canvas snapshot and context cleanup
 const SnapshotHandler = ({ 
   captureRef, 
   controlsRef 
@@ -61,7 +47,6 @@ const SnapshotHandler = ({
   const { gl, scene, camera } = useThree();
 
   useEffect(() => {
-    // Context Lost Handling
     const handleContextLost = (event: Event) => {
         event.preventDefault();
         console.warn('WebGL Context Lost');
@@ -91,21 +76,15 @@ const SnapshotHandler = ({
             return "";
         }
 
-        // Reset controls to initial position (Front view)
         if (controlsRef.current) {
           controlsRef.current.reset();
         }
         
-        // Ensure camera matrix is updated
         camera.updateMatrixWorld();
-        
-        // Force a render to ensure the scene is ready for capture
         gl.render(scene, camera);
 
-        // Optimize: Create a smaller canvas for the snapshot to avoid huge Base64 strings
         try {
             const screenshotCanvas = document.createElement('canvas');
-            // Reduce resolution for snapshots to save memory/storage
             const targetWidth = 500; 
             const aspect = gl.domElement.width / gl.domElement.height;
             const targetHeight = targetWidth / aspect;
@@ -116,23 +95,19 @@ const SnapshotHandler = ({
             const ctx = screenshotCanvas.getContext('2d');
             if (ctx) {
                 ctx.drawImage(gl.domElement, 0, 0, targetWidth, targetHeight);
-                // Use WebP with moderate compression for thumbnails
                 return screenshotCanvas.toDataURL('image/webp', 0.7);
             }
         } catch (e) {
             console.warn("Snapshot optimization failed", e);
         }
 
-        // Fallback
         return gl.domElement.toDataURL('image/jpeg', 0.5);
       };
     }
   }, [gl, scene, camera, captureRef, controlsRef]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      // Force cleanup of textures and geometries when component unmounts
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {
           if (object.geometry) object.geometry.dispose();
@@ -156,29 +131,53 @@ const MeasurementGuides: React.FC<{ width: number; height: number; position: [nu
     const widthCm = Math.round(width * UNIT_TO_CM);
     const heightCm = Math.round(height * UNIT_TO_CM);
     
-    // Slight offset from the image edge
-    const margin = 0.05;
-    const lineProps = { color: "#ec4899", lineWidth: 1 };
-    const textProps = { fontSize: 0.06, color: "#ec4899", anchorX: 'center' as const, anchorY: 'middle' as const, outlineWidth: 0.01, outlineColor: "#ffffff" };
-
+    // Offset for the lines so they don't touch the image
+    const margin = 0.04;
+    
+    // Bright pink color for visibility
+    const color = "#ec4899"; 
+    
     return (
         <group position={position} rotation={rotation}>
              {/* Horizontal Line (Bottom) */}
             <group position={[0, -height/2 - margin, 0]}>
-                <Line points={[[-width/2, 0, 0], [width/2, 0, 0]]} {...lineProps} />
-                <Line points={[[-width/2, 0.02, 0], [-width/2, -0.02, 0]]} {...lineProps} /> {/* Left tick */}
-                <Line points={[[width/2, 0.02, 0], [width/2, -0.02, 0]]} {...lineProps} /> {/* Right tick */}
-                <Text position={[0, -0.08, 0]} {...textProps}>
+                {/* Main horizontal line */}
+                <Line points={[[-width/2, 0, 0], [width/2, 0, 0]]} color={color} lineWidth={1.5} />
+                {/* Ticks */}
+                <Line points={[[-width/2, 0.02, 0], [-width/2, -0.02, 0]]} color={color} lineWidth={1.5} />
+                <Line points={[[width/2, 0.02, 0], [width/2, -0.02, 0]]} color={color} lineWidth={1.5} />
+                {/* Text Label */}
+                <Text 
+                    position={[0, -0.08, 0]} 
+                    fontSize={0.07} 
+                    color={color} 
+                    anchorX="center" 
+                    anchorY="middle"
+                    outlineWidth={0.005}
+                    outlineColor="#ffffff"
+                >
                     {widthCm} cm
                 </Text>
             </group>
 
-            {/* Vertical Line (Right) */}
+            {/* Vertical Line (Right side) */}
             <group position={[width/2 + margin, 0, 0]}>
-                <Line points={[[0, -height/2, 0], [0, height/2, 0]]} {...lineProps} />
-                <Line points={[[-0.02, -height/2, 0], [0.02, -height/2, 0]]} {...lineProps} /> {/* Bottom tick */}
-                <Line points={[[-0.02, height/2, 0], [0.02, height/2, 0]]} {...lineProps} /> {/* Top tick */}
-                <Text position={[0.08, 0, 0]} rotation={[0, 0, -Math.PI / 2]} {...textProps}>
+                {/* Main vertical line */}
+                <Line points={[[0, -height/2, 0], [0, height/2, 0]]} color={color} lineWidth={1.5} />
+                {/* Ticks */}
+                <Line points={[[-0.02, -height/2, 0], [0.02, -height/2, 0]]} color={color} lineWidth={1.5} /> 
+                <Line points={[[-0.02, height/2, 0], [0.02, height/2, 0]]} color={color} lineWidth={1.5} />
+                {/* Text Label (Rotated) */}
+                <Text 
+                    position={[0.08, 0, 0]} 
+                    rotation={[0, 0, -Math.PI / 2]} 
+                    fontSize={0.07} 
+                    color={color} 
+                    anchorX="center" 
+                    anchorY="middle"
+                    outlineWidth={0.005}
+                    outlineColor="#ffffff"
+                >
                     {heightCm} cm
                 </Text>
             </group>
@@ -186,7 +185,6 @@ const MeasurementGuides: React.FC<{ width: number; height: number; position: [nu
     );
 };
 
-// Separate component for the decal
 const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: number; side: 'front' | 'back'; showMeasurements?: boolean }> = ({ textureUrl, position, zPos, side, showMeasurements }) => {
   const texture = useTexture(textureUrl);
   
@@ -196,7 +194,6 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
     };
   }, [texture]);
   
-  // Cast to any or HTMLImageElement
   const img = texture.image as HTMLImageElement;
   const ratio = img ? img.width / img.height : 1;
   
@@ -209,7 +206,6 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
     scaleX = position.scale * ratio;
   }
 
-  // Back side Logic
   const finalZ = side === 'back' ? -zPos : zPos;
   const rotation: [number, number, number] = side === 'back' ? [0, Math.PI, 0] : [0, 0, 0];
   const finalX = side === 'back' ? -position.x : position.x;
@@ -219,7 +215,7 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
         <Decal 
         position={[finalX, position.y, finalZ]} 
         rotation={rotation} 
-        scale={[scaleX, scaleY, 2]} // Deep Z projection to avoid clipping
+        scale={[scaleX, scaleY, 2]} 
         debug={false}
         >
         <meshBasicMaterial 
@@ -231,11 +227,13 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
             depthWrite={false}
         />
         </Decal>
+        
         {showMeasurements && (
             <MeasurementGuides 
-                width={scaleX} 
-                height={scaleY} 
-                position={[finalX, position.y, finalZ + 0.1]} // Float slightly above decal
+                width={scaleX}
+                height={scaleY}
+                // Float slightly above the decal (z + 0.05) to ensure visibility over the shirt
+                position={[finalX, position.y, finalZ + (side === 'back' ? -0.05 : 0.05)]}
                 rotation={rotation}
             />
         )}
@@ -268,7 +266,6 @@ const TShirtMesh: React.FC<{ config: ConfigType; showMeasurements?: boolean }> =
     
     geo.computeBoundingBox();
     const zFront = geo.boundingBox!.max.z;
-    // We use the absolute value of min Z to handle the depth for the back projection similarly
     const zBack = Math.abs(geo.boundingBox!.min.z);
 
     return { geometry: geo, zFront, zBack };
@@ -290,9 +287,7 @@ const TShirtMesh: React.FC<{ config: ConfigType; showMeasurements?: boolean }> =
             key={layer.id} 
             textureUrl={layer.textureUrl} 
             position={layer.position} 
-            side={layer.side || 'front'} // Default to front if legacy
-            // Use zFront for Front, zBack for Back. 
-            // Add a tiny index offset to Z to handle overlapping layers on the same side
+            side={layer.side || 'front'} 
             zPos={(layer.side === 'back' ? zBack : zFront) + (index * 0.001)}
             showMeasurements={showMeasurements}
         />
@@ -304,15 +299,11 @@ const TShirtMesh: React.FC<{ config: ConfigType; showMeasurements?: boolean }> =
 export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front', lockView = false, showMeasurements = false }) => {
   const controlsRef = useRef<any>(null);
 
-  // Initial camera position depends on which side we want to show first.
-  // Front: [0, 0, 4.5] -> Looking at +Z face
-  // Back: [0, 0, -4.5] -> Looking at -Z face (Back of shirt)
-  const initialCameraPosition: [number, number, number] = activeLayerSide === 'back' ? [0, 0, -4.5] : [0, 0, 4.5];
+  // INCREASED DISTANCE: Z was 4.5, now 6.5 to ensure full view without high zoom
+  const initialCameraPosition: [number, number, number] = activeLayerSide === 'back' ? [0, 0, -6.5] : [0, 0, 6.5];
 
-  // Update controls if activeLayerSide changes dynamically (in Customizer mode)
   useEffect(() => {
     if (controlsRef.current && !lockView) {
-        // Only auto-rotate if view is unlocked (interactive mode)
         const targetAzimuth = activeLayerSide === 'front' ? 0 : Math.PI;
         controlsRef.current.setAzimuthalAngle(targetAzimuth);
         controlsRef.current.update();
@@ -320,7 +311,6 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
   }, [activeLayerSide, lockView]);
 
   return (
-    // Changed min-h-[400px] to min-h-[250px] md:min-h-[400px] for better mobile adaptability in modals
     <div className="w-full h-full min-h-[250px] md:min-h-[400px] relative bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden shadow-inner">
       <Canvas 
         shadows 
@@ -334,7 +324,6 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
         <ambientLight intensity={0.5} />
         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} shadow-mapSize={2048} castShadow />
         <spotLight position={[-10, 5, 10]} intensity={0.5} />
-        {/* Back Light to illuminate the back of the shirt */}
         <spotLight position={[0, 5, -10]} intensity={0.5} />
         
         {captureRef && <SnapshotHandler captureRef={captureRef} controlsRef={controlsRef} />}
@@ -348,13 +337,12 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
         <OrbitControls 
           ref={controlsRef}
           enablePan={false} 
-          // Disable interaction if lockView is true
           enableRotate={!lockView}
           enableZoom={!lockView}
           minPolarAngle={Math.PI / 4} 
           maxPolarAngle={Math.PI / 1.8}
           minDistance={3}
-          maxDistance={8}
+          maxDistance={9} // Increased max distance to allow zooming out more
         />
       </Canvas>
       {!lockView && (

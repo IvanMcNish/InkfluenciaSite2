@@ -70,7 +70,7 @@ export const AdminOrders: React.FC = () => {
                     <div className="absolute top-4 left-4 z-10 bg-white/80 dark:bg-black/80 backdrop-blur px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">
                         Render en Vivo
                     </div>
-                    <Scene config={selectedOrder.config} />
+                    <Scene config={selectedOrder.config} showMeasurements={true} />
                 </div>
 
                 {/* Right: Details & Data */}

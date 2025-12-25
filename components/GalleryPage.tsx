@@ -56,6 +56,7 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
                      <Scene 
                         config={selectedItem.config} 
                         activeLayerSide={initialSide || 'front'}
+                        showMeasurements={true}
                      />
                     <div className="absolute top-4 left-4 z-10 bg-white/80 dark:bg-black/80 backdrop-blur px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm flex items-center gap-1">
                         <Rotate3d className="w-3 h-3" />

@@ -129,18 +129,18 @@ export const OrderSuccess: React.FC<OrderSuccessProps> = ({ order, onReset }) =>
                     {/* Front View */}
                     <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 h-[400px] relative overflow-hidden group">
                         <div className="absolute top-4 left-4 z-10 bg-white/80 dark:bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm flex items-center gap-2 text-gray-800 dark:text-white">
-                            <Rotate3d className="w-3 h-3" /> Vista Frontal
+                            <Rotate3d className="w-3 h-3" /> Vista Frontal (Con Medidas)
                         </div>
-                        <Scene config={order.config} activeLayerSide="front" lockView={true} />
+                        <Scene config={order.config} activeLayerSide="front" lockView={true} showMeasurements={true} />
                     </div>
 
                     {/* Back View (Conditional) */}
                     {hasBackDesign && (
                         <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 h-[400px] relative overflow-hidden group">
                              <div className="absolute top-4 left-4 z-10 bg-white/80 dark:bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm flex items-center gap-2 text-gray-800 dark:text-white">
-                                <Rotate3d className="w-3 h-3" /> Vista Espalda
+                                <Rotate3d className="w-3 h-3" /> Vista Espalda (Con Medidas)
                             </div>
-                            <Scene config={order.config} activeLayerSide="back" lockView={true} />
+                            <Scene config={order.config} activeLayerSide="back" lockView={true} showMeasurements={true} />
                         </div>
                     )}
                 </div>

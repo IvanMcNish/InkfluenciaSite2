@@ -36,6 +36,7 @@ interface SceneProps {
   config: ConfigType;
   captureRef?: React.MutableRefObject<(() => string) | null>;
   activeLayerSide?: 'front' | 'back'; // New Prop to control camera
+  lockView?: boolean; // Prop to disable interaction and lock view
 }
 
 function Loader() {
@@ -168,9 +169,6 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
   }
 
   // Back side Logic
-  // 1. Z Position is negative (passed as prop if backend logic calculates it, or we simply negate it here if we assume symmetric thickness, but passing distinct Z is safer)
-  // 2. Rotation: 180 deg around Y to face "backwards"
-  // 3. X Position: Invert X so that "Right" controls move the decal to the "Right" of the screen when looking at the back
   const finalZ = side === 'back' ? -zPos : zPos;
   const rotation: [number, number, number] = side === 'back' ? [0, Math.PI, 0] : [0, 0, 0];
   const finalX = side === 'back' ? -position.x : position.x;
@@ -251,28 +249,30 @@ const TShirtMesh: React.FC<{ config: ConfigType }> = ({ config }) => {
   );
 };
 
-export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front' }) => {
+export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front', lockView = false }) => {
   const controlsRef = useRef<any>(null);
 
-  // Auto-Rotate Camera based on active layer side
+  // Initial camera position depends on which side we want to show first.
+  // Front: [0, 0, 4.5] -> Looking at +Z face
+  // Back: [0, 0, -4.5] -> Looking at -Z face (Back of shirt)
+  const initialCameraPosition: [number, number, number] = activeLayerSide === 'back' ? [0, 0, -4.5] : [0, 0, 4.5];
+
+  // Update controls if activeLayerSide changes dynamically (in Customizer mode)
   useEffect(() => {
-    if (controlsRef.current) {
-        // Front: Azimuth 0, Back: Azimuth PI
+    if (controlsRef.current && !lockView) {
+        // Only auto-rotate if view is unlocked (interactive mode)
         const targetAzimuth = activeLayerSide === 'front' ? 0 : Math.PI;
-        
-        // Smoothly move camera
-        // We set both min and max to force the angle, then reset them to allow movement
         controlsRef.current.setAzimuthalAngle(targetAzimuth);
         controlsRef.current.update();
     }
-  }, [activeLayerSide]);
+  }, [activeLayerSide, lockView]);
 
   return (
     // Changed min-h-[400px] to min-h-[250px] md:min-h-[400px] for better mobile adaptability in modals
     <div className="w-full h-full min-h-[250px] md:min-h-[400px] relative bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden shadow-inner">
       <Canvas 
         shadows 
-        camera={{ position: [0, 0, 5], fov: 45 }}
+        camera={{ position: initialCameraPosition, fov: 35 }}
         gl={{ 
             preserveDrawingBuffer: true,
             powerPreference: "high-performance",
@@ -296,15 +296,20 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
         <OrbitControls 
           ref={controlsRef}
           enablePan={false} 
+          // Disable interaction if lockView is true
+          enableRotate={!lockView}
+          enableZoom={!lockView}
           minPolarAngle={Math.PI / 4} 
           maxPolarAngle={Math.PI / 1.8}
           minDistance={3}
           maxDistance={8}
         />
       </Canvas>
-      <div className="absolute bottom-4 right-4 text-xs text-gray-400 pointer-events-none">
-        Arrastra para rotar • Rueda para zoom
-      </div>
+      {!lockView && (
+        <div className="absolute bottom-4 right-4 text-xs text-gray-400 pointer-events-none">
+            Arrastra para rotar • Rueda para zoom
+        </div>
+      )}
     </div>
   );
 };

@@ -10,20 +10,6 @@ import { TShirtConfig as ConfigType, Position } from '../types';
 // Conversion factor: 1 Three.js unit ~= 50 cm of physical width (Approximation for T-shirt scaling)
 const UNIT_TO_CM = 50;
 
-// Add type definitions for R3F elements to satisfy TypeScript
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      mesh: any;
-      meshStandardMaterial: any;
-      meshBasicMaterial: any;
-      ambientLight: any;
-      spotLight: any;
-      group: any;
-    }
-  }
-}
-
 interface SceneProps {
   config: ConfigType;
   captureRef?: React.MutableRefObject<(() => string) | null>;
@@ -185,7 +171,7 @@ const MeasurementGuides: React.FC<{ width: number; height: number; position: [nu
     );
 };
 
-const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: number; side: 'front' | 'back'; showMeasurements?: boolean }> = ({ textureUrl, position, zPos, side, showMeasurements }) => {
+const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: number; side: 'front' | 'back'; showMeasurements?: boolean; index: number }> = ({ textureUrl, position, zPos, side, showMeasurements, index }) => {
   const texture = useTexture(textureUrl);
   
   useEffect(() => {
@@ -210,6 +196,12 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
   const rotation: [number, number, number] = side === 'back' ? [0, Math.PI, 0] : [0, 0, 0];
   const finalX = side === 'back' ? -position.x : position.x;
   
+  // Priority Logic:
+  // renderOrder: Forces Three.js to sort these objects. Higher number = drawn last (on top).
+  // polygonOffsetFactor: pushes the depth. More negative = visually closer to camera (on top).
+  const renderPriority = 10 + index; 
+  const polyOffset = -10 - index; 
+
   return (
     <>
         <Decal 
@@ -217,12 +209,13 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
         rotation={rotation} 
         scale={[scaleX, scaleY, 2]} 
         debug={false}
+        renderOrder={renderPriority} // Fix for stacking order
         >
         <meshBasicMaterial 
             map={texture} 
             transparent 
             polygonOffset 
-            polygonOffsetFactor={-4}
+            polygonOffsetFactor={polyOffset} // Fix for z-fighting
             depthTest={true}
             depthWrite={false}
         />
@@ -285,10 +278,11 @@ const TShirtMesh: React.FC<{ config: ConfigType; showMeasurements?: boolean }> =
       {config.layers.map((layer, index) => (
         <DecalImage 
             key={layer.id} 
+            index={index} // Pass index for priority handling
             textureUrl={layer.textureUrl} 
             position={layer.position} 
             side={layer.side || 'front'} 
-            zPos={(layer.side === 'back' ? zBack : zFront) + (index * 0.001)}
+            zPos={(layer.side === 'back' ? zBack : zFront) + (index * 0.001)} // Still keep physical offset for safety
             showMeasurements={showMeasurements}
         />
       ))}

@@ -1,11 +1,12 @@
 
-import React, { useMemo, Suspense, useEffect, useRef } from 'react';
+import React, { useMemo, Suspense, useEffect, useRef, useState } from 'react';
 import { Canvas, useLoader, useThree } from '@react-three/fiber';
 import { OrbitControls, Decal, Environment, Center, useTexture, Html, useProgress, Text, Line } from '@react-three/drei';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import * as THREE from 'three';
 import { TSHIRT_OBJ_URL } from '../constants';
 import { TShirtConfig as ConfigType, Position } from '../types';
+import { getAppearanceSettings, DEFAULT_APPEARANCE } from '../services/settingsService';
 
 // Conversion factor: 1 Three.js unit ~= 50 cm of physical width (Approximation for T-shirt scaling)
 const UNIT_TO_CM = 50;
@@ -234,7 +235,7 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
   );
 };
 
-const TShirtMesh: React.FC<{ config: ConfigType; showMeasurements?: boolean }> = ({ config, showMeasurements }) => {
+const TShirtMesh: React.FC<{ config: ConfigType; showMeasurements?: boolean; customBlackColor?: string }> = ({ config, showMeasurements, customBlackColor }) => {
   const obj = useLoader(OBJLoader, TSHIRT_OBJ_URL);
   
   const { geometry, zFront, zBack } = useMemo(() => {
@@ -266,7 +267,8 @@ const TShirtMesh: React.FC<{ config: ConfigType; showMeasurements?: boolean }> =
 
   if (!geometry) return null;
 
-  const materialColor = config.color === 'white' ? '#ffffff' : '#1a1a1a';
+  // Uses custom black color from settings if available, otherwise default
+  const materialColor = config.color === 'white' ? '#ffffff' : (customBlackColor || '#050505');
   
   return (
     <mesh castShadow receiveShadow geometry={geometry} dispose={null}>
@@ -292,6 +294,16 @@ const TShirtMesh: React.FC<{ config: ConfigType; showMeasurements?: boolean }> =
 
 export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front', lockView = false, showMeasurements = false }) => {
   const controlsRef = useRef<any>(null);
+  const [blackColor, setBlackColor] = useState(DEFAULT_APPEARANCE.blackShirtHex);
+
+  useEffect(() => {
+    // Load appearance settings efficiently (settingsService caches it)
+    const loadSettings = async () => {
+        const settings = await getAppearanceSettings();
+        setBlackColor(settings.blackShirtHex);
+    };
+    loadSettings();
+  }, []);
 
   // Adjusted Distance: 5.8 to balance view between full shirt visibility and closeness
   const initialCameraPosition: [number, number, number] = activeLayerSide === 'back' ? [0, 0, -5.8] : [0, 0, 5.8];
@@ -324,7 +336,7 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
 
         <Suspense fallback={<Loader />}>
             <Center>
-                <TShirtMesh config={config} showMeasurements={showMeasurements} />
+                <TShirtMesh config={config} showMeasurements={showMeasurements} customBlackColor={blackColor} />
             </Center>
             <Environment preset="city" />
         </Suspense>

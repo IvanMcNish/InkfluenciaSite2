@@ -1,6 +1,6 @@
 
 import { supabase } from '../lib/supabaseClient';
-import { CustomizerConstraints, UploadLimits } from '../types';
+import { CustomizerConstraints, UploadLimits, AppearanceSettings } from '../types';
 
 // Default values representing the "Printable Area" edges
 // X: Wider range to allow small logos near armpits
@@ -14,6 +14,13 @@ export const DEFAULT_CONSTRAINTS: CustomizerConstraints = {
 export const DEFAULT_UPLOAD_LIMITS: UploadLimits = {
     maxFileSizeMB: 5
 };
+
+export const DEFAULT_APPEARANCE: AppearanceSettings = {
+    blackShirtHex: '#050505' // Default deep black
+};
+
+// In-memory cache to prevent fetching on every Scene render (e.g. in lists)
+let appearanceCache: AppearanceSettings | null = null;
 
 export const getCustomizerConstraints = async (): Promise<CustomizerConstraints> => {
     try {
@@ -90,6 +97,51 @@ export const saveUploadLimits = async (limits: UploadLimits): Promise<boolean> =
         return true;
     } catch (e) {
         console.error("Exception saving upload limits:", e);
+        return false;
+    }
+};
+
+export const getAppearanceSettings = async (forceRefresh = false): Promise<AppearanceSettings> => {
+    if (appearanceCache && !forceRefresh) return appearanceCache;
+
+    try {
+        const { data, error } = await supabase
+            .from('app_settings')
+            .select('value')
+            .eq('id', 'appearance_settings')
+            .single();
+
+        if (error || !data) {
+            appearanceCache = DEFAULT_APPEARANCE;
+            return DEFAULT_APPEARANCE;
+        }
+
+        appearanceCache = data.value as AppearanceSettings;
+        return appearanceCache;
+    } catch (e) {
+        console.error("Error fetching appearance:", e);
+        return DEFAULT_APPEARANCE;
+    }
+};
+
+export const saveAppearanceSettings = async (settings: AppearanceSettings): Promise<boolean> => {
+    try {
+        const { error } = await supabase
+            .from('app_settings')
+            .upsert({
+                id: 'appearance_settings',
+                value: settings
+            });
+
+        if (error) {
+            console.error("Error saving appearance:", error);
+            return false;
+        }
+        // Update cache immediately
+        appearanceCache = settings;
+        return true;
+    } catch (e) {
+        console.error("Exception saving appearance:", e);
         return false;
     }
 };

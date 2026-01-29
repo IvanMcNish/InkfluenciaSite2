@@ -83,4 +83,8 @@ export interface UploadLimits {
     maxFileSizeMB: number;
 }
 
+export interface AppearanceSettings {
+    blackShirtHex: string;
+}
+
 export type ViewState = 'landing' | 'customizer' | 'checkout' | 'success' | 'admin' | 'designer' | 'gallery' | 'track-order' | 'community' | 'contact';

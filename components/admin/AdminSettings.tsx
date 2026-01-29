@@ -1,9 +1,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ImageIcon, Smartphone, Monitor, Layout, Upload, Loader2, Database, Copy, Check, Trash2, AlertTriangle, Layers, Ruler, Save, HardDrive } from 'lucide-react';
+import { ImageIcon, Smartphone, Monitor, Layout, Upload, Loader2, Database, Copy, Check, Trash2, AlertTriangle, Layers, Ruler, Save, HardDrive, Palette } from 'lucide-react';
 import { uploadAppLogo, APP_LOGO_URL, APP_DESKTOP_LOGO_URL, APP_LANDING_LOGO_URL } from '../../lib/supabaseClient';
-import { getCustomizerConstraints, saveCustomizerConstraints, getUploadLimits, saveUploadLimits, DEFAULT_CONSTRAINTS, DEFAULT_UPLOAD_LIMITS } from '../../services/settingsService';
-import { CustomizerConstraints, UploadLimits } from '../../types';
+import { getCustomizerConstraints, saveCustomizerConstraints, getUploadLimits, saveUploadLimits, getAppearanceSettings, saveAppearanceSettings, DEFAULT_CONSTRAINTS, DEFAULT_UPLOAD_LIMITS, DEFAULT_APPEARANCE } from '../../services/settingsService';
+import { CustomizerConstraints, UploadLimits, AppearanceSettings } from '../../types';
 
 export const AdminSettings: React.FC = () => {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
@@ -19,9 +19,12 @@ export const AdminSettings: React.FC = () => {
   // Settings State
   const [constraints, setConstraints] = useState<CustomizerConstraints>(DEFAULT_CONSTRAINTS);
   const [uploadLimits, setUploadLimits] = useState<UploadLimits>(DEFAULT_UPLOAD_LIMITS);
+  const [appearance, setAppearance] = useState<AppearanceSettings>(DEFAULT_APPEARANCE);
+  
   const [isLoadingConstraints, setIsLoadingConstraints] = useState(true);
   const [isSavingConstraints, setIsSavingConstraints] = useState(false);
   const [isSavingLimits, setIsSavingLimits] = useState(false);
+  const [isSavingAppearance, setIsSavingAppearance] = useState(false);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const desktopLogoInputRef = useRef<HTMLInputElement>(null);
@@ -30,12 +33,14 @@ export const AdminSettings: React.FC = () => {
   useEffect(() => {
     const loadSettings = async () => {
         setIsLoadingConstraints(true);
-        const [constraintsData, limitsData] = await Promise.all([
+        const [constraintsData, limitsData, appearanceData] = await Promise.all([
             getCustomizerConstraints(),
-            getUploadLimits()
+            getUploadLimits(),
+            getAppearanceSettings()
         ]);
         setConstraints(constraintsData);
         setUploadLimits(limitsData);
+        setAppearance(appearanceData);
         setIsLoadingConstraints(false);
     };
     loadSettings();
@@ -74,6 +79,17 @@ export const AdminSettings: React.FC = () => {
           alert('Error al guardar límites.');
       }
       setIsSavingLimits(false);
+  };
+
+  const saveAppearance = async () => {
+      setIsSavingAppearance(true);
+      const success = await saveAppearanceSettings(appearance);
+      if (success) {
+          alert('Apariencia guardada exitosamente. Recarga la página para ver cambios en el 3D.');
+      } else {
+          alert('Error al guardar apariencia.');
+      }
+      setIsSavingAppearance(false);
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,6 +175,54 @@ export const AdminSettings: React.FC = () => {
                     <p className="text-[10px] text-gray-400 mt-2 text-center">PNG Transparente (Gran Formato)</p>
                 </div>
             </div>
+        </div>
+
+        {/* 3D Appearance Settings Section */}
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-cyan-100 dark:bg-cyan-900/20 rounded-lg text-cyan-600"><Palette className="w-6 h-6" /></div>
+                <div><h2 className="text-xl font-bold text-gray-900 dark:text-white">Apariencia 3D</h2><p className="text-gray-500 dark:text-gray-400 text-sm">Personaliza los colores base de los modelos 3D.</p></div>
+            </div>
+
+            {isLoadingConstraints ? (
+                <div className="p-8 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-cyan-500" /></div>
+            ) : (
+                <div className="space-y-6">
+                     <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                        <h3 className="font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2 text-sm uppercase"><Palette className="w-4 h-4"/> Color Base Camiseta Negra</h3>
+                        <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 rounded-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer">
+                                <input 
+                                    type="color" 
+                                    value={appearance.blackShirtHex} 
+                                    onChange={(e) => setAppearance({...appearance, blackShirtHex: e.target.value})} 
+                                    className="w-[150%] h-[150%] -translate-x-1/4 -translate-y-1/4 p-0 border-0 cursor-pointer" 
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="text-xs text-gray-500 block mb-1">Código Hexadecimal</label>
+                                <input 
+                                    type="text" 
+                                    value={appearance.blackShirtHex} 
+                                    onChange={(e) => setAppearance({...appearance, blackShirtHex: e.target.value})} 
+                                    className="w-full md:w-48 p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-cyan-500 outline-none text-sm font-mono uppercase" 
+                                />
+                            </div>
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-2">
+                            Define qué tan oscura se ve la camiseta negra. <br/>
+                            <span className="font-bold text-cyan-600">Recomendado:</span> #050505 (Negro Profundo) o #1a1a1a (Gris Oscuro/Lavado).
+                        </p>
+                    </div>
+
+                    <div className="flex justify-end">
+                        <button onClick={saveAppearance} disabled={isSavingAppearance} className="px-6 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg font-bold shadow-lg shadow-cyan-500/20 flex items-center gap-2 transition-colors">
+                            {isSavingAppearance ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            {isSavingAppearance ? 'Guardando...' : 'Guardar Apariencia'}
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
 
         {/* Upload Limits Section */}

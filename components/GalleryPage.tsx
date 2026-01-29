@@ -51,8 +51,8 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
                     <X className="w-6 h-6 text-gray-800 dark:text-gray-200" />
                 </button>
 
-                {/* Left: 3D Scene instead of Image */}
-                <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-800 relative shrink-0 min-h-[350px] overflow-hidden border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800">
+                {/* Left: 3D Scene - Height increased for Mobile (45vh instead of fixed px) */}
+                <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-800 relative shrink-0 h-[45vh] md:h-auto md:min-h-[400px] overflow-hidden border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800">
                      <Scene 
                         config={selectedItem.config} 
                         activeLayerSide={initialSide || 'front'}

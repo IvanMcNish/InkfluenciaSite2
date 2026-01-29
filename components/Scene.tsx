@@ -293,8 +293,8 @@ const TShirtMesh: React.FC<{ config: ConfigType; showMeasurements?: boolean }> =
 export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front', lockView = false, showMeasurements = false }) => {
   const controlsRef = useRef<any>(null);
 
-  // INCREASED DISTANCE: Z was 4.5, now 6.5 to ensure full view without high zoom
-  const initialCameraPosition: [number, number, number] = activeLayerSide === 'back' ? [0, 0, -6.5] : [0, 0, 6.5];
+  // Adjusted Distance: 5.8 to balance view between full shirt visibility and closeness
+  const initialCameraPosition: [number, number, number] = activeLayerSide === 'back' ? [0, 0, -5.8] : [0, 0, 5.8];
 
   useEffect(() => {
     if (controlsRef.current && !lockView) {

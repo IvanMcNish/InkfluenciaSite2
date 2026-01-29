@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Package, Search, Calendar, Eye, ChevronDown, Check, X, User, Phone, MapPin, Box, Download, CreditCard } from 'lucide-react';
+import { Package, Search, Calendar, Eye, ChevronDown, Check, X, User, Phone, MapPin, Box, Download, CreditCard, Map, Navigation } from 'lucide-react';
 import { getOrders, updateOrderStatus } from '../../services/orderService';
 import { Order, OrderStatus } from '../../types';
 import { formatCurrency } from '../../constants';
@@ -11,6 +11,9 @@ export const AdminOrders: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+
+  // Ubicación fija de la empresa
+  const ORIGIN_ADDRESS = "Carrera 31 # 20 - 26, Bucaramanga";
 
   const loadOrders = async () => {
     setIsLoading(true);
@@ -54,6 +57,14 @@ export const AdminOrders: React.FC = () => {
 
   const OrderDetailModal = () => {
     if (!selectedOrder) return null;
+
+    // Generar URLs para el mapa
+    const encodedOrigin = encodeURIComponent(ORIGIN_ADDRESS);
+    const encodedDest = encodeURIComponent(selectedOrder.address);
+    // URL para el iframe (Embed)
+    const iframeUrl = `https://maps.google.com/maps?saddr=${encodedOrigin}&daddr=${encodedDest}&output=embed`;
+    // URL para abrir en nueva pestaña (Full Google Maps)
+    const externalMapUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodedOrigin}&destination=${encodedDest}`;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in overflow-y-auto md:overflow-hidden">
@@ -112,7 +123,8 @@ export const AdminOrders: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="space-y-8">
+                    <div className="space-y-6">
+                        {/* Info Cliente */}
                         <div className="bg-gray-50 dark:bg-gray-800/50 p-5 rounded-xl border border-gray-100 dark:border-gray-800">
                             <h3 className="text-sm font-bold uppercase text-gray-400 mb-4 flex items-center gap-2">
                                 <User className="w-4 h-4" /> Cliente
@@ -133,6 +145,63 @@ export const AdminOrders: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Mapa de Ruta */}
+                        <div className="bg-white dark:bg-gray-800 p-1 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+                             <div className="p-4 pb-2">
+                                <h3 className="text-sm font-bold uppercase text-gray-400 mb-4 flex items-center gap-2">
+                                    <Map className="w-4 h-4" /> Ruta de Entrega
+                                </h3>
+                                {/* Visual Timeline */}
+                                <div className="flex flex-col gap-0 mb-4 pl-1">
+                                    {/* Origen */}
+                                    <div className="flex gap-3 relative">
+                                        <div className="flex flex-col items-center">
+                                            <div className="w-3 h-3 rounded-full bg-pink-500 ring-4 ring-pink-100 dark:ring-pink-900/30 z-10"></div>
+                                            <div className="w-0.5 h-12 bg-gray-200 dark:bg-gray-600 absolute top-3"></div>
+                                        </div>
+                                        <div className="pb-4">
+                                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Origen (Inkfluencia)</p>
+                                            <p className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[250px]">{ORIGIN_ADDRESS}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Destino */}
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-3 h-3 rounded-full bg-blue-500 ring-4 ring-blue-100 dark:ring-blue-900/30 z-10"></div>
+                                        <div>
+                                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Destino (Cliente)</p>
+                                            <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedOrder.address}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                             </div>
+
+                             {/* Iframe Map */}
+                             <div className="relative w-full h-56 bg-gray-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 group">
+                                <iframe
+                                    width="100%"
+                                    height="100%"
+                                    frameBorder="0"
+                                    scrolling="no"
+                                    src={iframeUrl}
+                                    title="Ruta de Entrega"
+                                    className="filter grayscale-[0.3] group-hover:grayscale-0 transition-all duration-500"
+                                ></iframe>
+                                
+                                <div className="absolute bottom-3 right-3">
+                                     <a 
+                                        href={externalMapUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-xs font-bold px-3 py-2 rounded-lg shadow-lg flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border border-gray-200 dark:border-gray-700"
+                                     >
+                                        <Navigation className="w-3 h-3 text-blue-500" /> Abrir GPS
+                                     </a>
+                                </div>
+                             </div>
+                        </div>
+
+                        {/* Info Producto */}
                         <div>
                              <h3 className="text-sm font-bold uppercase text-gray-400 mb-4 flex items-center gap-2">
                                 <Box className="w-4 h-4" /> Producto

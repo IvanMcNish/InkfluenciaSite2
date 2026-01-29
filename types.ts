@@ -79,4 +79,8 @@ export interface CustomizerConstraints {
     scale: { min: number, max: number };
 }
 
+export interface UploadLimits {
+    maxFileSizeMB: number;
+}
+
 export type ViewState = 'landing' | 'customizer' | 'checkout' | 'success' | 'admin' | 'designer' | 'gallery' | 'track-order' | 'community' | 'contact';

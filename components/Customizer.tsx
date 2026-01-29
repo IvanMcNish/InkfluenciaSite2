@@ -4,7 +4,7 @@ import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRigh
 import { TShirtConfig, CustomizerConstraints } from '../types';
 import { Scene } from './Scene';
 import { PRICES, formatCurrency } from '../constants';
-import { getCustomizerConstraints, DEFAULT_CONSTRAINTS } from '../services/settingsService';
+import { getCustomizerConstraints, DEFAULT_CONSTRAINTS, getUploadLimits, DEFAULT_UPLOAD_LIMITS } from '../services/settingsService';
 
 interface CustomizerProps {
   config: TShirtConfig;
@@ -26,22 +26,27 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const [showGuides, setShowGuides] = useState(true);
   
   const [constraints, setConstraints] = useState<CustomizerConstraints>(DEFAULT_CONSTRAINTS);
+  const [maxFileSizeMB, setMaxFileSizeMB] = useState<number>(DEFAULT_UPLOAD_LIMITS.maxFileSizeMB);
   const [constraintsLoaded, setConstraintsLoaded] = useState(false);
 
   useEffect(() => {
-      const loadConstraints = async () => {
-          const data = await getCustomizerConstraints();
-          setConstraints(data);
+      const loadSettings = async () => {
+          const [constraintsData, limitsData] = await Promise.all([
+              getCustomizerConstraints(),
+              getUploadLimits()
+          ]);
+          setConstraints(constraintsData);
+          setMaxFileSizeMB(limitsData.maxFileSizeMB);
           setConstraintsLoaded(true);
       };
-      loadConstraints();
+      loadSettings();
   }, []);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, slotIndex: number) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("La imagen es demasiado grande. Por favor usa una imagen menor a 5MB.");
+      if (file.size > maxFileSizeMB * 1024 * 1024) {
+        alert(`La imagen es demasiado grande. Por favor usa una imagen menor a ${maxFileSizeMB}MB.`);
         return;
       }
 

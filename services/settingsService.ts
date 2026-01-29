@@ -1,6 +1,6 @@
 
 import { supabase } from '../lib/supabaseClient';
-import { CustomizerConstraints } from '../types';
+import { CustomizerConstraints, UploadLimits } from '../types';
 
 // Default values representing the "Printable Area" edges
 // X: Wider range to allow small logos near armpits
@@ -9,6 +9,10 @@ export const DEFAULT_CONSTRAINTS: CustomizerConstraints = {
     x: { min: -0.28, max: 0.28 }, 
     y: { min: -0.45, max: 0.35 },
     scale: { min: 0.05, max: 0.45 }
+};
+
+export const DEFAULT_UPLOAD_LIMITS: UploadLimits = {
+    maxFileSizeMB: 5
 };
 
 export const getCustomizerConstraints = async (): Promise<CustomizerConstraints> => {
@@ -47,6 +51,45 @@ export const saveCustomizerConstraints = async (constraints: CustomizerConstrain
         return true;
     } catch (e) {
         console.error("Exception saving constraints:", e);
+        return false;
+    }
+};
+
+export const getUploadLimits = async (): Promise<UploadLimits> => {
+    try {
+        const { data, error } = await supabase
+            .from('app_settings')
+            .select('value')
+            .eq('id', 'upload_limits')
+            .single();
+
+        if (error || !data) {
+            return DEFAULT_UPLOAD_LIMITS;
+        }
+
+        return data.value as UploadLimits;
+    } catch (e) {
+        console.error("Error fetching upload limits:", e);
+        return DEFAULT_UPLOAD_LIMITS;
+    }
+};
+
+export const saveUploadLimits = async (limits: UploadLimits): Promise<boolean> => {
+    try {
+        const { error } = await supabase
+            .from('app_settings')
+            .upsert({
+                id: 'upload_limits',
+                value: limits
+            });
+
+        if (error) {
+            console.error("Error saving upload limits:", error);
+            return false;
+        }
+        return true;
+    } catch (e) {
+        console.error("Exception saving upload limits:", e);
         return false;
     }
 };

@@ -1,9 +1,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ImageIcon, Smartphone, Monitor, Layout, Upload, Loader2, Database, Copy, Check, Trash2, AlertTriangle, Layers, Ruler, Save } from 'lucide-react';
+import { ImageIcon, Smartphone, Monitor, Layout, Upload, Loader2, Database, Copy, Check, Trash2, AlertTriangle, Layers, Ruler, Save, HardDrive } from 'lucide-react';
 import { uploadAppLogo, APP_LOGO_URL, APP_DESKTOP_LOGO_URL, APP_LANDING_LOGO_URL } from '../../lib/supabaseClient';
-import { getCustomizerConstraints, saveCustomizerConstraints, DEFAULT_CONSTRAINTS } from '../../services/settingsService';
-import { CustomizerConstraints } from '../../types';
+import { getCustomizerConstraints, saveCustomizerConstraints, getUploadLimits, saveUploadLimits, DEFAULT_CONSTRAINTS, DEFAULT_UPLOAD_LIMITS } from '../../services/settingsService';
+import { CustomizerConstraints, UploadLimits } from '../../types';
 
 export const AdminSettings: React.FC = () => {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
@@ -18,8 +18,10 @@ export const AdminSettings: React.FC = () => {
 
   // Settings State
   const [constraints, setConstraints] = useState<CustomizerConstraints>(DEFAULT_CONSTRAINTS);
+  const [uploadLimits, setUploadLimits] = useState<UploadLimits>(DEFAULT_UPLOAD_LIMITS);
   const [isLoadingConstraints, setIsLoadingConstraints] = useState(true);
   const [isSavingConstraints, setIsSavingConstraints] = useState(false);
+  const [isSavingLimits, setIsSavingLimits] = useState(false);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const desktopLogoInputRef = useRef<HTMLInputElement>(null);
@@ -28,8 +30,12 @@ export const AdminSettings: React.FC = () => {
   useEffect(() => {
     const loadSettings = async () => {
         setIsLoadingConstraints(true);
-        const data = await getCustomizerConstraints();
-        setConstraints(data);
+        const [constraintsData, limitsData] = await Promise.all([
+            getCustomizerConstraints(),
+            getUploadLimits()
+        ]);
+        setConstraints(constraintsData);
+        setUploadLimits(limitsData);
         setIsLoadingConstraints(false);
     };
     loadSettings();
@@ -52,11 +58,22 @@ export const AdminSettings: React.FC = () => {
       setIsSavingConstraints(true);
       const success = await saveCustomizerConstraints(constraints);
       if (success) {
-          alert('Configuración guardada exitosamente');
+          alert('Configuración de área guardada exitosamente');
       } else {
           alert('Error al guardar. Asegúrate de ejecutar el Script SQL de "Configuración General".');
       }
       setIsSavingConstraints(false);
+  };
+
+  const saveLimits = async () => {
+      setIsSavingLimits(true);
+      const success = await saveUploadLimits(uploadLimits);
+      if (success) {
+          alert('Límites de carga guardados exitosamente');
+      } else {
+          alert('Error al guardar límites.');
+      }
+      setIsSavingLimits(false);
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,6 +159,48 @@ export const AdminSettings: React.FC = () => {
                     <p className="text-[10px] text-gray-400 mt-2 text-center">PNG Transparente (Gran Formato)</p>
                 </div>
             </div>
+        </div>
+
+        {/* Upload Limits Section */}
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg text-purple-600"><HardDrive className="w-6 h-6" /></div>
+                <div><h2 className="text-xl font-bold text-gray-900 dark:text-white">Límites de Carga</h2><p className="text-gray-500 dark:text-gray-400 text-sm">Controla el tamaño máximo de los archivos que los usuarios pueden subir.</p></div>
+            </div>
+
+            {isLoadingConstraints ? (
+                <div className="p-8 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-purple-500" /></div>
+            ) : (
+                <div className="space-y-6">
+                     <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                        <h3 className="font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2 text-sm uppercase"><Upload className="w-4 h-4"/> Peso Máximo de Imagen</h3>
+                        <div className="flex items-center gap-4">
+                            <div className="flex-1">
+                                <label className="text-xs text-gray-500 block mb-1">Tamaño en Megabytes (MB)</label>
+                                <input 
+                                    type="number" 
+                                    min="1"
+                                    max="50"
+                                    value={uploadLimits.maxFileSizeMB} 
+                                    onChange={(e) => setUploadLimits({...uploadLimits, maxFileSizeMB: parseInt(e.target.value) || 5})} 
+                                    className="w-full p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-purple-500 outline-none text-sm" 
+                                />
+                            </div>
+                            <div className="text-sm text-gray-500 pt-5">
+                                MB
+                            </div>
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-2">Valor actual: {uploadLimits.maxFileSizeMB}MB. Recomendado: 5MB a 15MB para evitar sobrecarga.</p>
+                    </div>
+
+                    <div className="flex justify-end">
+                        <button onClick={saveLimits} disabled={isSavingLimits} className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold shadow-lg shadow-purple-500/20 flex items-center gap-2 transition-colors">
+                            {isSavingLimits ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            {isSavingLimits ? 'Guardando...' : 'Guardar Límites'}
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
 
         {/* Customizer Constraints Section */}

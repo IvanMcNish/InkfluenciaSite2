@@ -306,7 +306,7 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
   }, []);
 
   // Adjusted Distance: 5.8 to balance view between full shirt visibility and closeness
-  const initialCameraPosition: [number, number, number] = activeLayerSide === 'back' ? [0, 0, -5.8] : [0, 0, 5.8];
+  const initialCameraPosition: [number, number, number] = activeLayerSide === 'front' ? [0, 0, -5.8] : [0, 0, 5.8];
 
   useEffect(() => {
     if (controlsRef.current && !lockView) {

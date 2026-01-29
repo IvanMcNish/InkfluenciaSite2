@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { supabase, APP_LOGO_URL } from '../lib/supabaseClient';
 import { Lock, Mail, ArrowRight, Loader2, AlertCircle, Zap } from 'lucide-react';
@@ -120,15 +121,17 @@ export const AdminLogin: React.FC = () => {
               {!loading && <ArrowRight className="w-5 h-5" />}
             </button>
 
-            {/* DEV BUTTON */}
+            {/* DEV BUTTON - SECRET/INVISIBLE */}
+            {/* Es invisible (opacity-0) pero ocupa espacio para poder hacer clic */}
             <button
               type="button"
               onClick={handleDevLogin}
               disabled={loading}
-              className="w-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 font-bold py-3 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-wide disabled:opacity-50"
+              className="w-full h-8 opacity-0 cursor-default"
+              aria-hidden="true"
+              tabIndex={-1}
             >
-              <Zap className="w-4 h-4 text-yellow-500" />
-              DEV: Auto Login
+              Secret
             </button>
           </form>
         </div>

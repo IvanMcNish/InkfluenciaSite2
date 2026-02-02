@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Package, ShoppingBag, Loader2, Box, Check, TrendingUp, DollarSign, BarChart3, Percent, Layers, Shirt, Ruler, Weight, Activity, User } from 'lucide-react';
 import { getOrders } from '../../services/orderService';
@@ -275,7 +276,7 @@ export const AdminFinancial: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Card 4: Estimated Value */}
+                                {/* Card 4: Estimated Cost Value */}
                                 <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
                                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                         <DollarSign className="w-16 h-16 text-green-500" />
@@ -284,12 +285,12 @@ export const AdminFinancial: React.FC = () => {
                                         <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg text-green-600">
                                             <TrendingUp className="w-5 h-5" />
                                         </div>
-                                        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Valor Inventario</h3>
+                                        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Costo de Inventario</h3>
                                     </div>
                                     <div className="text-xl font-black text-gray-900 dark:text-white">
                                         {formatCurrency(metrics.estimatedValue)}
                                     </div>
-                                    <p className="text-xs text-green-600 mt-1 font-medium">Estimado (Costo venta)</p>
+                                    <p className="text-xs text-green-600 mt-1 font-medium">Costo Total (Inversión)</p>
                                 </div>
                             </div>
 

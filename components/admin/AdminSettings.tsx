@@ -409,7 +409,7 @@ create policy "Public All Inventory" on inventory for all to public using (true)
                     </div>
                 </div>
                 <div>
-                     <h3 className="font-bold flex items-center gap-2"><Database className="w-4 h-4" /> Ordenes (Actualizado con Método de Pago)</h3>
+                     <h3 className="font-bold flex items-center gap-2"><Database className="w-4 h-4" /> Ordenes (Migración Descuento Admin)</h3>
                      <div className="relative mt-2">
                         <button onClick={() => copyToClipboard(`
 -- Agregar columna de género a pedidos si no existe
@@ -425,8 +425,15 @@ do $$ begin
     alter table orders add column payment_method text check (payment_method in ('credit_card', 'nequi', 'cod')) default 'cod';
   end if;
 end $$;
+
+-- Agregar columna de Descuento Admin
+do $$ begin
+  if not exists (select 1 from information_schema.columns where table_name='orders' and column_name='admin_discount_applied') then
+    alter table orders add column admin_discount_applied boolean default false;
+  end if;
+end $$;
 `, 'orders')} className="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 rounded text-xs">{copiedOrders ? 'Copiado' : 'Copiar'}</button>
-                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL Orders Migration (Payment & Gender)</pre>
+                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL Orders Migration (Payment, Gender & Admin Discount)</pre>
                      </div>
                 </div>
             </div>

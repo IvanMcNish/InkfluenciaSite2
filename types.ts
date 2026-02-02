@@ -34,6 +34,7 @@ export interface Order {
   total: number;
   date: string;
   status: OrderStatus;
+  adminDiscountApplied?: boolean; // New field for admin discount logic
 }
 
 export interface Customer {

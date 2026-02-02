@@ -27,7 +27,8 @@ export const getOrders = async (): Promise<Order[]> => {
     config: item.config,
     total: item.total,
     status: item.status,
-    date: item.created_at
+    date: item.created_at,
+    adminDiscountApplied: item.admin_discount_applied
   }));
 };
 
@@ -55,7 +56,8 @@ export const getOrderById = async (id: string): Promise<Order | null> => {
         config: data.config,
         total: data.total,
         status: data.status,
-        date: data.created_at
+        date: data.created_at,
+        adminDiscountApplied: data.admin_discount_applied
     };
 };
 
@@ -105,6 +107,31 @@ export const updateOrderStatus = async (orderId: string, newStatus: OrderStatus)
       return false;
   }
   return true;
+};
+
+export const toggleOrderDiscount = async (orderId: string, currentTotal: number, shouldApply: boolean): Promise<boolean> => {
+    const DISCOUNT_AMOUNT = 5000;
+    // If applying: subtract 5000. If removing: add 5000.
+    // NOTE: This assumes currentTotal passed is the value BEFORE the change being requested if UI logic is handled separately
+    // But to be safe, the service calculates new total based on currentTotal provided.
+    // In AdminOrders, we pass the 'total' as it is in state. 
+    // If we are checking the box (shouldApply = true), it means current state is unchecked (higher price).
+    // If we are unchecking (shouldApply = false), it means current state is checked (lower price).
+    const newTotal = shouldApply ? currentTotal - DISCOUNT_AMOUNT : currentTotal + DISCOUNT_AMOUNT;
+
+    const { error } = await supabase
+        .from('orders')
+        .update({ 
+            admin_discount_applied: shouldApply,
+            total: newTotal
+        })
+        .eq('id', orderId);
+
+    if (error) {
+        console.error('Error toggling discount:', error);
+        return false;
+    }
+    return true;
 };
 
 export const submitOrder = async (orderData: Omit<Order, 'id' | 'date' | 'status'>): Promise<Order> => {
@@ -171,6 +198,7 @@ export const submitOrder = async (orderData: Omit<Order, 'id' | 'date' | 'status
         config: data.config,
         total: data.total,
         date: data.created_at,
-        status: data.status
+        status: data.status,
+        adminDiscountApplied: false
     };
 };

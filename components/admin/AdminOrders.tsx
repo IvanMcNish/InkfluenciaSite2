@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import { Package, Search, Calendar, Eye, ChevronDown, Check, X, User, Phone, MapPin, Box, Download, CreditCard, Map, Navigation } from 'lucide-react';
-import { getOrders, updateOrderStatus } from '../../services/orderService';
+import { Package, Search, Calendar, Eye, ChevronDown, Check, X, User, Phone, MapPin, Box, Download, CreditCard, Map, Navigation, Tag } from 'lucide-react';
+import { getOrders, updateOrderStatus, toggleOrderDiscount } from '../../services/orderService';
 import { Order, OrderStatus } from '../../types';
 import { formatCurrency } from '../../constants';
 import { Scene } from '../Scene';
@@ -38,6 +38,34 @@ export const AdminOrders: React.FC = () => {
         loadOrders();
         alert("Error al actualizar el estado");
     }
+  };
+
+  const handleDiscountToggle = async (checked: boolean) => {
+      if (!selectedOrder) return;
+      
+      const DISCOUNT_AMOUNT = 5000;
+      
+      // Calculate optimistic new total for UI
+      // If checking the box (applying discount), subtract. If unchecking, add.
+      // Use Math.max to prevent negative totals just in case
+      const newTotal = checked 
+          ? Math.max(0, selectedOrder.total - DISCOUNT_AMOUNT)
+          : selectedOrder.total + DISCOUNT_AMOUNT;
+
+      // Optimistic Update: Update State IMMEDIATELY
+      const updatedOrder = { ...selectedOrder, adminDiscountApplied: checked, total: newTotal };
+      setSelectedOrder(updatedOrder);
+      // Also update the list in the background
+      setOrders(prev => prev.map(o => o.id === selectedOrder.id ? updatedOrder : o));
+
+      // DB Update (Async)
+      const success = await toggleOrderDiscount(selectedOrder.id, selectedOrder.total, checked);
+      if (!success) {
+          // Revert if failed
+          alert("Error al aplicar el descuento");
+          loadOrders(); // Reload from DB to be safe
+          if (selectedOrder) setSelectedOrder(selectedOrder); // Reset local state to original from closure
+      }
   };
 
   const getStatusColor = (status: OrderStatus) => {
@@ -251,10 +279,36 @@ export const AdminOrders: React.FC = () => {
                             <h3 className="text-sm font-bold uppercase text-gray-400 mb-4 flex items-center gap-2">
                                 <CreditCard className="w-4 h-4" /> Total
                             </h3>
+                            
+                            {/* Checkbox for Admin Discount */}
+                            <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 dark:bg-gray-800/30 rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
+                                <div className="relative flex items-center">
+                                    <input 
+                                        type="checkbox" 
+                                        id="admin-discount" 
+                                        checked={selectedOrder.adminDiscountApplied || false}
+                                        onChange={(e) => handleDiscountToggle(e.target.checked)}
+                                        className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 transition-all checked:border-pink-500 checked:bg-pink-500"
+                                    />
+                                    <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100">
+                                        <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                                    </div>
+                                </div>
+                                <label htmlFor="admin-discount" className="text-sm font-bold text-gray-700 dark:text-gray-300 cursor-pointer select-none flex items-center gap-2">
+                                    <Tag className="w-4 h-4 text-pink-500" />
+                                    Aplicar Descuento Admin (-$5.000)
+                                </label>
+                            </div>
+
                             <div className="flex justify-between items-center mb-4">
-                                <div className="text-3xl font-black text-gray-900 dark:text-white">
+                                <div className="text-3xl font-black text-gray-900 dark:text-white transition-all duration-300">
                                     {formatCurrency(selectedOrder.total)}
                                 </div>
+                                {selectedOrder.adminDiscountApplied && (
+                                    <span className="text-xs bg-pink-100 text-pink-700 px-2 py-1 rounded font-bold animate-pulse">
+                                        Descuento Aplicado
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>

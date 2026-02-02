@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { LandingPage } from './components/LandingPage';
@@ -15,6 +16,7 @@ import { DEFAULT_CONFIG } from './constants';
 import { TShirtConfig, ViewState, Order } from './types';
 import { supabase } from './lib/supabaseClient';
 import { Session } from '@supabase/supabase-js';
+import { Code2 } from 'lucide-react';
 
 const App: React.FC = () => {
   // Theme State
@@ -156,16 +158,27 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300 flex flex-col">
       <Navbar 
         darkMode={darkMode} 
         toggleDarkMode={() => setDarkMode(!darkMode)} 
         currentView={view}
         navigate={setView}
       />
-      <main className="container mx-auto">
+      <main className="container mx-auto flex-1 flex flex-col">
         {renderContent()}
       </main>
+      
+      {/* McNishStudio Signature Footer */}
+      <footer className="py-6 border-t border-gray-100 dark:border-gray-900 mt-auto bg-gray-50 dark:bg-gray-950/50 print:hidden">
+        <div className="container mx-auto px-6 flex flex-col items-center justify-center gap-2">
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-500 flex items-center gap-1.5">
+                <Code2 className="w-4 h-4" />
+                Desarrollado por <span className="font-bold text-gray-800 dark:text-gray-200 hover:text-pink-500 dark:hover:text-pink-400 transition-colors cursor-default">McNishStudio</span>
+            </p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest">Tecnología & Diseño 3D</p>
+        </div>
+      </footer>
     </div>
   );
 };

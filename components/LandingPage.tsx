@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Palette, Box, Sparkles, Grid } from 'lucide-react';
 import { APP_LANDING_LOGO_URL} from '../lib/supabaseClient';
@@ -28,7 +29,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewGallery
 
         <div className="mb-6 inline-block relative z-20">
           <span className="py-1 px-3 rounded-full bg-cyan-100 dark:bg-cyan-900 text-cyan-700 dark:text-cyan-300 text-sm font-bold tracking-wide">
-            NUEVA COLECCIÓN 2025
+            NUEVA COLECCIÓN 2026
           </span>
         </div>
         <h1 className="text-5xl md:text-8xl font-black mb-6 tracking-tight text-gray-900 dark:text-white relative z-20">

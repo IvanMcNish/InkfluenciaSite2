@@ -1,9 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
-import { Package, ShoppingBag, Loader2, Box, Check, TrendingUp, DollarSign, BarChart3, Percent, Layers, Shirt, Ruler, Weight, Activity, User } from 'lucide-react';
+import { Package, ShoppingBag, Loader2, Box, Check, TrendingUp, DollarSign, BarChart3, Percent, Layers, Shirt, Ruler, Weight, Activity, User, PieChart } from 'lucide-react';
 import { getOrders } from '../../services/orderService';
 import { Order, Gender } from '../../types';
-import { formatCurrency, SIZES } from '../../constants';
+import { formatCurrency, SIZES, getItemCost } from '../../constants';
 import { useInventory } from '../../hooks/useInventory';
 
 export const AdminFinancial: React.FC = () => {
@@ -32,9 +32,31 @@ export const AdminFinancial: React.FC = () => {
   const processingOrdersCount = orders.filter(o => o.status === 'processing').length;
   const shippedOrdersCount = orders.filter(o => o.status === 'shipped').length;
 
+  // --- REVENUE & COST CALCULATIONS ---
+
+  // 1. Realized Revenue (Only shipped orders)
   const realizedRevenue = orders
     .filter(o => o.status === 'shipped')
     .reduce((acc, curr) => acc + curr.total, 0);
+
+  // 2. Cost of Goods Sold (COGS) - Cost of shirts in SHIPPED orders
+  const cogsShipped = orders
+    .filter(o => o.status === 'shipped')
+    .reduce((acc, o) => acc + getItemCost(o.gender, o.size, o.grammage), 0);
+
+  // 3. Profit Margin Calculation
+  const grossProfit = realizedRevenue - cogsShipped;
+  const profitMargin = realizedRevenue > 0 ? (grossProfit / realizedRevenue) * 100 : 0;
+
+  // 4. Cost of CONSUMED inventory (Only Processing + Shipped)
+  // We exclude 'pending' because those items are still physically in the 'inventory' array (metrics.estimatedValue)
+  // adding them here would double-count the investment.
+  const costConsumedInventory = orders
+    .filter(o => o.status === 'processing' || o.status === 'shipped')
+    .reduce((acc, o) => acc + getItemCost(o.gender, o.size, o.grammage), 0);
+
+  // 5. Total Historical Investment = Current Assets (Inventory) + Depleted Assets (Consumed Cost)
+  const totalHistoricalInvestment = metrics.estimatedValue + costConsumedInventory;
 
   const potentialRevenue = orders
     .filter(o => o.status !== 'shipped')
@@ -88,21 +110,21 @@ export const AdminFinancial: React.FC = () => {
                                 <p className="text-xs text-blue-600 mt-1 font-medium">Histórico global</p>
                             </div>
 
-                            {/* Card 2: Orders In Process */}
+                            {/* Card 2: Profit Margin (NEW) */}
                             <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                    <Activity className="w-16 h-16 text-yellow-500" />
+                                    <PieChart className="w-16 h-16 text-purple-500" />
                                 </div>
                                 <div className="flex items-center gap-3 mb-2">
-                                    <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg text-yellow-600">
-                                        <Loader2 className="w-5 h-5" />
+                                    <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg text-purple-600">
+                                        <Percent className="w-5 h-5" />
                                     </div>
-                                    <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">En Proceso</h3>
+                                    <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Margen Ganancia</h3>
                                 </div>
-                                <div className="text-3xl font-black text-gray-900 dark:text-white">
-                                    {processingOrdersCount + pendingOrdersCount}
+                                <div className={`text-3xl font-black ${profitMargin > 30 ? 'text-green-500' : 'text-gray-900 dark:text-white'}`}>
+                                    {profitMargin.toFixed(1)}%
                                 </div>
-                                <p className="text-xs text-yellow-600 mt-1 font-medium">Pendientes de envío</p>
+                                <p className="text-xs text-gray-500 mt-1 font-medium">Utilidad Bruta: <span className="text-green-600 font-bold">{formatCurrency(grossProfit)}</span></p>
                             </div>
 
                             {/* Card 3: Orders Shipped */}
@@ -297,12 +319,15 @@ export const AdminFinancial: React.FC = () => {
                                         <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg text-green-600">
                                             <TrendingUp className="w-5 h-5" />
                                         </div>
-                                        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Costo de Inventario</h3>
+                                        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Valor Inventario</h3>
                                     </div>
                                     <div className="text-xl font-black text-gray-900 dark:text-white">
                                         {formatCurrency(metrics.estimatedValue)}
                                     </div>
-                                    <p className="text-xs text-green-600 mt-1 font-medium">Costo Total (Inversión)</p>
+                                    <div className="flex flex-col mt-1">
+                                         <p className="text-[10px] text-gray-400 uppercase">Inversión Histórica (Total)</p>
+                                         <p className="text-sm font-bold text-green-600">{formatCurrency(totalHistoricalInvestment)}</p>
+                                    </div>
                                 </div>
                             </div>
 

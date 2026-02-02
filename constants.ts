@@ -25,6 +25,22 @@ export const INVENTORY_COSTS = {
   }
 };
 
+// Helper para calcular costo de una unidad específica
+export const getItemCost = (gender: string, size: string, grammage: string) => {
+  // Rule 1: XS Size override (regardless of gender or grammage)
+  if (size === 'XS') {
+    return INVENTORY_COSTS.XS_ALL;
+  } 
+  
+  // Rule 2: Gender & Grammage logic
+  // Safe check for gender (default to male if missing/invalid)
+  const genderKey = gender === 'female' ? 'female' : 'male';
+  // Safe check for grammage
+  const grammageKey = grammage === '200g' ? '200g' : '150g';
+  
+  return INVENTORY_COSTS[genderKey][grammageKey];
+};
+
 export const SHIPPING = 10000; // COP
 
 export const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];

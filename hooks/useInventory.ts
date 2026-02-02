@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getInventory } from '../services/inventoryService';
 import { InventoryItem, Gender } from '../types';
-import { INVENTORY_COSTS } from '../constants';
+import { getItemCost } from '../constants';
 
 export const useInventory = () => {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -53,22 +53,7 @@ export const useInventory = () => {
 
     // Financial Value (Cost Calculation)
     const estimatedValue = inventory.reduce((acc, item) => {
-      let unitCost = 0;
-
-      // Rule 1: XS Size override (regardless of gender or grammage)
-      if (item.size === 'XS') {
-        unitCost = INVENTORY_COSTS.XS_ALL;
-      } 
-      // Rule 2: Gender & Grammage logic
-      else {
-        // Safe check for gender (default to male if missing/invalid, though DB enforces constraints)
-        const genderKey = item.gender === 'female' ? 'female' : 'male';
-        // Safe check for grammage
-        const grammageKey = item.grammage === '200g' ? '200g' : '150g';
-        
-        unitCost = INVENTORY_COSTS[genderKey][grammageKey];
-      }
-
+      const unitCost = getItemCost(item.gender, item.size, item.grammage);
       return acc + (item.quantity * unitCost);
     }, 0);
 

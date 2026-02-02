@@ -88,4 +88,8 @@ export interface AppearanceSettings {
     blackShirtHex: string;
 }
 
+export interface FinancialSettings {
+    totalHistoricalInvestment: number;
+}
+
 export type ViewState = 'landing' | 'customizer' | 'checkout' | 'success' | 'admin' | 'designer' | 'gallery' | 'track-order' | 'community' | 'contact';

@@ -5,10 +5,13 @@ import { getOrders } from '../../services/orderService';
 import { Order, Gender } from '../../types';
 import { formatCurrency, SIZES, getItemCost } from '../../constants';
 import { useInventory } from '../../hooks/useInventory';
+import { getFinancialSettings, saveFinancialSettings } from '../../services/settingsService';
 
 export const AdminFinancial: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+  const [historicalInvestment, setHistoricalInvestment] = useState<number>(0);
+  const [isLoadingFinancials, setIsLoadingFinancials] = useState(true);
   
   // State for the specific section filter
   const [viewGender, setViewGender] = useState<'all' | Gender>('all');
@@ -25,6 +28,37 @@ export const AdminFinancial: React.FC = () => {
     };
     loadOrders();
   }, []);
+
+  // Fetch persistent financial history
+  useEffect(() => {
+    const loadFinancials = async () => {
+        setIsLoadingFinancials(true);
+        const settings = await getFinancialSettings();
+        setHistoricalInvestment(settings.totalHistoricalInvestment || 0);
+        setIsLoadingFinancials(false);
+    };
+    loadFinancials();
+  }, []);
+
+  // Sync Logic: If Historical is 0 but we have data, calculate a baseline and save it.
+  // CRITICAL FIX: Only run this if ALL loading states are false. This prevents overwriting existing data due to race conditions.
+  useEffect(() => {
+      if (!isLoadingFinancials && !isLoadingOrders && !isLoadingInventory && historicalInvestment === 0 && (metrics.estimatedValue > 0 || orders.length > 0)) {
+          
+          const cogsShippedOrProcessing = orders
+            .filter(o => o.status === 'processing' || o.status === 'shipped')
+            .reduce((acc, o) => acc + getItemCost(o.gender, o.size, o.grammage), 0);
+          
+          const baseline = metrics.estimatedValue + cogsShippedOrProcessing;
+          
+          if (baseline > 0) {
+              console.log("Auto-syncing Historical Investment Baseline:", baseline);
+              saveFinancialSettings({ totalHistoricalInvestment: baseline });
+              setHistoricalInvestment(baseline);
+          }
+      }
+  }, [isLoadingOrders, isLoadingInventory, isLoadingFinancials, historicalInvestment, metrics.estimatedValue, orders]);
+
 
   // Order Calculations
   const totalOrdersCount = orders.length;
@@ -48,15 +82,9 @@ export const AdminFinancial: React.FC = () => {
   const grossProfit = realizedRevenue - cogsShipped;
   const profitMargin = realizedRevenue > 0 ? (grossProfit / realizedRevenue) * 100 : 0;
 
-  // 4. Cost of CONSUMED inventory (Only Processing + Shipped)
-  // We exclude 'pending' because those items are still physically in the 'inventory' array (metrics.estimatedValue)
-  // adding them here would double-count the investment.
-  const costConsumedInventory = orders
-    .filter(o => o.status === 'processing' || o.status === 'shipped')
-    .reduce((acc, o) => acc + getItemCost(o.gender, o.size, o.grammage), 0);
-
-  // 5. Total Historical Investment = Current Assets (Inventory) + Depleted Assets (Consumed Cost)
-  const totalHistoricalInvestment = metrics.estimatedValue + costConsumedInventory;
+  // 5. Total Historical Investment (Uses persistent value now)
+  // If still 0 (loading or really new), fallback to metric logic temporarily for display
+  const displayHistoricalInvestment = historicalInvestment > 0 ? historicalInvestment : metrics.estimatedValue;
 
   const potentialRevenue = orders
     .filter(o => o.status !== 'shipped')
@@ -87,7 +115,7 @@ export const AdminFinancial: React.FC = () => {
         .reduce((acc, i) => acc + i.quantity, 0);
   };
 
-  if (isLoadingOrders || isLoadingInventory) return <div className="p-8 text-center">Cargando datos financieros e inventario...</div>;
+  if (isLoadingOrders || isLoadingInventory || isLoadingFinancials) return <div className="p-8 text-center flex flex-col items-center justify-center gap-2"><Loader2 className="w-8 h-8 animate-spin text-pink-500" /><span>Cargando datos financieros...</span></div>;
 
   return (
     <div className="animate-fade-in space-y-8">
@@ -325,8 +353,8 @@ export const AdminFinancial: React.FC = () => {
                                         {formatCurrency(metrics.estimatedValue)}
                                     </div>
                                     <div className="flex flex-col mt-1">
-                                         <p className="text-[10px] text-gray-400 uppercase">Inversión Histórica (Total)</p>
-                                         <p className="text-sm font-bold text-green-600">{formatCurrency(totalHistoricalInvestment)}</p>
+                                         <p className="text-[10px] text-gray-400 uppercase">Costo Acumulado (Histórico)</p>
+                                         <p className="text-sm font-bold text-green-600">{formatCurrency(displayHistoricalInvestment)}</p>
                                     </div>
                                 </div>
                             </div>

@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Layers, DollarSign, PlusCircle, Save, Loader2, Database, Shirt, TrendingUp, User } from 'lucide-react';
 import { upsertInventoryBatch } from '../../services/inventoryService';
+import { addToHistoricalInvestment } from '../../services/settingsService';
 import { useInventory } from '../../hooks/useInventory';
-import { formatCurrency, SIZES } from '../../constants';
+import { formatCurrency, SIZES, getItemCost } from '../../constants';
 import { Gender } from '../../types';
 
 export const AdminInventory: React.FC = () => {
@@ -26,9 +27,19 @@ export const AdminInventory: React.FC = () => {
 
   const saveStockUpdates = async () => {
       setIsSavingStock(true);
+      
+      let totalCostAdded = 0;
+      
       const updates = SIZES.map(size => {
           const currentQty = getQuantity(selectedGender, mgmtColor, size, mgmtGrammage);
           const qtyToAdd = stockInputs[size] || 0;
+          
+          // Calculate cost for this specific addition
+          if (qtyToAdd > 0) {
+              const unitCost = getItemCost(selectedGender, size, mgmtGrammage);
+              totalCostAdded += (unitCost * qtyToAdd);
+          }
+
           const newTotal = currentQty + qtyToAdd;
 
           return {
@@ -40,14 +51,21 @@ export const AdminInventory: React.FC = () => {
           };
       });
 
+      // 1. Update Inventory Quantities
       const result = await upsertInventoryBatch(updates);
       
-      if (result.success) {
+      // 2. Update Historical Financial Accumulator
+      let financialUpdateSuccess = true;
+      if (totalCostAdded > 0) {
+          financialUpdateSuccess = await addToHistoricalInvestment(totalCostAdded);
+      }
+      
+      if (result.success && financialUpdateSuccess) {
           await refreshInventory();
           setStockInputs({}); 
-          alert("¡Stock agregado correctamente!");
+          alert(`¡Stock actualizado! Se agregó ${formatCurrency(totalCostAdded)} a la Inversión Histórica.`);
       } else {
-          alert("Error al actualizar inventario.");
+          alert("Hubo un error al actualizar el inventario o las finanzas.");
       }
       setIsSavingStock(false);
   };
@@ -76,6 +94,7 @@ export const AdminInventory: React.FC = () => {
                     <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Valor Inventario</h3>
                 </div>
                 <div className="text-xl font-black text-gray-900 dark:text-white">{formatCurrency(metrics.estimatedValue)}</div>
+                <p className="text-[10px] text-gray-400 mt-1">Valor actual en bodega</p>
             </div>
 
             <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800">

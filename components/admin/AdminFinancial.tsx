@@ -193,19 +193,31 @@ export const AdminFinancial: React.FC = () => {
 
                             {/* Efficiency Metric */}
                             <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center text-center">
-                                <div className="w-24 h-24 rounded-full border-8 border-gray-100 dark:border-gray-800 flex items-center justify-center mb-4 relative">
+                                <div className="w-24 h-24 relative flex items-center justify-center mb-4">
                                     <Percent className="w-8 h-8 text-gray-400 absolute" />
-                                    <svg className="w-full h-full transform -rotate-90">
+                                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                                        {/* Background Ring */}
                                         <circle
-                                            cx="48"
-                                            cy="48"
-                                            r="38"
+                                            cx="50"
+                                            cy="50"
+                                            r="40"
                                             stroke="currentColor"
-                                            strokeWidth="8"
+                                            strokeWidth="10"
                                             fill="transparent"
-                                            className="text-pink-500"
-                                            strokeDasharray={`${2 * Math.PI * 38}`}
-                                            strokeDashoffset={`${2 * Math.PI * 38 * (1 - shippedPercentage / 100)}`}
+                                            className="text-gray-100 dark:text-gray-800"
+                                        />
+                                        {/* Progress Ring */}
+                                        <circle
+                                            cx="50"
+                                            cy="50"
+                                            r="40"
+                                            stroke="currentColor"
+                                            strokeWidth="10"
+                                            fill="transparent"
+                                            className="text-pink-500 transition-all duration-1000 ease-out"
+                                            strokeDasharray={`${2 * Math.PI * 40}`}
+                                            strokeDashoffset={`${2 * Math.PI * 40 * (1 - shippedPercentage / 100)}`}
+                                            strokeLinecap="round"
                                         />
                                     </svg>
                                 </div>

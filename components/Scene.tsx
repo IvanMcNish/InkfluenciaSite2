@@ -8,7 +8,7 @@ import { TShirtConfig as ConfigType, Position } from '../types';
 import { getAppearanceSettings, DEFAULT_APPEARANCE } from '../services/settingsService';
 
 // Fix for TypeScript errors regarding missing intrinsic elements in JSX
-declare module 'react' {
+declare global {
     namespace JSX {
         interface IntrinsicElements {
             group: any;

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { supabase, APP_LOGO_URL } from '../lib/supabaseClient';
-import { Lock, Mail, ArrowRight, Loader2, AlertCircle, Zap } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 
 export const AdminLogin: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -27,31 +27,6 @@ export const AdminLogin: React.FC = () => {
       setError(err.message || 'Error al iniciar sesión');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDevLogin = async () => {
-    const devEmail = 'inkfluencia@gmail.com';
-    const devPass = 'Na881212';
-    
-    // Actualizamos el estado visual
-    setEmail(devEmail);
-    setPassword(devPass);
-    
-    setLoading(true);
-    setError(null);
-
-    try {
-        const { error } = await supabase.auth.signInWithPassword({
-            email: devEmail,
-            password: devPass,
-        });
-
-        if (error) throw error;
-    } catch (err: any) {
-        setError(err.message || 'Error al iniciar sesión (DEV)');
-    } finally {
-        setLoading(false);
     }
   };
 
@@ -119,19 +94,6 @@ export const AdminLogin: React.FC = () => {
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Entrar al Panel'}
               {!loading && <ArrowRight className="w-5 h-5" />}
-            </button>
-
-            {/* DEV BUTTON - SECRET/INVISIBLE */}
-            {/* Es invisible (opacity-0) pero ocupa espacio para poder hacer clic */}
-            <button
-              type="button"
-              onClick={handleDevLogin}
-              disabled={loading}
-              className="w-full h-8 opacity-0 cursor-default"
-              aria-hidden="true"
-              tabIndex={-1}
-            >
-              Secret
             </button>
           </form>
         </div>

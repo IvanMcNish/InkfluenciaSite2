@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Instagram, ThumbsUp, Trash2, Check, X, Loader2, ImagePlus, User, MessageCircle, RefreshCw, CloudLightning } from 'lucide-react';
+import { Instagram, Trash2, Check, X, Loader2, ImagePlus, User, MessageCircle, MoreHorizontal } from 'lucide-react';
 import { getAdminSocialPosts, updateSocialPostStatus, deleteSocialPost, createSocialPost } from '../../services/socialService';
 import { InstagramPost } from '../../types';
-import { supabase } from '../../lib/supabaseClient';
 
 export const AdminCommunity: React.FC = () => {
     const [posts, setPosts] = useState<InstagramPost[]>([]);
@@ -12,7 +11,6 @@ export const AdminCommunity: React.FC = () => {
     
     // Manual Add State
     const [isAdding, setIsAdding] = useState(false);
-    const [isSyncing, setIsSyncing] = useState(false);
     const [newPost, setNewPost] = useState({ username: '', caption: '', image: '' });
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -33,7 +31,7 @@ export const AdminCommunity: React.FC = () => {
     };
 
     const handleReject = async (id: string) => {
-        if (!confirm("¿Eliminar esta publicación?")) return;
+        if (!confirm("¿Eliminar permanentemente esta publicación?")) return;
         const success = await deleteSocialPost(id);
         if (success) setPosts(prev => prev.filter(p => p.id !== id));
     };
@@ -49,26 +47,6 @@ export const AdminCommunity: React.FC = () => {
         }
     };
 
-    // --- NUEVA FUNCIÓN PARA LLAMAR A EDGE FUNCTION ---
-    const handleSyncInstagram = async () => {
-        setIsSyncing(true);
-        try {
-            const { data, error } = await supabase.functions.invoke('sync-instagram-hashtag', {
-                body: { hashtag: 'inkfluencia' } // Puedes hacer esto dinámico si quieres
-            });
-
-            if (error) throw error;
-
-            alert(`Sincronización completada. Se encontraron ${data?.count || 0} publicaciones nuevas.`);
-            loadPosts(); // Recargar la lista
-        } catch (err: any) {
-            console.error('Error syncing:', err);
-            alert(`Error al sincronizar: ${err.message || 'Verifica que la Edge Function esté desplegada y las variables de entorno configuradas.'}`);
-        } finally {
-            setIsSyncing(false);
-        }
-    };
-
     const handleCreatePost = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newPost.image || !newPost.username) return;
@@ -78,7 +56,7 @@ export const AdminCommunity: React.FC = () => {
             username: newPost.username,
             caption: newPost.caption,
             imageUrl: newPost.image,
-            likes: Math.floor(Math.random() * 200) + 50, // Fake initial likes for manual posts
+            likes: Math.floor(Math.random() * 200) + 50, // Fake initial likes for manual admin posts
             approved: true
         });
 
@@ -100,22 +78,14 @@ export const AdminCommunity: React.FC = () => {
              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex-1 w-full">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold flex items-center gap-2">
+                        <h2 className="text-xl font-bold flex items-center gap-2 text-gray-900 dark:text-white">
                             <Instagram className="w-6 h-6 text-pink-500" />
-                            Muro de Comunidad
+                            Gestión de Comunidad (Fotos de Clientes)
                         </h2>
-                        <button 
-                            onClick={handleSyncInstagram}
-                            disabled={isSyncing}
-                            className="text-xs bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-all shadow-md disabled:opacity-70"
-                        >
-                            {isSyncing ? <Loader2 className="w-4 h-4 animate-spin"/> : <CloudLightning className="w-4 h-4" />}
-                            {isSyncing ? 'Sincronizando...' : 'Sincronizar Instagram #Hashtag'}
-                        </button>
                     </div>
                     
                     <form onSubmit={handleCreatePost} className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
-                        <h3 className="text-sm font-bold uppercase text-gray-500 mb-3">Agregar Publicación Manualmente</h3>
+                        <h3 className="text-sm font-bold uppercase text-gray-500 mb-3">Publicar como Admin</h3>
                         <div className="flex flex-col md:flex-row gap-4">
                             <div 
                                 onClick={() => fileInputRef.current?.click()}
@@ -135,10 +105,10 @@ export const AdminCommunity: React.FC = () => {
                                         <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                         <input 
                                             type="text" 
-                                            placeholder="@usuario_instagram" 
+                                            placeholder="Nombre del cliente..." 
                                             value={newPost.username}
                                             onChange={e => setNewPost({...newPost, username: e.target.value})}
-                                            className="w-full pl-10 p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm outline-none focus:ring-2 focus:ring-pink-500"
+                                            className="w-full pl-10 p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm outline-none focus:ring-2 focus:ring-pink-500 text-gray-900 dark:text-white"
                                         />
                                     </div>
                                     <div className="flex-1 relative">
@@ -148,7 +118,7 @@ export const AdminCommunity: React.FC = () => {
                                             placeholder="Descripción / Caption..." 
                                             value={newPost.caption}
                                             onChange={e => setNewPost({...newPost, caption: e.target.value})}
-                                            className="w-full pl-10 p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm outline-none focus:ring-2 focus:ring-pink-500"
+                                            className="w-full pl-10 p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm outline-none focus:ring-2 focus:ring-pink-500 text-gray-900 dark:text-white"
                                         />
                                     </div>
                                 </div>
@@ -157,8 +127,8 @@ export const AdminCommunity: React.FC = () => {
                                     disabled={isAdding || !newPost.image}
                                     className="px-4 py-2 bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-200 text-white dark:text-black rounded-lg font-bold text-sm transition-colors flex items-center gap-2 disabled:opacity-50"
                                 >
-                                    {isAdding ? <Loader2 className="w-4 h-4 animate-spin"/> : <Instagram className="w-4 h-4" />}
-                                    Publicar Manualmente
+                                    {isAdding ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4" />}
+                                    Publicar y Aprobar
                                 </button>
                             </div>
                         </div>
@@ -171,53 +141,63 @@ export const AdminCommunity: React.FC = () => {
                 <div className="flex gap-4 mb-4 border-b border-gray-200 dark:border-gray-800">
                     <button 
                         onClick={() => setActiveTab('pending')}
-                        className={`pb-2 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'pending' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+                        className={`pb-2 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'pending' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
                     >
-                        Pendientes ({posts.filter(p => !p.approved).length})
+                        Pendientes de Aprobación ({posts.filter(p => !p.approved).length})
                     </button>
                     <button 
                          onClick={() => setActiveTab('approved')}
-                         className={`pb-2 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'approved' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+                         className={`pb-2 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'approved' ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
                     >
-                        Publicados ({posts.filter(p => p.approved).length})
+                        Publicados en Web ({posts.filter(p => p.approved).length})
                     </button>
                 </div>
 
                 {isLoading ? (
                     <div className="py-10 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-pink-500"/></div>
                 ) : filteredPosts.length === 0 ? (
-                    <div className="py-10 text-center text-gray-500 italic">No hay publicaciones en esta sección.</div>
+                    <div className="py-10 text-center text-gray-500 italic bg-white dark:bg-gray-900 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
+                        No hay publicaciones en esta sección.
+                    </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredPosts.map(post => (
-                            <div key={post.id} className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-sm">
-                                <div className="h-48 bg-gray-100 overflow-hidden relative group">
-                                    <img src={post.imageUrl} alt={post.username} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                                    {/* Indicador de Origen */}
-                                    <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-full">
-                                        {post.id.length > 20 ? 'Instagram API' : 'Manual'}
+                            <div key={post.id} className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col">
+                                {/* Simulated Instagram Card Header */}
+                                <div className="p-3 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500">
+                                            <img 
+                                                src={post.userAvatar || `https://ui-avatars.com/api/?name=${post.username}&background=random&color=fff`} 
+                                                alt={post.username} 
+                                                className="w-full h-full rounded-full object-cover border border-white dark:border-gray-900 bg-white"
+                                            />
+                                        </div>
+                                        <span className="text-sm font-bold text-gray-900 dark:text-white">
+                                            {post.username}
+                                        </span>
                                     </div>
+                                    <MoreHorizontal className="w-5 h-5 text-gray-400" />
                                 </div>
-                                <div className="p-4">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div>
-                                            <div className="font-bold text-sm text-gray-900 dark:text-white">{post.username}</div>
-                                            <div className="text-xs text-gray-500">{post.timestamp}</div>
-                                        </div>
-                                        <div className="flex items-center gap-1 text-xs font-bold text-pink-500">
-                                            <ThumbsUp className="w-3 h-3" /> {post.likes}
-                                        </div>
+
+                                <div className="h-64 bg-gray-100 dark:bg-gray-800 overflow-hidden relative">
+                                    <img src={post.imageUrl} alt={post.username} className="w-full h-full object-cover" />
+                                </div>
+                                
+                                <div className="p-4 flex-1 flex flex-col">
+                                    <div className="text-sm text-gray-500 mb-4 flex-1">
+                                        <span className="font-bold text-gray-900 dark:text-white mr-1">{post.username}</span>
+                                        <span className="text-gray-800 dark:text-gray-300">{post.caption}</span>
                                     </div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 mb-4 h-8">{post.caption}</p>
                                     
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 mt-auto">
                                         {!post.approved ? (
                                             <>
-                                                <button onClick={() => handleApprove(post.id)} className="flex-1 bg-green-500 hover:bg-green-600 text-white py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1"><Check className="w-3 h-3" /> Aprobar</button>
-                                                <button onClick={() => handleReject(post.id)} className="flex-1 bg-red-100 hover:bg-red-200 text-red-600 dark:bg-red-900/30 dark:hover:bg-red-900/50 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1"><X className="w-3 h-3" /> Rechazar</button>
+                                                <button onClick={() => handleApprove(post.id)} className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-colors shadow-lg shadow-green-500/20"><Check className="w-3 h-3" /> Aprobar</button>
+                                                <button onClick={() => handleReject(post.id)} className="flex-1 bg-red-100 hover:bg-red-200 text-red-600 dark:bg-red-900/30 dark:hover:bg-red-900/50 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-colors"><X className="w-3 h-3" /> Rechazar</button>
                                             </>
                                         ) : (
-                                            <button onClick={() => handleReject(post.id)} className="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1"><Trash2 className="w-3 h-3" /> Eliminar</button>
+                                            <button onClick={() => handleReject(post.id)} className="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-colors"><Trash2 className="w-3 h-3" /> Eliminar del Muro</button>
                                         )}
                                     </div>
                                 </div>

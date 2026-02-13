@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { Instagram, Heart, MessageCircle, Share2, Loader2, ArrowRight, Camera, Upload, X, CheckCircle } from 'lucide-react';
+import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Camera, Upload, X, CheckCircle, Loader2, User, Sparkles, Instagram, ExternalLink } from 'lucide-react';
 import { getInstagramPosts, createSocialPost } from '../services/socialService';
 import { InstagramPost } from '../types';
 
@@ -15,8 +15,6 @@ export const CommunityPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const instagramLink = "https://www.instagram.com/inkfluencia_?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==";
-
   useEffect(() => {
     const loadPosts = async () => {
       setIsLoading(true);
@@ -30,7 +28,6 @@ export const CommunityPage: React.FC = () => {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
-          // Limit 5MB
           if (file.size > 5 * 1024 * 1024) {
               alert("La imagen es muy pesada. Máximo 5MB.");
               return;
@@ -48,16 +45,14 @@ export const CommunityPage: React.FC = () => {
       if (!newPost.image || !newPost.username) return;
       
       setIsSubmitting(true);
-      
-      // Ensure username has @
-      let finalUsername = newPost.username.trim();
-      if (!finalUsername.startsWith('@')) finalUsername = '@' + finalUsername;
+      const finalUsername = newPost.username.trim().replace(/\s+/g, '_').toLowerCase();
 
       const success = await createSocialPost({
           username: finalUsername,
           caption: newPost.caption,
           imageUrl: newPost.image,
-          approved: false // User posts require approval
+          likes: 0,
+          approved: false 
       });
 
       setIsSubmitting(false);
@@ -78,7 +73,7 @@ export const CommunityPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)]">
+    <div className="min-h-screen bg-gray-50 dark:bg-black">
       {/* Upload Modal */}
       {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
@@ -87,13 +82,13 @@ export const CommunityPage: React.FC = () => {
                   
                   {uploadStep === 'form' ? (
                       <form onSubmit={handleSubmit}>
-                          <h2 className="text-2xl font-bold mb-1 flex items-center gap-2"><Camera className="w-6 h-6 text-pink-500" /> Sube tu Look</h2>
-                          <p className="text-sm text-gray-500 mb-6">Comparte tu estilo Inkfluencia con la comunidad.</p>
+                          <h2 className="text-2xl font-bold mb-1 flex items-center gap-2 text-gray-900 dark:text-white"><Camera className="w-6 h-6 text-pink-500" /> Sube tu Look</h2>
+                          <p className="text-sm text-gray-500 mb-6">Comparte tu estilo Inkfluencia. Tu foto será revisada antes de publicarse.</p>
                           
                           <div className="space-y-4">
                               <div 
                                 onClick={() => fileInputRef.current?.click()}
-                                className={`w-full aspect-[4/3] rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors relative overflow-hidden ${newPost.image ? 'border-pink-500' : 'border-gray-300 dark:border-gray-700 hover:border-pink-400'}`}
+                                className={`w-full aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors relative overflow-hidden bg-gray-50 dark:bg-gray-800 ${newPost.image ? 'border-pink-500' : 'border-gray-300 dark:border-gray-700 hover:border-pink-400'}`}
                               >
                                   {newPost.image ? (
                                       <img src={newPost.image} className="absolute inset-0 w-full h-full object-cover" alt="Preview" />
@@ -107,34 +102,35 @@ export const CommunityPage: React.FC = () => {
                               </div>
 
                               <div>
-                                  <label className="text-xs font-bold uppercase text-gray-500 ml-1">Tu Usuario de Instagram</label>
+                                  <label className="text-xs font-bold uppercase text-gray-500 ml-1">Tu Nombre / Usuario</label>
                                   <input 
                                     type="text" 
-                                    placeholder="@tu_usuario"
+                                    placeholder="ej. juan.estilo"
                                     required
                                     value={newPost.username}
                                     onChange={e => setNewPost({...newPost, username: e.target.value})}
-                                    className="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 outline-none focus:ring-2 focus:ring-pink-500"
+                                    className="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 outline-none focus:ring-2 focus:ring-pink-500 text-gray-900 dark:text-white"
                                   />
                               </div>
 
                               <div>
-                                  <label className="text-xs font-bold uppercase text-gray-500 ml-1">Descripción (Opcional)</label>
+                                  <label className="text-xs font-bold uppercase text-gray-500 ml-1">Mensaje (Caption)</label>
                                   <textarea 
-                                    placeholder="¡Me encanta mi nueva camiseta!"
+                                    placeholder="Me encanta mi nueva camiseta..."
                                     rows={2}
+                                    required
                                     value={newPost.caption}
                                     onChange={e => setNewPost({...newPost, caption: e.target.value})}
-                                    className="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 outline-none focus:ring-2 focus:ring-pink-500 resize-none"
+                                    className="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 outline-none focus:ring-2 focus:ring-pink-500 resize-none text-gray-900 dark:text-white"
                                   />
                               </div>
 
                               <button 
                                 type="submit" 
                                 disabled={!newPost.image || isSubmitting}
-                                className="w-full py-3 bg-gradient-to-r from-pink-600 to-orange-500 text-white font-bold rounded-xl shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                                className="w-full py-3 bg-gradient-to-r from-pink-600 to-orange-500 text-white font-bold rounded-xl shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 hover:shadow-orange-500/20 transition-all"
                               >
-                                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin"/> : 'Enviar para Aprobación'}
+                                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin"/> : 'Enviar a Revisión'}
                               </button>
                           </div>
                       </form>
@@ -143,126 +139,138 @@ export const CommunityPage: React.FC = () => {
                           <div className="w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
                               <CheckCircle className="w-10 h-10 text-green-500" />
                           </div>
-                          <h3 className="text-2xl font-bold mb-2">¡Foto Recibida!</h3>
-                          <p className="text-gray-500 mb-6">Tu publicación ha sido enviada a revisión. Una vez aprobada por el equipo, aparecerá en el muro.</p>
-                          <button onClick={closeAndReset} className="px-6 py-2 bg-gray-100 dark:bg-gray-800 font-bold rounded-lg hover:bg-gray-200 transition-colors">Cerrar</button>
+                          <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">¡Gracias!</h3>
+                          <p className="text-gray-500 mb-6">Tu foto ha sido enviada al equipo de Inkfluencia. Una vez aprobada, aparecerá en la galería de la comunidad.</p>
+                          <button onClick={closeAndReset} className="px-6 py-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Cerrar</button>
                       </div>
                   )}
               </div>
           </div>
       )}
 
-      {/* Hero Header */}
-      <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 text-white py-20 px-6 text-center">
-        <div className="max-w-3xl mx-auto space-y-6">
-          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold border border-white/30">
-            <Instagram className="w-4 h-4" />
-            <span>@inkfluencia_</span>
-          </div>
-          <h1 className="text-4xl md:text-6xl font-black tracking-tight">
-            La Revolución <span className="text-yellow-300">#Inkfluencia</span>
-          </h1>
-          <p className="text-lg md:text-xl text-white/90 leading-relaxed max-w-2xl mx-auto">
-            No solo creamos camisetas, creamos historias. Únete a nuestra comunidad, sube tu foto y etiquétanos para aparecer aquí.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-             <button 
-                onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center justify-center gap-2 bg-white text-pink-600 px-8 py-3 rounded-full font-bold shadow-lg hover:scale-105 transition-transform"
-            >
-                <Camera className="w-5 h-5" />
-                Subir mi Foto
-            </button>
-            <a 
-                href={instagramLink} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 bg-black/20 text-white border border-white/30 hover:bg-black/30 px-8 py-3 rounded-full font-bold transition-all"
-            >
-                <Instagram className="w-5 h-5" />
-                Ver en Instagram
-            </a>
-          </div>
+      {/* HERO SECTION COMPACT WITH GRADIENT */}
+      <div className="relative bg-gradient-to-r from-violet-600 to-orange-500 overflow-hidden shadow-lg border-b border-white/10">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="absolute inset-0 bg-grid-pattern opacity-10 mix-blend-overlay"></div>
+        
+        <div className="max-w-7xl mx-auto px-6 py-12 md:py-16 relative z-10 text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white backdrop-blur-md border border-white/30 text-xs font-bold uppercase tracking-wider mb-4 shadow-sm">
+                <Sparkles className="w-3 h-3" /> Wall of Fame
+            </div>
+            
+            <h1 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight leading-tight drop-shadow-sm">
+              Comunidad Inkfluencia
+            </h1>
+            
+            <p className="text-lg text-white/90 max-w-2xl mx-auto mb-8 leading-relaxed font-medium drop-shadow-sm">
+              Únete a la revolución visual. Miles de clientes creando tendencias con sus diseños únicos.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <button 
+                    onClick={() => setIsModalOpen(true)}
+                    className="group relative inline-flex items-center gap-2 bg-white text-orange-600 px-8 py-3 rounded-full font-bold text-base shadow-xl hover:bg-gray-50 hover:scale-105 transition-all duration-300"
+                >
+                    <Camera className="w-5 h-5" />
+                    Subir mi Foto
+                </button>
+
+                <a 
+                    href="https://www.instagram.com/inkfluencia_/tagged/" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center gap-2 bg-black/20 hover:bg-black/30 text-white border border-white/30 px-6 py-3 rounded-full font-bold text-base backdrop-blur-sm transition-all duration-300 hover:scale-105"
+                >
+                    <Instagram className="w-5 h-5" />
+                    <span>Ver en Instagram</span>
+                    <span className="opacity-70 text-xs font-normal bg-white/10 px-1.5 py-0.5 rounded ml-1">#inkfluencia</span>
+                    <ExternalLink className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
+                </a>
+            </div>
         </div>
       </div>
 
-      {/* Feed Grid */}
-      <div className="max-w-7xl mx-auto px-6 py-16">
+      {/* MASONRY FEED */}
+      <div className="max-w-7xl mx-auto px-4 py-12">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
-            <Loader2 className="w-10 h-10 text-pink-500 animate-spin" />
+            <Loader2 className="w-12 h-12 text-pink-500 animate-spin" />
           </div>
         ) : (
           <>
             {posts.length === 0 ? (
-                <div className="text-center py-20 bg-gray-50 dark:bg-gray-900 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-800">
-                    <Instagram className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-gray-600 dark:text-gray-400">Aún no hay publicaciones</h3>
-                    <p className="text-gray-400 mt-2 mb-8">¡Sé el primero en subir tu foto!</p>
-                    <button onClick={() => setIsModalOpen(true)} className="text-pink-500 font-bold hover:underline">Subir Foto Ahora</button>
+                <div className="text-center py-20">
+                    <div className="w-24 h-24 bg-gray-100 dark:bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-white dark:border-gray-800 shadow-xl">
+                        <User className="w-10 h-10 text-gray-300" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Aún no hay publicaciones</h3>
+                    <p className="text-gray-500 mt-2 mb-8">¡Sé el primero en estrenar el muro de la fama!</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
                     {posts.map((post) => (
                     <div 
                         key={post.id} 
-                        className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-xl shadow-gray-200/50 dark:shadow-none group hover:-translate-y-2 transition-transform duration-300"
+                        className="break-inside-avoid bg-white dark:bg-gray-900 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-2xl transition-all duration-500 group"
                     >
-                        {/* Card Header */}
+                        {/* Header */}
                         <div className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full p-0.5 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500">
-                                <img 
-                                    src={post.userAvatar || `https://ui-avatars.com/api/?name=${post.username}&background=random`} 
-                                    alt={post.username} 
-                                    className="w-full h-full rounded-full object-cover border-2 border-white dark:border-gray-900"
-                                />
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500">
+                                    <img 
+                                        src={post.userAvatar || `https://ui-avatars.com/api/?name=${post.username}&background=random&color=fff&bold=true`} 
+                                        alt={post.username} 
+                                        className="w-full h-full rounded-full object-cover border-2 border-white dark:border-gray-900 bg-white"
+                                    />
+                                </div>
+                                <div>
+                                    <span className="block text-sm font-bold text-gray-900 dark:text-white leading-none hover:underline cursor-pointer">
+                                        {post.username}
+                                    </span>
+                                    <span className="text-[10px] text-gray-400 font-medium">Original de Inkfluencia</span>
+                                </div>
                             </div>
-                            <div>
-                                <p className="font-bold text-sm text-gray-900 dark:text-white">{post.username}</p>
-                                <p className="text-xs text-gray-500">{post.timestamp}</p>
-                            </div>
-                        </div>
-                        <button className="text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                            <Share2 className="w-5 h-5" />
-                        </button>
                         </div>
 
                         {/* Image */}
-                        <div className="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                        <div className="relative overflow-hidden bg-gray-100 dark:bg-gray-800">
                             <img 
                                 src={post.imageUrl} 
                                 alt="Post" 
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-700"
                             />
-                            {/* Overlay Icon on Hover */}
-                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Heart className="w-12 h-12 text-white fill-white drop-shadow-lg" />
-                            </div>
+                            {/* Overlay Gradient on Hover */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         </div>
 
-                        {/* Actions & Caption */}
+                        {/* Footer / Actions */}
                         <div className="p-4">
-                            <div className="flex items-center gap-4 mb-3">
-                                <button className="text-gray-800 dark:text-gray-200 hover:text-pink-500 transition-colors">
-                                    <Heart className="w-7 h-7" />
-                                </button>
-                                <button className="text-gray-800 dark:text-gray-200 hover:text-blue-500 transition-colors">
-                                    <MessageCircle className="w-7 h-7" />
-                                </button>
+                            <div className="flex justify-between items-center mb-3">
+                                <div className="flex gap-4">
+                                    <button className="group/btn">
+                                        <Heart className="w-6 h-6 text-gray-900 dark:text-white group-hover/btn:text-red-500 transition-colors" />
+                                    </button>
+                                    <button className="group/btn">
+                                        <MessageCircle className="w-6 h-6 text-gray-900 dark:text-white group-hover/btn:text-blue-500 transition-colors" />
+                                    </button>
+                                    <button className="group/btn">
+                                        <Send className="w-6 h-6 text-gray-900 dark:text-white group-hover/btn:text-green-500 transition-colors -rotate-45 mb-1" />
+                                    </button>
+                                </div>
+                                <Bookmark className="w-6 h-6 text-gray-900 dark:text-white hover:text-yellow-500 transition-colors cursor-pointer" />
+                            </div>
+
+                            <div className="text-sm text-gray-900 dark:text-white font-bold mb-2">
+                                {post.likes > 0 ? `${post.likes} Me gusta` : 'Les gusta a inkfluencia_ y otros'}
+                            </div>
+
+                            <div className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                                <span className="font-bold text-gray-900 dark:text-white mr-2">{post.username}</span>
+                                {post.caption}
                             </div>
                             
-                            <div className="text-sm font-bold text-gray-900 dark:text-white mb-2">
-                                {post.likes} Me gusta
-                            </div>
-                            
-                            <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                                <span className="font-bold mr-2 text-gray-900 dark:text-white">{post.username}</span>
-                                {post.caption.split(' ').map((word, i) => (
-                                    word.startsWith('#') ? 
-                                    <span key={i} className="text-blue-600 dark:text-blue-400 font-medium">{word} </span> : 
-                                    <span key={i}>{word} </span>
-                                ))}
+                            <div className="mt-3 text-[10px] text-gray-400 uppercase tracking-wide font-medium">
+                                {post.timestamp}
                             </div>
                         </div>
                     </div>
@@ -271,24 +279,6 @@ export const CommunityPage: React.FC = () => {
             )}
           </>
         )}
-
-        <div className="mt-16 text-center">
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">¿Quieres aparecer aquí?</h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-lg mx-auto">
-                Sube una foto usando tu prenda Inkfluencia, etiquétanos y usa el hashtag <span className="font-bold text-pink-500">#inkfluencia</span>. ¡Seleccionamos las mejores cada semana!
-            </p>
-            <div className="flex justify-center gap-4">
-                 <div className="w-16 h-16 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                    <span className="text-2xl">📸</span>
-                 </div>
-                 <div className="w-16 h-16 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                    <span className="text-2xl">🏷️</span>
-                 </div>
-                 <div className="w-16 h-16 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                    <span className="text-2xl">✨</span>
-                 </div>
-            </div>
-        </div>
       </div>
     </div>
   );

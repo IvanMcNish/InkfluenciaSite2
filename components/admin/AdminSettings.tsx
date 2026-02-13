@@ -362,20 +362,25 @@ create table if not exists social_posts (
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- Políticas RLS
+-- Habilitar RLS
 alter table social_posts enable row level security;
 
--- Público puede VER posts APROBADOS
+-- Política: Público puede VER posts APROBADOS
+drop policy if exists "Public Read Approved Posts" on social_posts;
 create policy "Public Read Approved Posts" on social_posts for select using (approved = true);
 
--- Admin puede VER TODO
+-- Política: Admin puede VER TODO
+drop policy if exists "Admin Read All Posts" on social_posts;
 create policy "Admin Read All Posts" on social_posts for select using (auth.role() = 'authenticated');
 
--- Cualquiera puede CREAR (para subir fotos), por defecto approved=false
+-- Política: Cualquiera puede CREAR (subir fotos), por defecto approved=false
+drop policy if exists "Public Create Posts" on social_posts;
 create policy "Public Create Posts" on social_posts for insert with check (true);
 
--- Admin puede ACTUALIZAR (aprobar) y BORRAR
+-- Política: Admin puede ACTUALIZAR (aprobar) y BORRAR
+drop policy if exists "Admin Update Posts" on social_posts;
 create policy "Admin Update Posts" on social_posts for update using (auth.role() = 'authenticated');
+drop policy if exists "Admin Delete Posts" on social_posts;
 create policy "Admin Delete Posts" on social_posts for delete using (auth.role() = 'authenticated');
 `, 'community')} className="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 rounded text-xs">{copiedCommunity ? 'Copiado' : 'Copiar'}</button>
                         <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL Social Community (Muro)</pre>

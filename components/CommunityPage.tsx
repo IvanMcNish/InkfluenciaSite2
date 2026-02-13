@@ -190,7 +190,7 @@ export const CommunityPage: React.FC = () => {
         </div>
       </div>
 
-      {/* MASONRY FEED */}
+      {/* GRID FEED (STANDARD SIZES) */}
       <div className="max-w-7xl mx-auto px-4 py-12">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
@@ -207,14 +207,14 @@ export const CommunityPage: React.FC = () => {
                     <p className="text-gray-500 mt-2 mb-8">¡Sé el primero en estrenar el muro de la fama!</p>
                 </div>
             ) : (
-                <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {posts.map((post) => (
                     <div 
                         key={post.id} 
-                        className="break-inside-avoid bg-white dark:bg-gray-900 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-2xl transition-all duration-500 group"
+                        className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-2xl transition-all duration-500 group flex flex-col"
                     >
                         {/* Header */}
-                        <div className="p-4 flex items-center justify-between">
+                        <div className="p-4 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500">
                                     <img 
@@ -232,19 +232,19 @@ export const CommunityPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Image */}
-                        <div className="relative overflow-hidden bg-gray-100 dark:bg-gray-800">
+                        {/* Image - Enforced Aspect Ratio for Uniformity */}
+                        <div className="aspect-square relative overflow-hidden bg-gray-100 dark:bg-gray-800">
                             <img 
                                 src={post.imageUrl} 
                                 alt="Post" 
-                                className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-700"
+                                className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
                             />
                             {/* Overlay Gradient on Hover */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         </div>
 
                         {/* Footer / Actions */}
-                        <div className="p-4">
+                        <div className="p-4 flex-1 flex flex-col justify-end">
                             <div className="flex justify-between items-center mb-3">
                                 <div className="flex gap-4">
                                     <button className="group/btn">
@@ -264,7 +264,7 @@ export const CommunityPage: React.FC = () => {
                                 {post.likes > 0 ? `${post.likes} Me gusta` : 'Les gusta a inkfluencia_ y otros'}
                             </div>
 
-                            <div className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                            <div className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-2">
                                 <span className="font-bold text-gray-900 dark:text-white mr-2">{post.username}</span>
                                 {post.caption}
                             </div>

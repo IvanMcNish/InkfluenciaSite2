@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Navbar } from './components/Navbar';
 import { LandingPage } from './components/LandingPage';
 import { Customizer } from './components/Customizer';
@@ -40,6 +40,10 @@ const App: React.FC = () => {
   // Auth State
   const [session, setSession] = useState<Session | null>(null);
 
+  // Footer Intersection State
+  const footerRef = useRef<HTMLElement>(null);
+  const [isFooterVisible, setIsFooterVisible] = useState(false);
+
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -54,8 +58,6 @@ const App: React.FC = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
-        // Handle "Invalid Refresh Token" error by clearing the session state
-        // This often happens if the local token is stale
         console.warn("Session error:", error.message);
         setSession(null);
       } else {
@@ -72,13 +74,35 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Footer Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsFooterVisible(entry.isIntersecting);
+      },
+      {
+        root: null,
+        threshold: 0.1, // Trigger when 10% of footer is visible
+      }
+    );
+
+    if (footerRef.current) {
+      observer.observe(footerRef.current);
+    }
+
+    return () => {
+      if (footerRef.current) {
+        observer.unobserve(footerRef.current);
+      }
+    };
+  }, []);
+
   const handleOrderSuccess = (order: Order) => {
     setLastOrder(order);
     setView('success');
   };
 
   const handleSaveDesign = async (name: string, designConfig: TShirtConfig) => {
-    // Save to Supabase (async operation now)
     await saveDesignToCollection(name, designConfig);
     setConfig(DEFAULT_CONFIG);
     setView('gallery');
@@ -86,7 +110,6 @@ const App: React.FC = () => {
 
   const handleBuyGalleryDesign = (designConfig: TShirtConfig) => {
     setConfig(designConfig);
-    // Directly go to checkout, skipping the customizer
     setView('checkout'); 
   };
 
@@ -150,7 +173,6 @@ const App: React.FC = () => {
       case 'track-order':
         return <TrackOrderPage />;
       case 'admin':
-        // Protected Route Logic
         return session ? <AdminPanel /> : <AdminLogin />;
       default:
         return <LandingPage onStart={() => setView('customizer')} onViewGallery={() => setView('gallery')} />;
@@ -158,19 +180,44 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300 flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300 flex flex-col relative">
       <Navbar 
         darkMode={darkMode} 
         toggleDarkMode={() => setDarkMode(!darkMode)} 
         currentView={view}
         navigate={setView}
       />
+      
       <main className="container mx-auto flex-1 flex flex-col">
         {renderContent()}
       </main>
       
-      {/* McNishStudio Signature Footer */}
-      <footer className="py-6 border-t border-gray-100 dark:border-gray-900 mt-auto bg-gray-50 dark:bg-gray-950/50 print:hidden">
+      {/* Floating Mini Footer (Visible when real footer is hidden) */}
+      <div 
+        className={`fixed bottom-4 left-4 z-40 transition-all duration-500 ease-in-out ${
+          !isFooterVisible 
+            ? 'opacity-100 translate-y-0' 
+            : 'opacity-0 translate-y-10 pointer-events-none'
+        }`}
+      >
+        <a 
+            href="https://mcnishstudio.pages.dev/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 bg-white/30 dark:bg-black/30 backdrop-blur-md border border-gray-200/50 dark:border-gray-800/50 rounded-full px-3 py-1.5 shadow-lg hover:bg-white/80 dark:hover:bg-black/80 hover:scale-105 transition-all group"
+        >
+            <Code2 className="w-3 h-3 text-gray-500 group-hover:text-pink-500 transition-colors" />
+            <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                McNishStudio
+            </span>
+        </a>
+      </div>
+
+      {/* Static Footer */}
+      <footer 
+        ref={footerRef}
+        className="py-6 border-t border-gray-100 dark:border-gray-900 mt-auto bg-gray-50 dark:bg-gray-950/50 print:hidden relative z-10"
+      >
         <div className="container mx-auto px-6 flex flex-col items-center justify-center gap-2">
             <p className="text-sm font-medium text-gray-500 dark:text-gray-500 flex items-center gap-1.5">
                 <Code2 className="w-4 h-4" />

@@ -7,20 +7,6 @@ import { TSHIRT_OBJ_URL } from '../constants';
 import { TShirtConfig as ConfigType, Position } from '../types';
 import { getAppearanceSettings, DEFAULT_APPEARANCE } from '../services/settingsService';
 
-// Fix for TypeScript errors regarding missing intrinsic elements in JSX
-declare global {
-    namespace JSX {
-        interface IntrinsicElements {
-            group: any;
-            mesh: any;
-            meshStandardMaterial: any;
-            meshBasicMaterial: any;
-            ambientLight: any;
-            spotLight: any;
-        }
-    }
-}
-
 // Conversion factor: 1 Three.js unit ~= 50 cm of physical width (Approximation for T-shirt scaling)
 const UNIT_TO_CM = 50;
 

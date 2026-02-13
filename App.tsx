@@ -174,7 +174,15 @@ const App: React.FC = () => {
         <div className="container mx-auto px-6 flex flex-col items-center justify-center gap-2">
             <p className="text-sm font-medium text-gray-500 dark:text-gray-500 flex items-center gap-1.5">
                 <Code2 className="w-4 h-4" />
-                Desarrollado por <span className="font-bold text-gray-800 dark:text-gray-200 hover:text-pink-500 dark:hover:text-pink-400 transition-colors cursor-default">McNishStudio</span>
+                Desarrollado por 
+                <a 
+                    href="https://mcnishstudio.pages.dev/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="font-bold text-gray-800 dark:text-gray-200 hover:text-pink-500 dark:hover:text-pink-400 transition-colors"
+                >
+                    McNishStudio
+                </a>
             </p>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest">Tecnología & Diseño 3D</p>
         </div>

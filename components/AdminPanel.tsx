@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { ShoppingBag, Settings, Grid, LogOut, BarChart3, Layers, Users } from 'lucide-react';
+import { ShoppingBag, Settings, Grid, LogOut, BarChart3, Layers, Users, Instagram } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { AdminFinancial } from './admin/AdminFinancial';
 import { AdminOrders } from './admin/AdminOrders';
@@ -7,9 +8,10 @@ import { AdminInventory } from './admin/AdminInventory';
 import { AdminCustomers } from './admin/AdminCustomers';
 import { AdminGallery } from './admin/AdminGallery';
 import { AdminSettings } from './admin/AdminSettings';
+import { AdminCommunity } from './admin/AdminCommunity';
 
 export const AdminPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'financial' | 'orders' | 'inventory' | 'customers' | 'gallery' | 'settings'>('financial');
+  const [activeTab, setActiveTab] = useState<'financial' | 'orders' | 'inventory' | 'customers' | 'gallery' | 'community' | 'settings'>('financial');
 
   const handleLogout = async () => {
       await supabase.auth.signOut();
@@ -21,6 +23,7 @@ export const AdminPanel: React.FC = () => {
     { id: 'inventory', label: 'Gestión Stock', icon: Layers },
     { id: 'customers', label: 'Clientes', icon: Users },
     { id: 'gallery', label: 'Galería', icon: Grid },
+    { id: 'community', label: 'Comunidad', icon: Instagram },
     { id: 'settings', label: 'Config', icon: Settings },
   ] as const;
 
@@ -47,12 +50,12 @@ export const AdminPanel: React.FC = () => {
         </div>
 
         {/* MOBILE GRID MENU */}
-        <div className="grid grid-cols-3 gap-2 mb-6 md:hidden">
+        <div className="grid grid-cols-4 gap-2 mb-6 md:hidden">
             {tabs.map(tab => (
                 <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex flex-col items-center justify-center p-3 rounded-xl text-xs font-bold transition-all ${
+                className={`flex flex-col items-center justify-center p-2 rounded-xl text-[10px] font-bold transition-all ${
                     activeTab === tab.id
                     ? 'bg-pink-600 text-white shadow-lg shadow-pink-500/30'
                     : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-800'
@@ -86,6 +89,7 @@ export const AdminPanel: React.FC = () => {
         {activeTab === 'inventory' && <AdminInventory />}
         {activeTab === 'customers' && <AdminCustomers />}
         {activeTab === 'gallery' && <AdminGallery />}
+        {activeTab === 'community' && <AdminCommunity />}
         {activeTab === 'settings' && <AdminSettings />}
       </div>
     </div>

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ImageIcon, Smartphone, Monitor, Layout, Upload, Loader2, Database, Copy, Check, Trash2, AlertTriangle, Layers, Ruler, Save, HardDrive, Palette } from 'lucide-react';
+import { ImageIcon, Smartphone, Monitor, Layout, Upload, Loader2, Database, Copy, Check, Trash2, AlertTriangle, Layers, Ruler, Save, HardDrive, Palette, Instagram } from 'lucide-react';
 import { uploadAppLogo, APP_LOGO_URL, APP_DESKTOP_LOGO_URL, APP_LANDING_LOGO_URL } from '../../lib/supabaseClient';
 import { getCustomizerConstraints, saveCustomizerConstraints, getUploadLimits, saveUploadLimits, getAppearanceSettings, saveAppearanceSettings, DEFAULT_CONSTRAINTS, DEFAULT_UPLOAD_LIMITS, DEFAULT_APPEARANCE } from '../../services/settingsService';
 import { CustomizerConstraints, UploadLimits, AppearanceSettings } from '../../types';
@@ -15,6 +15,7 @@ export const AdminSettings: React.FC = () => {
   const [copiedInventory, setCopiedInventory] = useState(false);
   const [copiedOrders, setCopiedOrders] = useState(false);
   const [copiedSettings, setCopiedSettings] = useState(false);
+  const [copiedCommunity, setCopiedCommunity] = useState(false);
 
   // Settings State
   const [constraints, setConstraints] = useState<CustomizerConstraints>(DEFAULT_CONSTRAINTS);
@@ -128,12 +129,13 @@ export const AdminSettings: React.FC = () => {
       if (newLogoUrl) { alert('¡Logo Landing Page actualizado! Recarga para ver cambios.'); window.location.reload(); }
   };
 
-  const copyToClipboard = (text: string, type: 'storage' | 'gallery' | 'inventory' | 'orders' | 'settings') => {
+  const copyToClipboard = (text: string, type: 'storage' | 'gallery' | 'inventory' | 'orders' | 'settings' | 'community') => {
     navigator.clipboard.writeText(text);
     if (type === 'storage') { setCopiedStorage(true); setTimeout(() => setCopiedStorage(false), 2000); }
     else if (type === 'gallery') { setCopiedGallery(true); setTimeout(() => setCopiedGallery(false), 2000); }
     else if (type === 'inventory') { setCopiedInventory(true); setTimeout(() => setCopiedInventory(false), 2000); }
     else if (type === 'orders') { setCopiedOrders(true); setTimeout(() => setCopiedOrders(false), 2000); }
+    else if (type === 'community') { setCopiedCommunity(true); setTimeout(() => setCopiedCommunity(false), 2000); }
     else { setCopiedSettings(true); setTimeout(() => setCopiedSettings(false), 2000); }
   };
 
@@ -344,6 +346,42 @@ export const AdminSettings: React.FC = () => {
             <p className="text-gray-500 mb-6">Usa estos scripts en el editor SQL de Supabase para configurar la base de datos.</p>
             
             <div className="space-y-6">
+                <div>
+                    <h3 className="font-bold flex items-center gap-2"><Instagram className="w-4 h-4" /> Muro Social (Comunidad)</h3>
+                    <div className="relative mt-2">
+                        <button onClick={() => copyToClipboard(`
+-- Tabla para publicaciones sociales
+create table if not exists social_posts (
+  id uuid default gen_random_uuid() primary key,
+  username text not null,
+  user_avatar text,
+  image_url text not null,
+  caption text,
+  likes integer default 0,
+  approved boolean default false,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- Políticas RLS
+alter table social_posts enable row level security;
+
+-- Público puede VER posts APROBADOS
+create policy "Public Read Approved Posts" on social_posts for select using (approved = true);
+
+-- Admin puede VER TODO
+create policy "Admin Read All Posts" on social_posts for select using (auth.role() = 'authenticated');
+
+-- Cualquiera puede CREAR (para subir fotos), por defecto approved=false
+create policy "Public Create Posts" on social_posts for insert with check (true);
+
+-- Admin puede ACTUALIZAR (aprobar) y BORRAR
+create policy "Admin Update Posts" on social_posts for update using (auth.role() = 'authenticated');
+create policy "Admin Delete Posts" on social_posts for delete using (auth.role() = 'authenticated');
+`, 'community')} className="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 rounded text-xs">{copiedCommunity ? 'Copiado' : 'Copiar'}</button>
+                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL Social Community (Muro)</pre>
+                    </div>
+                </div>
+
                 <div>
                     <h3 className="font-bold flex items-center gap-2"><Database className="w-4 h-4" /> Configuración General (Tabla Settings)</h3>
                      <div className="relative mt-2">

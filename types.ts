@@ -67,11 +67,13 @@ export interface CollectionItem {
 export interface InstagramPost {
   id: string;
   username: string;
-  userAvatar: string;
+  userAvatar?: string;
   imageUrl: string;
   likes: number;
   caption: string;
-  timestamp: string;
+  timestamp: string; // Display string or date
+  createdAt: string; // ISO DB Date
+  approved: boolean;
 }
 
 export interface CustomizerConstraints {

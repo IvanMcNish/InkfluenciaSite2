@@ -25,6 +25,7 @@ interface SceneProps {
   lockView?: boolean; 
   showMeasurements?: boolean;
   onPositionChange?: (x: number, y: number) => void;
+  onLayerSelect?: (index: number) => void;
 }
 
 function Loader() {
@@ -181,7 +182,8 @@ const DecalImage: React.FC<{
     index: number;
     lockView: boolean;
     isDraggingRef: React.MutableRefObject<boolean>;
-}> = ({ textureUrl, position, zPos, side, showMeasurements, index, lockView, isDraggingRef }) => {
+    onLayerSelect?: (index: number) => void;
+}> = ({ textureUrl, position, zPos, side, showMeasurements, index, lockView, isDraggingRef, onLayerSelect }) => {
   const texture = useTexture(textureUrl);
   const [hovered, setHovered] = useState(false);
   
@@ -212,7 +214,10 @@ const DecalImage: React.FC<{
 
   const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
       if (lockView) {
-          e.stopPropagation(); 
+          e.stopPropagation();
+          // Vital: Select this layer when clicking to start drag
+          if (onLayerSelect) onLayerSelect(index);
+          
           isDraggingRef.current = true;
           document.body.style.cursor = 'grabbing';
       }
@@ -273,11 +278,12 @@ interface TShirtMeshProps {
     customBlackColor?: string;
     lockView?: boolean;
     onPositionChange?: (x: number, y: number) => void;
+    onLayerSelect?: (index: number) => void;
     activeLayerSide: 'front' | 'back';
     isDraggingRef: React.MutableRefObject<boolean>;
 }
 
-const TShirtMesh: React.FC<TShirtMeshProps> = ({ config, showMeasurements, customBlackColor, lockView, onPositionChange, activeLayerSide, isDraggingRef }) => {
+const TShirtMesh: React.FC<TShirtMeshProps> = ({ config, showMeasurements, customBlackColor, lockView, onPositionChange, onLayerSelect, activeLayerSide, isDraggingRef }) => {
   const obj = useLoader(OBJLoader, TSHIRT_OBJ_URL);
   
   const { geometry, zFront, zBack } = useMemo(() => {
@@ -326,14 +332,6 @@ const TShirtMesh: React.FC<TShirtMeshProps> = ({ config, showMeasurements, custo
       onPositionChange(x, y);
   };
 
-  const handlePointerUp = () => {
-      // Releasing mouse anywhere on the mesh stops the drag
-      if (isDraggingRef.current) {
-        isDraggingRef.current = false;
-        document.body.style.cursor = 'default';
-      }
-  };
-
   if (!geometry) return null;
 
   const materialColor = config.color === 'white' ? '#ffffff' : (customBlackColor || '#050505');
@@ -345,8 +343,9 @@ const TShirtMesh: React.FC<TShirtMeshProps> = ({ config, showMeasurements, custo
         geometry={geometry} 
         dispose={null}
         onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp} // Safety: stops drag if mouse leaves the shirt mesh
+        // Removed onPointerLeave/Up from here. 
+        // We rely on the global listener in Scene to stop dragging.
+        // This ensures moving the mouse quickly off the mesh doesn't "drop" the item.
     >
       <MeshStandardMaterial 
         color={materialColor} 
@@ -364,13 +363,14 @@ const TShirtMesh: React.FC<TShirtMeshProps> = ({ config, showMeasurements, custo
             showMeasurements={showMeasurements}
             lockView={!!lockView}
             isDraggingRef={isDraggingRef}
+            onLayerSelect={onLayerSelect}
         />
       ))}
     </Mesh>
   );
 };
 
-export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front', lockView = false, showMeasurements = false, onPositionChange }) => {
+export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front', lockView = false, showMeasurements = false, onPositionChange, onLayerSelect }) => {
   const controlsRef = useRef<any>(null);
   const isDraggingRef = useRef(false); // Global dragging state for this scene
   const [blackColor, setBlackColor] = useState(DEFAULT_APPEARANCE.blackShirtHex);
@@ -383,6 +383,25 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
     loadSettings();
   }, []);
 
+  // Global Pointer Up Listener to handle "Drop" anywhere
+  useEffect(() => {
+    const handleGlobalPointerUp = () => {
+        if (isDraggingRef.current) {
+            isDraggingRef.current = false;
+            document.body.style.cursor = 'default';
+        }
+    };
+    
+    // Listen on window to catch release even if mouse left the canvas
+    window.addEventListener('pointerup', handleGlobalPointerUp);
+    window.addEventListener('touchend', handleGlobalPointerUp);
+    
+    return () => {
+        window.removeEventListener('pointerup', handleGlobalPointerUp);
+        window.removeEventListener('touchend', handleGlobalPointerUp);
+    };
+  }, []);
+
   const initialCameraPosition: [number, number, number] = useMemo(() => {
       return activeLayerSide === 'back' ? [0, 0, -5.8] : [0, 0, 5.8];
   }, [activeLayerSide]);
@@ -391,23 +410,13 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
   useEffect(() => {
     if (controlsRef.current) {
         if (lockView) {
-            // Force reset to clear any rotated state
             controlsRef.current.reset();
-
-            // Set precise geometric position based on side
             const zPos = activeLayerSide === 'back' ? -5.8 : 5.8;
-            
-            // Manually set camera matrix
             const camera = controlsRef.current.object;
             camera.position.set(0, 0, zPos);
             camera.lookAt(0, 0, 0);
-            
-            // Lock controls strictly
             controlsRef.current.target.set(0, 0, 0);
             controlsRef.current.update();
-        } else {
-            // Unlock does not auto-rotate, just enables interaction
-            // No action needed, OrbitControls prop enableRotate={true} handles it
         }
     }
   }, [activeLayerSide, lockView]);
@@ -422,8 +431,6 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
             powerPreference: "high-performance",
             antialias: true
         }} 
-        // Global pointer up listener on canvas to catch releases outside the mesh
-        onPointerUp={() => { isDraggingRef.current = false; document.body.style.cursor = 'default'; }}
       >
         <AmbientLight intensity={0.5} />
         <SpotLight position={[10, 10, 10]} angle={0.15} penumbra={1} shadow-mapSize={2048} castShadow />
@@ -440,6 +447,7 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
                     customBlackColor={blackColor} 
                     lockView={lockView}
                     onPositionChange={onPositionChange}
+                    onLayerSelect={onLayerSelect}
                     activeLayerSide={activeLayerSide}
                     isDraggingRef={isDraggingRef}
                 />

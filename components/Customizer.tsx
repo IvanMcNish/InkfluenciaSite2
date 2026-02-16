@@ -268,10 +268,6 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
     const wasShowingGuides = showGuides;
     if (wasShowingGuides) setShowGuides(false);
     
-    // Temporarily unlock to ensure snapshot is taken from a clean state if needed, 
-    // although capturing current view is usually better. 
-    // Let's keep current view but hide UI elements.
-    
     await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
@@ -386,6 +382,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
             showMeasurements={showGuides}
             lockView={isViewLocked}
             onPositionChange={handleDragPosition}
+            onLayerSelect={setActiveLayerIndex}
         />
         
         {/* Top Controls Overlay */}

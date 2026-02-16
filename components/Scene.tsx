@@ -15,7 +15,6 @@ const AmbientLight = 'ambientLight' as any;
 const SpotLight = 'spotLight' as any;
 const MeshBasicMaterial = 'meshBasicMaterial' as any;
 const MeshStandardMaterial = 'meshStandardMaterial' as any;
-const CircleGeometry = 'circleGeometry' as any;
 
 const UNIT_TO_CM = 50;
 
@@ -184,6 +183,7 @@ const DecalImage: React.FC<{
     isDraggingRef: React.MutableRefObject<boolean>;
 }> = ({ textureUrl, position, zPos, side, showMeasurements, index, lockView, isDraggingRef }) => {
   const texture = useTexture(textureUrl);
+  const [hovered, setHovered] = useState(false);
   
   useEffect(() => {
     return () => {
@@ -218,12 +218,19 @@ const DecalImage: React.FC<{
       }
   };
 
-  const handlePointerUp = () => {
-      // Logic handled in parent mostly, but we keep this for safety
+  const handlePointerOver = () => {
       if (lockView) {
-          // document.body.style.cursor = 'default';
+          setHovered(true);
+          document.body.style.cursor = 'grab';
       }
-  };
+  }
+
+  const handlePointerOut = () => {
+      setHovered(false);
+      if (!isDraggingRef.current) {
+          document.body.style.cursor = 'default';
+      }
+  }
 
   return (
     <>
@@ -233,6 +240,9 @@ const DecalImage: React.FC<{
             scale={[scaleX, scaleY, 2]} 
             debug={false}
             renderOrder={renderPriority}
+            onPointerDown={handlePointerDown}
+            onPointerOver={handlePointerOver}
+            onPointerOut={handlePointerOut}
         >
         <MeshBasicMaterial 
             map={texture} 
@@ -241,27 +251,9 @@ const DecalImage: React.FC<{
             polygonOffsetFactor={polyOffset} 
             depthTest={true}
             depthWrite={false}
+            color={hovered && lockView ? '#ffeeee' : '#ffffff'} // Slight tint on hover when editable
         />
         </Decal>
-        
-        {/* Helper Handle for Dragging - Visible only when Locked */}
-        {lockView && (
-            <Mesh
-                position={[finalX, position.y, finalZ + (side === 'back' ? -0.05 : 0.05)]}
-                rotation={rotation}
-                onPointerDown={handlePointerDown}
-                onPointerUp={handlePointerUp}
-                renderOrder={999} // Always on top
-            >
-                <CircleGeometry args={[0.04, 16]} />
-                <MeshBasicMaterial color="#ec4899" transparent opacity={0.6} depthTest={false} />
-                {/* Inner white dot */}
-                <Mesh position={[0,0,0.001]} renderOrder={1000}>
-                     <CircleGeometry args={[0.02, 16]} />
-                     <MeshBasicMaterial color="white" transparent opacity={0.8} depthTest={false} />
-                </Mesh>
-            </Mesh>
-        )}
         
         {showMeasurements && (
             <MeasurementGuides 
@@ -316,7 +308,8 @@ const TShirtMesh: React.FC<TShirtMeshProps> = ({ config, showMeasurements, custo
   }, [obj]);
 
   const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
-      // Only process move if locked AND we are currently dragging a decal
+      // Logic: If locked AND user has initiated a drag on the decal (isDraggingRef),
+      // then dragging anywhere on the mesh updates the position.
       if (!lockView || !onPositionChange || !isDraggingRef.current) return;
       
       e.stopPropagation();
@@ -326,13 +319,6 @@ const TShirtMesh: React.FC<TShirtMeshProps> = ({ config, showMeasurements, custo
       let y = point.y;
 
       // Invert X for back view logic to match decal coordinate system
-      // Standard Decal System: Center (0,0). 
-      // Front View: Mouse X matches Decal X.
-      // Back View: Camera is rotated 180. Mouse moving Right on screen increases World X.
-      // But Decal on back is rotated 180Y. 
-      // We previously used: finalX = side === 'back' ? -position.x : position.x;
-      // So position.x = side === 'back' ? -finalX : finalX;
-      // Here, point.x is World X (finalX).
       if (activeLayerSide === 'back') {
           x = -x;
       }
@@ -341,6 +327,7 @@ const TShirtMesh: React.FC<TShirtMeshProps> = ({ config, showMeasurements, custo
   };
 
   const handlePointerUp = () => {
+      // Releasing mouse anywhere on the mesh stops the drag
       if (isDraggingRef.current) {
         isDraggingRef.current = false;
         document.body.style.cursor = 'default';
@@ -359,7 +346,7 @@ const TShirtMesh: React.FC<TShirtMeshProps> = ({ config, showMeasurements, custo
         dispose={null}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp} // Safety release if mouse leaves mesh
+        onPointerLeave={handlePointerUp} // Safety: stops drag if mouse leaves the shirt mesh
     >
       <MeshStandardMaterial 
         color={materialColor} 
@@ -435,6 +422,8 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
             powerPreference: "high-performance",
             antialias: true
         }} 
+        // Global pointer up listener on canvas to catch releases outside the mesh
+        onPointerUp={() => { isDraggingRef.current = false; document.body.style.cursor = 'default'; }}
       >
         <AmbientLight intensity={0.5} />
         <SpotLight position={[10, 10, 10]} angle={0.15} penumbra={1} shadow-mapSize={2048} castShadow />

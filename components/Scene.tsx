@@ -1,6 +1,6 @@
 
 import React, { useMemo, Suspense, useEffect, useRef, useState } from 'react';
-import { Canvas, useLoader, useThree } from '@react-three/fiber';
+import { Canvas, useLoader, useThree, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Decal, Environment, Center, useTexture, Html, useProgress, Text, Line } from '@react-three/drei';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import * as THREE from 'three';
@@ -9,15 +9,14 @@ import { TShirtConfig as ConfigType, Position } from '../types';
 import { getAppearanceSettings, DEFAULT_APPEARANCE } from '../services/settingsService';
 
 // Fix for JSX.IntrinsicElements missing Three.js elements in some environments
-// By using aliased components, we bypass the intrinsic elements check.
 const Group = 'group' as any;
 const Mesh = 'mesh' as any;
 const AmbientLight = 'ambientLight' as any;
 const SpotLight = 'spotLight' as any;
 const MeshBasicMaterial = 'meshBasicMaterial' as any;
 const MeshStandardMaterial = 'meshStandardMaterial' as any;
+const CircleGeometry = 'circleGeometry' as any;
 
-// Conversion factor: 1 Three.js unit ~= 50 cm of physical width (Approximation for T-shirt scaling)
 const UNIT_TO_CM = 50;
 
 interface SceneProps {
@@ -25,7 +24,8 @@ interface SceneProps {
   captureRef?: React.MutableRefObject<(() => string) | null>;
   activeLayerSide?: 'front' | 'back'; 
   lockView?: boolean; 
-  showMeasurements?: boolean; // New prop for toggling rulers
+  showMeasurements?: boolean;
+  onPositionChange?: (x: number, y: number) => void;
 }
 
 function Loader() {
@@ -129,20 +129,15 @@ const MeasurementGuides: React.FC<{ width: number; height: number; position: [nu
     
     // Offset for the lines so they don't touch the image
     const margin = 0.04;
-    
-    // Bright pink color for visibility
     const color = "#ec4899"; 
     
     return (
         <Group position={position} rotation={rotation}>
              {/* Horizontal Line (Bottom) */}
             <Group position={[0, -height/2 - margin, 0]}>
-                {/* Main horizontal line */}
                 <Line points={[[-width/2, 0, 0], [width/2, 0, 0]]} color={color} lineWidth={1.5} />
-                {/* Ticks */}
                 <Line points={[[-width/2, 0.02, 0], [-width/2, -0.02, 0]]} color={color} lineWidth={1.5} />
                 <Line points={[[width/2, 0.02, 0], [width/2, -0.02, 0]]} color={color} lineWidth={1.5} />
-                {/* Text Label */}
                 <Text 
                     position={[0, -0.08, 0]} 
                     fontSize={0.07} 
@@ -158,12 +153,9 @@ const MeasurementGuides: React.FC<{ width: number; height: number; position: [nu
 
             {/* Vertical Line (Right side) */}
             <Group position={[width/2 + margin, 0, 0]}>
-                {/* Main vertical line */}
                 <Line points={[[0, -height/2, 0], [0, height/2, 0]]} color={color} lineWidth={1.5} />
-                {/* Ticks */}
                 <Line points={[[-0.02, -height/2, 0], [0.02, -height/2, 0]]} color={color} lineWidth={1.5} /> 
                 <Line points={[[-0.02, height/2, 0], [0.02, height/2, 0]]} color={color} lineWidth={1.5} />
-                {/* Text Label (Rotated) */}
                 <Text 
                     position={[0.08, 0, 0]} 
                     rotation={[0, 0, -Math.PI / 2]} 
@@ -181,7 +173,16 @@ const MeasurementGuides: React.FC<{ width: number; height: number; position: [nu
     );
 };
 
-const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: number; side: 'front' | 'back'; showMeasurements?: boolean; index: number }> = ({ textureUrl, position, zPos, side, showMeasurements, index }) => {
+const DecalImage: React.FC<{ 
+    textureUrl: string; 
+    position: Position; 
+    zPos: number; 
+    side: 'front' | 'back'; 
+    showMeasurements?: boolean; 
+    index: number;
+    lockView: boolean;
+    isDraggingRef: React.MutableRefObject<boolean>;
+}> = ({ textureUrl, position, zPos, side, showMeasurements, index, lockView, isDraggingRef }) => {
   const texture = useTexture(textureUrl);
   
   useEffect(() => {
@@ -206,36 +207,66 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
   const rotation: [number, number, number] = side === 'back' ? [0, Math.PI, 0] : [0, 0, 0];
   const finalX = side === 'back' ? -position.x : position.x;
   
-  // Priority Logic:
-  // renderOrder: Forces Three.js to sort these objects. Higher number = drawn last (on top).
-  // polygonOffsetFactor: pushes the depth. More negative = visually closer to camera (on top).
   const renderPriority = 10 + index; 
   const polyOffset = -10 - index; 
+
+  const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
+      if (lockView) {
+          e.stopPropagation(); 
+          isDraggingRef.current = true;
+          document.body.style.cursor = 'grabbing';
+      }
+  };
+
+  const handlePointerUp = () => {
+      // Logic handled in parent mostly, but we keep this for safety
+      if (lockView) {
+          // document.body.style.cursor = 'default';
+      }
+  };
 
   return (
     <>
         <Decal 
-        position={[finalX, position.y, finalZ]} 
-        rotation={rotation} 
-        scale={[scaleX, scaleY, 2]} 
-        debug={false}
-        renderOrder={renderPriority} // Fix for stacking order
+            position={[finalX, position.y, finalZ]} 
+            rotation={rotation} 
+            scale={[scaleX, scaleY, 2]} 
+            debug={false}
+            renderOrder={renderPriority}
         >
         <MeshBasicMaterial 
             map={texture} 
             transparent 
             polygonOffset 
-            polygonOffsetFactor={polyOffset} // Fix for z-fighting
+            polygonOffsetFactor={polyOffset} 
             depthTest={true}
             depthWrite={false}
         />
         </Decal>
         
+        {/* Helper Handle for Dragging - Visible only when Locked */}
+        {lockView && (
+            <Mesh
+                position={[finalX, position.y, finalZ + (side === 'back' ? -0.05 : 0.05)]}
+                rotation={rotation}
+                onPointerDown={handlePointerDown}
+                onPointerUp={handlePointerUp}
+                renderOrder={999} // Always on top
+            >
+                <CircleGeometry args={[0.04, 16]} />
+                <MeshBasicMaterial color="#ec4899" transparent opacity={0.6} depthTest={false} />
+                {/* Inner white dot */}
+                <Mesh position={[0,0,0.001]} renderOrder={1000}>
+                     <CircleGeometry args={[0.02, 16]} />
+                     <MeshBasicMaterial color="white" transparent opacity={0.8} depthTest={false} />
+                </Mesh>
+            </Mesh>
+        )}
+        
         {showMeasurements && (
             <MeasurementGuides 
                 width={scaleX}
                 height={scaleY}
-                // Float slightly above the decal (z + 0.05) to ensure visibility over the shirt
                 position={[finalX, position.y, finalZ + (side === 'back' ? -0.05 : 0.05)]}
                 rotation={rotation}
             />
@@ -244,7 +275,17 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
   );
 };
 
-const TShirtMesh: React.FC<{ config: ConfigType; showMeasurements?: boolean; customBlackColor?: string }> = ({ config, showMeasurements, customBlackColor }) => {
+interface TShirtMeshProps {
+    config: ConfigType;
+    showMeasurements?: boolean;
+    customBlackColor?: string;
+    lockView?: boolean;
+    onPositionChange?: (x: number, y: number) => void;
+    activeLayerSide: 'front' | 'back';
+    isDraggingRef: React.MutableRefObject<boolean>;
+}
+
+const TShirtMesh: React.FC<TShirtMeshProps> = ({ config, showMeasurements, customBlackColor, lockView, onPositionChange, activeLayerSide, isDraggingRef }) => {
   const obj = useLoader(OBJLoader, TSHIRT_OBJ_URL);
   
   const { geometry, zFront, zBack } = useMemo(() => {
@@ -274,13 +315,52 @@ const TShirtMesh: React.FC<{ config: ConfigType; showMeasurements?: boolean; cus
     return { geometry: geo, zFront, zBack };
   }, [obj]);
 
+  const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
+      // Only process move if locked AND we are currently dragging a decal
+      if (!lockView || !onPositionChange || !isDraggingRef.current) return;
+      
+      e.stopPropagation();
+      const point = e.point;
+      
+      let x = point.x;
+      let y = point.y;
+
+      // Invert X for back view logic to match decal coordinate system
+      // Standard Decal System: Center (0,0). 
+      // Front View: Mouse X matches Decal X.
+      // Back View: Camera is rotated 180. Mouse moving Right on screen increases World X.
+      // But Decal on back is rotated 180Y. 
+      // We previously used: finalX = side === 'back' ? -position.x : position.x;
+      // So position.x = side === 'back' ? -finalX : finalX;
+      // Here, point.x is World X (finalX).
+      if (activeLayerSide === 'back') {
+          x = -x;
+      }
+
+      onPositionChange(x, y);
+  };
+
+  const handlePointerUp = () => {
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+        document.body.style.cursor = 'default';
+      }
+  };
+
   if (!geometry) return null;
 
-  // Uses custom black color from settings if available, otherwise default
   const materialColor = config.color === 'white' ? '#ffffff' : (customBlackColor || '#050505');
   
   return (
-    <Mesh castShadow receiveShadow geometry={geometry} dispose={null}>
+    <Mesh 
+        castShadow 
+        receiveShadow 
+        geometry={geometry} 
+        dispose={null}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp} // Safety release if mouse leaves mesh
+    >
       <MeshStandardMaterial 
         color={materialColor} 
         roughness={0.8}
@@ -289,24 +369,26 @@ const TShirtMesh: React.FC<{ config: ConfigType; showMeasurements?: boolean; cus
       {config.layers.map((layer, index) => (
         <DecalImage 
             key={layer.id} 
-            index={index} // Pass index for priority handling
+            index={index} 
             textureUrl={layer.textureUrl} 
             position={layer.position} 
             side={layer.side || 'front'} 
-            zPos={(layer.side === 'back' ? zBack : zFront) + (index * 0.001)} // Still keep physical offset for safety
+            zPos={(layer.side === 'back' ? zBack : zFront) + (index * 0.001)} 
             showMeasurements={showMeasurements}
+            lockView={!!lockView}
+            isDraggingRef={isDraggingRef}
         />
       ))}
     </Mesh>
   );
 };
 
-export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front', lockView = false, showMeasurements = false }) => {
+export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front', lockView = false, showMeasurements = false, onPositionChange }) => {
   const controlsRef = useRef<any>(null);
+  const isDraggingRef = useRef(false); // Global dragging state for this scene
   const [blackColor, setBlackColor] = useState(DEFAULT_APPEARANCE.blackShirtHex);
 
   useEffect(() => {
-    // Load appearance settings efficiently (settingsService caches it)
     const loadSettings = async () => {
         const settings = await getAppearanceSettings();
         setBlackColor(settings.blackShirtHex);
@@ -314,14 +396,32 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
     loadSettings();
   }, []);
 
-  // Adjusted Distance: 5.8 to balance view between full shirt visibility and closeness
-  const initialCameraPosition: [number, number, number] = activeLayerSide === 'back' ? [0, 0, -5.8] : [0, 0, 5.8];
+  const initialCameraPosition: [number, number, number] = useMemo(() => {
+      return activeLayerSide === 'back' ? [0, 0, -5.8] : [0, 0, 5.8];
+  }, [activeLayerSide]);
 
+  // Handle View Locking and Camera Reset
   useEffect(() => {
-    if (controlsRef.current && !lockView) {
-        const targetAzimuth = activeLayerSide === 'front' ? 0 : Math.PI;
-        controlsRef.current.setAzimuthalAngle(targetAzimuth);
-        controlsRef.current.update();
+    if (controlsRef.current) {
+        if (lockView) {
+            // Force reset to clear any rotated state
+            controlsRef.current.reset();
+
+            // Set precise geometric position based on side
+            const zPos = activeLayerSide === 'back' ? -5.8 : 5.8;
+            
+            // Manually set camera matrix
+            const camera = controlsRef.current.object;
+            camera.position.set(0, 0, zPos);
+            camera.lookAt(0, 0, 0);
+            
+            // Lock controls strictly
+            controlsRef.current.target.set(0, 0, 0);
+            controlsRef.current.update();
+        } else {
+            // Unlock does not auto-rotate, just enables interaction
+            // No action needed, OrbitControls prop enableRotate={true} handles it
+        }
     }
   }, [activeLayerSide, lockView]);
 
@@ -345,19 +445,27 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
 
         <Suspense fallback={<Loader />}>
             <Center>
-                <TShirtMesh config={config} showMeasurements={showMeasurements} customBlackColor={blackColor} />
+                <TShirtMesh 
+                    config={config} 
+                    showMeasurements={showMeasurements} 
+                    customBlackColor={blackColor} 
+                    lockView={lockView}
+                    onPositionChange={onPositionChange}
+                    activeLayerSide={activeLayerSide}
+                    isDraggingRef={isDraggingRef}
+                />
             </Center>
             <Environment preset="city" />
         </Suspense>
         <OrbitControls 
           ref={controlsRef}
           enablePan={false} 
-          enableRotate={!lockView}
-          enableZoom={!lockView}
+          enableRotate={!lockView} // Disable rotation when locked to allow drag
+          enableZoom={!lockView} // Disable zoom when locked to avoid messing up precision
           minPolarAngle={Math.PI / 4} 
           maxPolarAngle={Math.PI / 1.8}
           minDistance={3}
-          maxDistance={9} // Increased max distance to allow zooming out more
+          maxDistance={9}
         />
       </Canvas>
       {!lockView && (

@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt, Ruler } from 'lucide-react';
+import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt, Ruler, Lock, Unlock, MousePointer2, HelpCircle, X, Hand } from 'lucide-react';
 import { TShirtConfig, CustomizerConstraints } from '../types';
 import { Scene } from './Scene';
 import { PRICES, formatCurrency } from '../constants';
@@ -25,6 +25,10 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const [isProcessing, setIsProcessing] = useState(false);
   const [showGuides, setShowGuides] = useState(true);
   
+  // New States for UX improvements
+  const [showTutorial, setShowTutorial] = useState(true);
+  const [isViewLocked, setIsViewLocked] = useState(false);
+
   const [constraints, setConstraints] = useState<CustomizerConstraints>(DEFAULT_CONSTRAINTS);
   const [maxFileSizeMB, setMaxFileSizeMB] = useState<number>(DEFAULT_UPLOAD_LIMITS.maxFileSizeMB);
   const [constraintsLoaded, setConstraintsLoaded] = useState(false);
@@ -97,6 +101,8 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 return { ...prev, layers: newLayers };
              });
              setActiveLayerIndex(slotIndex);
+             // Auto-lock view to help user position immediately
+             setIsViewLocked(true);
            }
         }
         img.src = event.target?.result as string;
@@ -158,6 +164,32 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         };
         return { ...prev, layers: newLayers };
     });
+  };
+
+  // Callback for Drag-and-Drop from 3D Scene
+  const handleDragPosition = (x: number, y: number) => {
+      setConfig(prev => {
+          const newLayers = [...prev.layers];
+          if (!newLayers[activeLayerIndex]) return prev;
+
+          const currentLayer = newLayers[activeLayerIndex];
+          const { min: minX, max: maxX } = getDynamicBounds(currentLayer.position.scale, 'x');
+          const { min: minY, max: maxY } = getDynamicBounds(currentLayer.position.scale, 'y');
+
+          // Clamp values
+          const clampedX = Math.max(minX, Math.min(x, maxX));
+          const clampedY = Math.max(minY, Math.min(y, maxY));
+
+          newLayers[activeLayerIndex] = {
+              ...currentLayer,
+              position: {
+                  ...currentLayer.position,
+                  x: clampedX,
+                  y: clampedY
+              }
+          };
+          return { ...prev, layers: newLayers };
+      });
   };
 
   const adjustScale = (delta: number) => {
@@ -232,8 +264,13 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
     setIsProcessing(true);
     setSaveError('');
     
+    // Disable guides and reset view for perfect snapshot
     const wasShowingGuides = showGuides;
     if (wasShowingGuides) setShowGuides(false);
+    
+    // Temporarily unlock to ensure snapshot is taken from a clean state if needed, 
+    // although capturing current view is usually better. 
+    // Let's keep current view but hide UI elements.
     
     await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -284,24 +321,116 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
 
   const activeLayer = config.layers[activeLayerIndex];
 
+  // Tutorial Modal Component
+  const TutorialModal = () => (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800">
+              <div className="p-6 text-center">
+                  <div className="w-16 h-16 bg-gradient-to-tr from-pink-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white shadow-lg">
+                      <Shirt className="w-8 h-8" />
+                  </div>
+                  <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Crea tu Estilo Único</h2>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">Sigue estos pasos para diseñar la camiseta perfecta:</p>
+                  
+                  <div className="space-y-4 text-left mb-8">
+                      <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-blue-600 shrink-0">
+                              <Upload className="w-5 h-5" />
+                          </div>
+                          <div>
+                              <h4 className="font-bold text-gray-900 dark:text-white text-sm">1. Sube tu imagen</h4>
+                              <p className="text-xs text-gray-500">Puedes añadir hasta 2 diseños diferentes.</p>
+                          </div>
+                      </div>
+                      <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                          <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center text-purple-600 shrink-0">
+                              <Lock className="w-5 h-5" />
+                          </div>
+                          <div>
+                              <h4 className="font-bold text-gray-900 dark:text-white text-sm">2. Modo Edición</h4>
+                              <p className="text-xs text-gray-500">Activa el candado para <span className="font-bold text-purple-500">arrastrar y mover</span> la imagen.</p>
+                          </div>
+                      </div>
+                      <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                          <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center text-orange-600 shrink-0">
+                              <RefreshCw className="w-5 h-5" />
+                          </div>
+                          <div>
+                              <h4 className="font-bold text-gray-900 dark:text-white text-sm">3. Vista 360°</h4>
+                              <p className="text-xs text-gray-500">Desbloquea el candado para rotar la camiseta.</p>
+                          </div>
+                      </div>
+                  </div>
+
+                  <button 
+                    onClick={() => setShowTutorial(false)}
+                    className="w-full py-3 bg-gradient-to-r from-pink-600 to-orange-500 text-white rounded-xl font-bold shadow-lg hover:shadow-orange-500/20 transition-all hover:scale-105"
+                  >
+                      ¡Entendido, empezar a diseñar!
+                  </button>
+              </div>
+          </div>
+      </div>
+  );
+
   return (
     <div className="flex flex-col sm:flex-row lg:grid lg:grid-cols-3 gap-4 lg:gap-8 p-4 lg:p-6 max-w-7xl mx-auto h-[calc(100vh-65px)] lg:h-[calc(100vh-80px)]">
       
+      {showTutorial && <TutorialModal />}
+
       <div className="w-full sm:w-1/2 lg:w-auto lg:col-span-2 h-[35vh] sm:h-full lg:h-full min-h-[250px] border-2 lg:border-4 border-white dark:border-gray-800 rounded-2xl shadow-lg lg:shadow-2xl overflow-hidden relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 shrink-0 group">
         <Scene 
             config={config} 
             captureRef={captureRef} 
             activeLayerSide={activeLayer?.side || 'front'} 
             showMeasurements={showGuides}
+            lockView={isViewLocked}
+            onPositionChange={handleDragPosition}
         />
         
-        <button
-            onClick={() => setShowGuides(!showGuides)}
-            className={`absolute top-4 right-4 p-2.5 rounded-full shadow-lg transition-all z-10 ${showGuides ? 'bg-pink-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-400 hover:text-pink-500'}`}
-            title="Mostrar/Ocultar Medidas"
-        >
-            <Ruler className="w-5 h-5" />
-        </button>
+        {/* Top Controls Overlay */}
+        <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-10">
+            {/* Lock/Unlock Toggle */}
+            <div className="flex flex-col gap-2">
+                <button
+                    onClick={() => setIsViewLocked(!isViewLocked)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-lg transition-all font-bold backdrop-blur-md ${
+                        isViewLocked 
+                        ? 'bg-pink-500 text-white hover:bg-pink-600' 
+                        : 'bg-white/90 dark:bg-black/80 text-gray-700 dark:text-white hover:bg-white dark:hover:bg-black'
+                    }`}
+                >
+                    {isViewLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                    <span className="text-xs uppercase tracking-wide">
+                        {isViewLocked ? 'Edición (Arrastrar)' : 'Rotar Cámara'}
+                    </span>
+                </button>
+                
+                {isViewLocked && (
+                    <div className="bg-black/50 text-white text-[10px] px-3 py-1 rounded-full backdrop-blur-md animate-fade-in flex items-center gap-1 w-max">
+                        <Hand className="w-3 h-3" /> Arrastra sobre la camiseta
+                    </div>
+                )}
+            </div>
+
+            {/* Right Side Tools */}
+            <div className="flex flex-col gap-2">
+                <button
+                    onClick={() => setShowGuides(!showGuides)}
+                    className={`p-2.5 rounded-full shadow-lg transition-all ${showGuides ? 'bg-indigo-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-400 hover:text-indigo-500'}`}
+                    title="Regla / Medidas"
+                >
+                    <Ruler className="w-5 h-5" />
+                </button>
+                <button
+                    onClick={() => setShowTutorial(true)}
+                    className="p-2.5 rounded-full shadow-lg transition-all bg-white dark:bg-gray-800 text-gray-400 hover:text-yellow-500"
+                    title="Ayuda"
+                >
+                    <HelpCircle className="w-5 h-5" />
+                </button>
+            </div>
+        </div>
       </div>
 
       <div className="w-full sm:w-1/2 lg:w-auto bg-white dark:bg-gray-900 p-4 lg:p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 flex flex-col gap-4 lg:gap-6 overflow-y-auto flex-1">
@@ -414,12 +543,21 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 <label className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2 uppercase tracking-wide">
                   <Move className="w-4 h-4" /> Mover (#{activeLayerIndex + 1})
                 </label>
-                <button 
-                   onClick={centerImage}
-                   className="text-[10px] lg:text-xs text-pink-500 hover:text-pink-600 font-bold flex items-center gap-1 bg-pink-50 dark:bg-pink-900/10 px-2 py-1 rounded"
-                >
-                  <RotateCcw className="w-3 h-3" /> CENTRAR
-                </button>
+                <div className="flex gap-2">
+                    <button 
+                        onClick={() => setIsViewLocked(!isViewLocked)}
+                        className={`text-[10px] font-bold flex items-center gap-1 px-2 py-1 rounded transition-colors ${isViewLocked ? 'bg-pink-100 text-pink-600 dark:bg-pink-900/30' : 'bg-gray-100 text-gray-500 dark:bg-gray-800'}`}
+                    >
+                        {isViewLocked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+                        {isViewLocked ? 'Desbloquear' : 'Bloquear para Mover'}
+                    </button>
+                    <button 
+                    onClick={centerImage}
+                    className="text-[10px] text-pink-500 hover:text-pink-600 font-bold flex items-center gap-1 bg-pink-50 dark:bg-pink-900/10 px-2 py-1 rounded"
+                    >
+                    <RotateCcw className="w-3 h-3" /> CENTRAR
+                    </button>
+                </div>
               </div>
               
               <div className="grid grid-cols-3 gap-1 w-28 mx-auto">

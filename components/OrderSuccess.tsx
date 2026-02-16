@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { Order } from '../types';
-import { CheckCircle, Printer, MapPin, Mail, Phone, Calendar, ArrowRight, Info, User, Box, Rotate3d, Layers } from 'lucide-react';
+import { CheckCircle, Printer, MapPin, Mail, Phone, Calendar, ArrowRight, Info, User, Box, Rotate3d, Layers, MessageCircle } from 'lucide-react';
 import { formatCurrency } from '../constants';
 import { APP_LOGO_URL } from '../lib/supabaseClient';
 import { Scene } from './Scene';
+import { generateWhatsAppLink } from '../services/orderService';
 
 interface OrderSuccessProps {
   order: Order | null;
@@ -18,7 +19,11 @@ export const OrderSuccess: React.FC<OrderSuccessProps> = ({ order, onReset }) =>
     window.print();
   };
 
-  // Filter layers by side to decide layout
+  const handleWhatsAppNotify = () => {
+    const link = generateWhatsAppLink(order);
+    window.open(link, '_blank');
+  };
+
   const backLayers = order.config.layers.filter(l => l.side === 'back');
   const hasBackDesign = backLayers.length > 0;
 
@@ -41,7 +46,14 @@ export const OrderSuccess: React.FC<OrderSuccessProps> = ({ order, onReset }) =>
             </p>
         </div>
         
-        <div className="flex justify-center gap-4">
+        <div className="flex flex-wrap justify-center gap-4">
+            <button 
+                onClick={handleWhatsAppNotify}
+                className="flex items-center gap-2 px-8 py-3 bg-green-500 hover:bg-green-600 text-white rounded-full font-bold shadow-lg shadow-green-500/20 transition-all hover:scale-105"
+            >
+                <MessageCircle className="w-5 h-5" />
+                Confirmar por WhatsApp
+            </button>
             <button 
                 onClick={handlePrint}
                 className="flex items-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-full font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
@@ -89,7 +101,6 @@ export const OrderSuccess: React.FC<OrderSuccessProps> = ({ order, onReset }) =>
 
         {/* Receipt Body */}
         <div className="p-8 space-y-8">
-            {/* Customer Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 print:grid-cols-2">
                 <div className="p-4 bg-gray-50 dark:bg-gray-800/30 rounded-xl border border-gray-100 dark:border-gray-800">
                     <h4 className="text-xs font-bold uppercase text-gray-400 mb-3 tracking-wider flex items-center gap-2">
@@ -117,16 +128,12 @@ export const OrderSuccess: React.FC<OrderSuccessProps> = ({ order, onReset }) =>
 
             <div className="border-t border-dashed border-gray-200 dark:border-gray-700 my-4"></div>
 
-            {/* PRODUCT DETAILS SECTION - REDESIGNED WITH DUAL SCENES */}
             <div>
                 <h4 className="text-sm font-black uppercase text-gray-800 dark:text-white mb-6 tracking-wider border-l-4 border-pink-500 pl-3">
                     Detalles de Producción
                 </h4>
 
-                {/* VISUALS: Dual 3D Scenes if Back Design exists, Single Large if not */}
                 <div className={`grid grid-cols-1 ${hasBackDesign ? 'lg:grid-cols-2' : ''} gap-6 mb-8`}>
-                    
-                    {/* Front View */}
                     <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 h-[400px] relative overflow-hidden group">
                         <div className="absolute top-4 left-4 z-10 bg-white/80 dark:bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm flex items-center gap-2 text-gray-800 dark:text-white">
                             <Rotate3d className="w-3 h-3" /> Vista Frontal (Con Medidas)
@@ -134,7 +141,6 @@ export const OrderSuccess: React.FC<OrderSuccessProps> = ({ order, onReset }) =>
                         <Scene config={order.config} activeLayerSide="front" lockView={true} showMeasurements={true} />
                     </div>
 
-                    {/* Back View (Conditional) */}
                     {hasBackDesign && (
                         <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 h-[400px] relative overflow-hidden group">
                              <div className="absolute top-4 left-4 z-10 bg-white/80 dark:bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm flex items-center gap-2 text-gray-800 dark:text-white">
@@ -145,7 +151,6 @@ export const OrderSuccess: React.FC<OrderSuccessProps> = ({ order, onReset }) =>
                     )}
                 </div>
 
-                {/* Specs List */}
                 <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm">
                     <h5 className="font-bold text-lg mb-4 flex items-center gap-2">
                         <Box className="w-5 h-5 text-gray-400" /> Especificaciones Técnicas
@@ -184,7 +189,6 @@ export const OrderSuccess: React.FC<OrderSuccessProps> = ({ order, onReset }) =>
 
             <div className="border-t border-gray-200 dark:border-gray-700"></div>
 
-            {/* Totals */}
             <div className="flex flex-col items-end gap-2">
                 <div className="w-full md:w-1/2 print:w-1/2 space-y-2">
                     <div className="flex justify-between text-sm text-gray-500">
@@ -203,7 +207,6 @@ export const OrderSuccess: React.FC<OrderSuccessProps> = ({ order, onReset }) =>
             </div>
         </div>
         
-        {/* Footer */}
         <div className="bg-gray-50 dark:bg-gray-800/50 p-4 text-center text-xs text-gray-400 border-t border-gray-100 dark:border-gray-800 print:bg-gray-100 print:text-gray-500">
             Gracias por comprar en Inkfluencia. Para soporte contacte a soporte@inkfluencia.com
         </div>

@@ -12,6 +12,9 @@ export const PRICES = {
   '200g': 65000
 };
 
+// Número de WhatsApp oficial para notificaciones (Colombia: +57)
+export const WHATSAPP_PHONE = '573203191152';
+
 // Costos de producción para valoración de inventario
 export const INVENTORY_COSTS = {
   XS_ALL: 15000, // Precio único para cualquier camiseta XS

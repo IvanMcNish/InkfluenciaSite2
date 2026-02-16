@@ -1,16 +1,22 @@
-
-import React, { useEffect, useState } from 'react';
-import { Package, Search, Calendar, Eye, ChevronDown, Check, X, User, Phone, MapPin, Box, Download, CreditCard, Map, Navigation, Tag } from 'lucide-react';
-import { getOrders, updateOrderStatus, toggleOrderDiscount } from '../../services/orderService';
+// Added missing imports for React hooks and Lucide icons
+import React, { useState, useEffect } from 'react';
+import { 
+  X, Calendar, ChevronDown, Check, User, Phone, MapPin, 
+  Map, Navigation, Box, Download, CreditCard, Tag, 
+  Search, Package, Eye, Loader2, Trash2, Shirt, AlertTriangle 
+} from 'lucide-react';
 import { Order, OrderStatus } from '../../types';
+import { getOrders, updateOrderStatus, toggleOrderDiscount, deleteOrder } from '../../services/orderService';
 import { formatCurrency } from '../../constants';
 import { Scene } from '../Scene';
 
 export const AdminOrders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Ubicación fija de la empresa
   const ORIGIN_ADDRESS = "Carrera 31 # 20 - 26, Bucaramanga";
@@ -40,31 +46,39 @@ export const AdminOrders: React.FC = () => {
     }
   };
 
+  const confirmDeleteOrder = async () => {
+      if (!orderToDelete) return;
+      
+      const orderId = orderToDelete.id;
+      setIsDeleting(orderId);
+      const success = await deleteOrder(orderId);
+      
+      if (success) {
+          setOrders(prev => prev.filter(o => o.id !== orderId));
+          if (selectedOrder?.id === orderId) setSelectedOrder(null);
+          setOrderToDelete(null);
+      } else {
+          alert("Error al eliminar el pedido");
+      }
+      setIsDeleting(null);
+  };
+
   const handleDiscountToggle = async (checked: boolean) => {
       if (!selectedOrder) return;
       
       const DISCOUNT_AMOUNT = 5000;
-      
-      // Calculate optimistic new total for UI
-      // If checking the box (applying discount), subtract. If unchecking, add.
-      // Use Math.max to prevent negative totals just in case
       const newTotal = checked 
           ? Math.max(0, selectedOrder.total - DISCOUNT_AMOUNT)
           : selectedOrder.total + DISCOUNT_AMOUNT;
 
-      // Optimistic Update: Update State IMMEDIATELY
       const updatedOrder = { ...selectedOrder, adminDiscountApplied: checked, total: newTotal };
       setSelectedOrder(updatedOrder);
-      // Also update the list in the background
       setOrders(prev => prev.map(o => o.id === selectedOrder.id ? updatedOrder : o));
 
-      // DB Update (Async)
       const success = await toggleOrderDiscount(selectedOrder.id, selectedOrder.total, checked);
       if (!success) {
-          // Revert if failed
           alert("Error al aplicar el descuento");
-          loadOrders(); // Reload from DB to be safe
-          if (selectedOrder) setSelectedOrder(selectedOrder); // Reset local state to original from closure
+          loadOrders();
       }
   };
 
@@ -83,15 +97,62 @@ export const AdminOrders: React.FC = () => {
     });
   };
 
+  const getCityFromAddress = (address: string) => {
+      const parts = address.split(',');
+      if (parts.length >= 2) {
+          return parts[parts.length - 1].trim();
+      }
+      return address.length > 15 ? address.substring(0, 15) + '...' : address;
+  };
+
+  const DeleteModal = () => {
+    if (!orderToDelete) return null;
+    return (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+                <div className="p-6 text-center">
+                    <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600">
+                        <AlertTriangle className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">¿Eliminar Pedido?</h3>
+                    <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl mb-4 text-left border border-gray-100 dark:border-gray-800">
+                        <p className="text-sm font-bold text-gray-400 uppercase mb-1">Detalles del pedido</p>
+                        <p className="text-gray-900 dark:text-white font-mono font-bold">#{orderToDelete.id}</p>
+                        <p className="text-gray-700 dark:text-gray-300 font-medium">{orderToDelete.customerName}</p>
+                        <p className="text-xs text-gray-500 mt-1">{formatDate(orderToDelete.date)}</p>
+                    </div>
+                    <p className="text-red-500 text-sm font-bold flex items-center justify-center gap-2 mb-6">
+                        <X className="w-4 h-4" />
+                        Esta acción no se puede deshacer
+                    </p>
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={() => setOrderToDelete(null)}
+                            className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button 
+                            onClick={confirmDeleteOrder}
+                            disabled={isDeleting === orderToDelete.id}
+                            className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all flex items-center justify-center gap-2"
+                        >
+                            {isDeleting === orderToDelete.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                            Confirmar Borrado
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+  };
+
   const OrderDetailModal = () => {
     if (!selectedOrder) return null;
 
-    // Generar URLs para el mapa
     const encodedOrigin = encodeURIComponent(ORIGIN_ADDRESS);
     const encodedDest = encodeURIComponent(selectedOrder.address);
-    // URL para el iframe (Embed)
     const iframeUrl = `https://maps.google.com/maps?saddr=${encodedOrigin}&daddr=${encodedDest}&output=embed`;
-    // URL para abrir en nueva pestaña (Full Google Maps)
     const externalMapUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodedOrigin}&destination=${encodedDest}`;
 
     return (
@@ -174,14 +235,13 @@ export const AdminOrders: React.FC = () => {
                         </div>
 
                         {/* Mapa de Ruta */}
-                        <div className="bg-white dark:bg-gray-800 p-1 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+                        <div className="bg-white dark:bg-gray-800 p-1 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
                              <div className="p-4 pb-2">
                                 <h3 className="text-sm font-bold uppercase text-gray-400 mb-4 flex items-center gap-2">
                                     <Map className="w-4 h-4" /> Ruta de Entrega
                                 </h3>
                                 {/* Visual Timeline */}
                                 <div className="flex flex-col gap-0 mb-4 pl-1">
-                                    {/* Origen */}
                                     <div className="flex gap-3 relative">
                                         <div className="flex flex-col items-center">
                                             <div className="w-3 h-3 rounded-full bg-pink-500 ring-4 ring-pink-100 dark:ring-pink-900/30 z-10"></div>
@@ -192,8 +252,6 @@ export const AdminOrders: React.FC = () => {
                                             <p className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[250px]">{ORIGIN_ADDRESS}</p>
                                         </div>
                                     </div>
-
-                                    {/* Destino */}
                                     <div className="flex items-center gap-3">
                                         <div className="w-3 h-3 rounded-full bg-blue-500 ring-4 ring-blue-100 dark:ring-blue-900/30 z-10"></div>
                                         <div>
@@ -204,7 +262,6 @@ export const AdminOrders: React.FC = () => {
                                 </div>
                              </div>
 
-                             {/* Iframe Map */}
                              <div className="relative w-full h-56 bg-gray-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 group">
                                 <iframe
                                     width="100%"
@@ -215,7 +272,6 @@ export const AdminOrders: React.FC = () => {
                                     title="Ruta de Entrega"
                                     className="filter grayscale-[0.3] group-hover:grayscale-0 transition-all duration-500"
                                 ></iframe>
-                                
                                 <div className="absolute bottom-3 right-3">
                                      <a 
                                         href={externalMapUrl}
@@ -279,8 +335,6 @@ export const AdminOrders: React.FC = () => {
                             <h3 className="text-sm font-bold uppercase text-gray-400 mb-4 flex items-center gap-2">
                                 <CreditCard className="w-4 h-4" /> Total
                             </h3>
-                            
-                            {/* Checkbox for Admin Discount */}
                             <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 dark:bg-gray-800/30 rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
                                 <div className="relative flex items-center">
                                     <input 
@@ -299,7 +353,6 @@ export const AdminOrders: React.FC = () => {
                                     Aplicar Descuento Admin (-$5.000)
                                 </label>
                             </div>
-
                             <div className="flex justify-between items-center mb-4">
                                 <div className="text-3xl font-black text-gray-900 dark:text-white transition-all duration-300">
                                     {formatCurrency(selectedOrder.total)}
@@ -332,6 +385,7 @@ export const AdminOrders: React.FC = () => {
         </div>
 
         {selectedOrder && <OrderDetailModal />}
+        {orderToDelete && <DeleteModal />}
 
         {orders.length === 0 && !isLoading ? (
             <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
@@ -359,13 +413,39 @@ export const AdminOrders: React.FC = () => {
                                     {order.status === 'shipped' && 'Enviado'}
                                 </span>
                             </div>
-                            <button 
-                                onClick={() => setSelectedOrder(order)}
-                                className="w-full flex items-center justify-center gap-2 text-sm font-bold text-white bg-pink-600 hover:bg-pink-700 py-2.5 rounded-lg transition-colors"
-                            >
-                                <Eye className="w-4 h-4" />
-                                Ver Detalles
-                            </button>
+                            <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
+                                <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                                    <span className="text-gray-400 block">Color</span>
+                                    <div className="flex items-center gap-1">
+                                        <div className={`w-2.5 h-2.5 rounded-full border border-gray-300 ${order.config.color === 'white' ? 'bg-white' : 'bg-black'}`}></div>
+                                        <span className="font-bold text-gray-700 dark:text-gray-200 capitalize">{order.config.color === 'white' ? 'Blanca' : 'Negra'}</span>
+                                    </div>
+                                </div>
+                                <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                                    <span className="text-gray-400 block">Gramaje</span>
+                                    <span className="font-bold text-gray-700 dark:text-gray-200">{order.grammage}</span>
+                                </div>
+                                <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded col-span-2">
+                                    <span className="text-gray-400 block">Ciudad</span>
+                                    <span className="font-bold text-gray-700 dark:text-gray-200 truncate block">{getCityFromAddress(order.address)}</span>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => setSelectedOrder(order)}
+                                    className="flex-1 flex items-center justify-center gap-2 text-sm font-bold text-white bg-pink-600 hover:bg-pink-700 py-2.5 rounded-lg transition-colors"
+                                >
+                                    <Eye className="w-4 h-4" />
+                                    Ver
+                                </button>
+                                <button 
+                                    onClick={() => setOrderToDelete(order)}
+                                    disabled={isDeleting === order.id}
+                                    className="p-2.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50"
+                                >
+                                    {isDeleting === order.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -378,6 +458,9 @@ export const AdminOrders: React.FC = () => {
                                 <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 text-xs uppercase tracking-wider text-gray-500 font-semibold">
                                     <th className="p-4">ID / Fecha</th>
                                     <th className="p-4">Cliente</th>
+                                    <th className="p-4">Color</th>
+                                    <th className="p-4">Gramaje</th>
+                                    <th className="p-4">Ciudad</th>
                                     <th className="p-4">Detalle</th>
                                     <th className="p-4">Total</th>
                                     <th className="p-4 text-center">Estado</th>
@@ -399,8 +482,26 @@ export const AdminOrders: React.FC = () => {
                                             <div className="font-medium text-gray-900 dark:text-white">{order.customerName}</div>
                                             <div className="text-sm text-gray-500">{order.email}</div>
                                         </td>
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <div className={`w-3.5 h-3.5 rounded-full border border-gray-200 shadow-sm ${order.config.color === 'white' ? 'bg-white' : 'bg-black'}`}></div>
+                                                <span className="capitalize font-medium text-gray-700 dark:text-gray-300">
+                                                    {order.config.color === 'white' ? 'Blanca' : 'Negra'}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
+                                            <span className="text-sm font-medium px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-300">
+                                                {order.grammage}
+                                            </span>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="text-sm text-gray-600 dark:text-gray-300 font-medium truncate max-w-[120px]" title={order.address}>
+                                                {getCityFromAddress(order.address)}
+                                            </div>
+                                        </td>
                                         <td className="p-4 text-sm">
-                                            {order.gender === 'male' ? 'Hombre' : 'Mujer'} / {order.size}
+                                            {order.gender === 'male' ? 'H' : 'M'} / {order.size}
                                         </td>
                                         <td className="p-4">
                                             <div className="font-bold text-gray-900 dark:text-white">
@@ -415,13 +516,23 @@ export const AdminOrders: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="p-4 text-center">
-                                            <button 
-                                                onClick={() => setSelectedOrder(order)}
-                                                className="inline-flex items-center gap-1 text-sm font-bold text-pink-600 hover:text-pink-700 bg-pink-50 hover:bg-pink-100 dark:bg-pink-900/20 dark:hover:bg-pink-900/40 px-3 py-1.5 rounded-lg transition-colors"
-                                            >
-                                                <Eye className="w-4 h-4" />
-                                                Ver
-                                            </button>
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button 
+                                                    onClick={() => setSelectedOrder(order)}
+                                                    className="inline-flex items-center gap-1 text-sm font-bold text-pink-600 hover:text-pink-700 bg-pink-50 hover:bg-pink-100 dark:bg-pink-900/20 dark:hover:bg-pink-900/40 px-3 py-1.5 rounded-lg transition-colors"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                    Ver
+                                                </button>
+                                                <button 
+                                                    onClick={() => setOrderToDelete(order)}
+                                                    disabled={isDeleting === order.id}
+                                                    className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+                                                    title="Eliminar Pedido"
+                                                >
+                                                    {isDeleting === order.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ImageIcon, Smartphone, Monitor, Layout, Upload, Loader2, Database, Copy, Check, Trash2, AlertTriangle, Layers, Ruler, Save, HardDrive, Palette, Instagram } from 'lucide-react';
 import { uploadAppLogo, APP_LOGO_URL, APP_DESKTOP_LOGO_URL, APP_LANDING_LOGO_URL } from '../../lib/supabaseClient';
@@ -452,31 +451,43 @@ create policy "Public All Inventory" on inventory for all to public using (true)
                     </div>
                 </div>
                 <div>
-                     <h3 className="font-bold flex items-center gap-2"><Database className="w-4 h-4" /> Ordenes (Migración Descuento Admin)</h3>
+                     <h3 className="font-bold flex items-center gap-2 text-red-600"><AlertTriangle className="w-4 h-4" /> Ordenes: FIX ELIMINACIÓN (Copiar y Ejecutar)</h3>
                      <div className="relative mt-2">
                         <button onClick={() => copyToClipboard(`
--- Agregar columna de género a pedidos si no existe
+-- 1. Habilitar RLS
+alter table orders enable row level security;
+
+-- 2. ELIMINAR políticas antiguas de borrado para evitar conflictos
+drop policy if exists "Admin Delete Orders" on orders;
+drop policy if exists "Admin All Access" on orders;
+drop policy if exists "Enable delete for authenticated users only" on orders;
+
+-- 3. Crear política EXPLÍCITA de borrado para administradores
+create policy "Admin Delete Orders" 
+on orders 
+for delete 
+to authenticated 
+using (true);
+
+-- 4. Crear política para el resto de operaciones (Lectura, Inserción, Actualización)
+create policy "Admin Management Orders" 
+on orders 
+for all 
+to authenticated 
+using (true) 
+with check (true);
+
+-- 5. Asegurar columnas de migración
 do $$ begin
   if not exists (select 1 from information_schema.columns where table_name='orders' and column_name='gender') then
     alter table orders add column gender text default 'male';
   end if;
-end $$;
-
--- Agregar columna de método de pago
-do $$ begin
-  if not exists (select 1 from information_schema.columns where table_name='orders' and column_name='payment_method') then
-    alter table orders add column payment_method text check (payment_method in ('credit_card', 'nequi', 'cod')) default 'cod';
-  end if;
-end $$;
-
--- Agregar columna de Descuento Admin
-do $$ begin
   if not exists (select 1 from information_schema.columns where table_name='orders' and column_name='admin_discount_applied') then
     alter table orders add column admin_discount_applied boolean default false;
   end if;
 end $$;
-`, 'orders')} className="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 rounded text-xs">{copiedOrders ? 'Copiado' : 'Copiar'}</button>
-                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL Orders Migration (Payment, Gender & Admin Discount)</pre>
+`, 'orders')} className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-bold">{copiedOrders ? 'Copiado' : 'Copiar FIX'}</button>
+                        <pre className="bg-gray-900 text-red-100 p-4 rounded-lg text-xs overflow-x-auto border border-red-900/50">-- SQL FIX: ESTE SCRIPT PERMITE EL BORRADO EN SUPABASE</pre>
                      </div>
                 </div>
             </div>

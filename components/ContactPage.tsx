@@ -1,5 +1,7 @@
+
 import React, { useState } from 'react';
 import { Mail, MapPin, Phone, Send, Instagram, ExternalLink, MessageCircle, Clock } from 'lucide-react';
+import { WHATSAPP_PHONE } from '../constants';
 
 export const ContactPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -69,12 +71,12 @@ export const ContactPage: React.FC = () => {
                         <h3 className="font-bold text-gray-900 dark:text-white mb-1">WhatsApp</h3>
                         <p className="text-sm text-gray-500 mb-3">Atención rápida</p>
                         <a 
-                            href="https://wa.me/573153510106" 
+                            href={`https://wa.me/${WHATSAPP_PHONE}`}
                             target="_blank" 
                             rel="noopener noreferrer" 
                             className="text-green-600 font-bold text-sm hover:underline"
                         >
-                            +57 315 351 0106
+                            +57 320 319 1152
                         </a>
                     </div>
 

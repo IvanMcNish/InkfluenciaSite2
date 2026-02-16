@@ -1,8 +1,8 @@
-
 import { supabase, uploadBase64Image } from '../lib/supabaseClient';
 import { Order, OrderStatus } from '../types';
 import { saveOrUpdateCustomer } from './customerService';
 import { adjustInventoryQuantity } from './inventoryService';
+import { WHATSAPP_PHONE, formatCurrency } from '../constants';
 
 export const getOrders = async (): Promise<Order[]> => {
   const { data, error } = await supabase
@@ -62,19 +62,14 @@ export const getOrderById = async (id: string): Promise<Order | null> => {
 };
 
 export const updateOrderStatus = async (orderId: string, newStatus: OrderStatus): Promise<boolean> => {
-  // 1. Obtener el pedido actual
   const currentOrder = await getOrderById(orderId);
   if (!currentOrder) return false;
 
   const oldStatus = currentOrder.status;
-
-  // 2. Lógica de Inventario
   const isConsumedState = (status: OrderStatus) => status === 'processing' || status === 'shipped';
-
   const wasConsumed = isConsumedState(oldStatus);
   const willBeConsumed = isConsumedState(newStatus);
 
-  // CASO 1: De Pendiente -> (Procesando O Enviado) => Restar
   if (!wasConsumed && willBeConsumed) {
       await adjustInventoryQuantity(
           currentOrder.gender, 
@@ -83,10 +78,7 @@ export const updateOrderStatus = async (orderId: string, newStatus: OrderStatus)
           currentOrder.grammage, 
           -1
       );
-  }
-  
-  // CASO 2: De (Procesando O Enviado) -> Pendiente => Sumar (Devolver)
-  else if (wasConsumed && !willBeConsumed) {
+  } else if (wasConsumed && !willBeConsumed) {
       await adjustInventoryQuantity(
           currentOrder.gender, 
           currentOrder.config.color, 
@@ -96,7 +88,6 @@ export const updateOrderStatus = async (orderId: string, newStatus: OrderStatus)
       );
   }
 
-  // 3. Actualizar estado en base de datos
   const { error } = await supabase
     .from('orders')
     .update({ status: newStatus })
@@ -109,14 +100,53 @@ export const updateOrderStatus = async (orderId: string, newStatus: OrderStatus)
   return true;
 };
 
+/**
+ * Elimina un pedido y devuelve el stock si el pedido ya estaba descontado.
+ */
+export const deleteOrder = async (orderId: string): Promise<boolean> => {
+    try {
+        // 1. Obtener detalles del pedido EN MEMORIA antes de borrarlo
+        const order = await getOrderById(orderId);
+        if (!order) {
+            console.error('No se pudo encontrar el pedido en la DB');
+            return false;
+        }
+
+        // 2. Ejecutar el borrado real en Supabase PRIMERO
+        const { error } = await supabase
+            .from('orders')
+            .delete()
+            .eq('id', orderId);
+
+        if (error) {
+            console.error('🚨 SUPABASE DELETE ERROR:', error.message, error.details, error.hint);
+            return false;
+        }
+
+        console.log('✅ Registro eliminado de Supabase exitosamente');
+
+        // 3. Solo si se borró con éxito de la DB, devolvemos el stock (usando el objeto 'order' que guardamos en el paso 1)
+        const isConsumedState = (status: OrderStatus) => status === 'processing' || status === 'shipped';
+        if (isConsumedState(order.status)) {
+            console.log(`📦 Devolviendo stock al inventario para pedido eliminado: ${orderId}`);
+            await adjustInventoryQuantity(
+                order.gender, 
+                order.config.color, 
+                order.size, 
+                order.grammage, 
+                1
+            );
+        }
+
+        return true;
+    } catch (e) {
+        console.error('Excepción crítica en deleteOrder:', e);
+        return false;
+    }
+};
+
 export const toggleOrderDiscount = async (orderId: string, currentTotal: number, shouldApply: boolean): Promise<boolean> => {
     const DISCOUNT_AMOUNT = 5000;
-    // If applying: subtract 5000. If removing: add 5000.
-    // NOTE: This assumes currentTotal passed is the value BEFORE the change being requested if UI logic is handled separately
-    // But to be safe, the service calculates new total based on currentTotal provided.
-    // In AdminOrders, we pass the 'total' as it is in state. 
-    // If we are checking the box (shouldApply = true), it means current state is unchecked (higher price).
-    // If we are unchecking (shouldApply = false), it means current state is checked (lower price).
     const newTotal = shouldApply ? currentTotal - DISCOUNT_AMOUNT : currentTotal + DISCOUNT_AMOUNT;
 
     const { error } = await supabase
@@ -134,8 +164,20 @@ export const toggleOrderDiscount = async (orderId: string, currentTotal: number,
     return true;
 };
 
+export const generateWhatsAppLink = (order: Order) => {
+    const message = `¡Hola *Inkfluencia*! 👋 Acabo de realizar un nuevo pedido.\n\n` +
+                    `📦 *ID del Pedido:* #${order.id}\n` +
+                    `👤 *Cliente:* ${order.customerName}\n` +
+                    `👕 *Prenda:* Camiseta ${order.config.color === 'white' ? 'Blanca' : 'Negra'} (${order.gender === 'male' ? 'Hombre' : 'Mujer'})\n` +
+                    `📏 *Talla:* ${order.size}\n` +
+                    `🧶 *Gramaje:* ${order.grammage}\n` +
+                    `📍 *Dirección:* ${order.address}\n` +
+                    `💰 *Total:* ${formatCurrency(order.total)}`;
+    
+    return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`;
+};
+
 export const submitOrder = async (orderData: Omit<Order, 'id' | 'date' | 'status'>): Promise<Order> => {
-    // 1. Process images
     const processedConfig = { ...orderData.config };
     
     if (processedConfig.snapshotUrl && processedConfig.snapshotUrl.startsWith('data:')) {
@@ -152,7 +194,6 @@ export const submitOrder = async (orderData: Omit<Order, 'id' | 'date' | 'status
     }));
     processedConfig.layers = processedLayers;
 
-    // 2. Save Customer
     await saveOrUpdateCustomer(
         orderData.customerName,
         orderData.email,
@@ -162,7 +203,6 @@ export const submitOrder = async (orderData: Omit<Order, 'id' | 'date' | 'status
 
     const newOrderId = Math.random().toString(36).substr(2, 9).toUpperCase();
 
-    // 3. Insert Order
     const { data, error } = await supabase
       .from('orders')
       .insert([{

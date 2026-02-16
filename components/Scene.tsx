@@ -1,3 +1,4 @@
+
 import React, { useMemo, Suspense, useEffect, useRef, useState } from 'react';
 import { Canvas, useLoader, useThree } from '@react-three/fiber';
 import { OrbitControls, Decal, Environment, Center, useTexture, Html, useProgress, Text, Line } from '@react-three/drei';
@@ -6,6 +7,15 @@ import * as THREE from 'three';
 import { TSHIRT_OBJ_URL } from '../constants';
 import { TShirtConfig as ConfigType, Position } from '../types';
 import { getAppearanceSettings, DEFAULT_APPEARANCE } from '../services/settingsService';
+
+// Fix for JSX.IntrinsicElements missing Three.js elements in some environments
+// By using aliased components, we bypass the intrinsic elements check.
+const Group = 'group' as any;
+const Mesh = 'mesh' as any;
+const AmbientLight = 'ambientLight' as any;
+const SpotLight = 'spotLight' as any;
+const MeshBasicMaterial = 'meshBasicMaterial' as any;
+const MeshStandardMaterial = 'meshStandardMaterial' as any;
 
 // Conversion factor: 1 Three.js unit ~= 50 cm of physical width (Approximation for T-shirt scaling)
 const UNIT_TO_CM = 50;
@@ -124,9 +134,9 @@ const MeasurementGuides: React.FC<{ width: number; height: number; position: [nu
     const color = "#ec4899"; 
     
     return (
-        <group position={position} rotation={rotation}>
+        <Group position={position} rotation={rotation}>
              {/* Horizontal Line (Bottom) */}
-            <group position={[0, -height/2 - margin, 0]}>
+            <Group position={[0, -height/2 - margin, 0]}>
                 {/* Main horizontal line */}
                 <Line points={[[-width/2, 0, 0], [width/2, 0, 0]]} color={color} lineWidth={1.5} />
                 {/* Ticks */}
@@ -144,10 +154,10 @@ const MeasurementGuides: React.FC<{ width: number; height: number; position: [nu
                 >
                     {widthCm} cm
                 </Text>
-            </group>
+            </Group>
 
             {/* Vertical Line (Right side) */}
-            <group position={[width/2 + margin, 0, 0]}>
+            <Group position={[width/2 + margin, 0, 0]}>
                 {/* Main vertical line */}
                 <Line points={[[0, -height/2, 0], [0, height/2, 0]]} color={color} lineWidth={1.5} />
                 {/* Ticks */}
@@ -166,8 +176,8 @@ const MeasurementGuides: React.FC<{ width: number; height: number; position: [nu
                 >
                     {heightCm} cm
                 </Text>
-            </group>
-        </group>
+            </Group>
+        </Group>
     );
 };
 
@@ -211,7 +221,7 @@ const DecalImage: React.FC<{ textureUrl: string; position: Position; zPos: numbe
         debug={false}
         renderOrder={renderPriority} // Fix for stacking order
         >
-        <meshBasicMaterial 
+        <MeshBasicMaterial 
             map={texture} 
             transparent 
             polygonOffset 
@@ -270,8 +280,8 @@ const TShirtMesh: React.FC<{ config: ConfigType; showMeasurements?: boolean; cus
   const materialColor = config.color === 'white' ? '#ffffff' : (customBlackColor || '#050505');
   
   return (
-    <mesh castShadow receiveShadow geometry={geometry} dispose={null}>
-      <meshStandardMaterial 
+    <Mesh castShadow receiveShadow geometry={geometry} dispose={null}>
+      <MeshStandardMaterial 
         color={materialColor} 
         roughness={0.8}
         metalness={0.1}
@@ -287,7 +297,7 @@ const TShirtMesh: React.FC<{ config: ConfigType; showMeasurements?: boolean; cus
             showMeasurements={showMeasurements}
         />
       ))}
-    </mesh>
+    </Mesh>
   );
 };
 
@@ -326,10 +336,10 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
             antialias: true
         }} 
       >
-        <ambientLight intensity={0.5} />
-        <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} shadow-mapSize={2048} castShadow />
-        <spotLight position={[-10, 5, 10]} intensity={0.5} />
-        <spotLight position={[0, 5, -10]} intensity={0.5} />
+        <AmbientLight intensity={0.5} />
+        <SpotLight position={[10, 10, 10]} angle={0.15} penumbra={1} shadow-mapSize={2048} castShadow />
+        <SpotLight position={[-10, 5, 10]} intensity={0.5} />
+        <SpotLight position={[0, 5, -10]} intensity={0.5} />
         
         {captureRef && <SnapshotHandler captureRef={captureRef} controlsRef={controlsRef} />}
 

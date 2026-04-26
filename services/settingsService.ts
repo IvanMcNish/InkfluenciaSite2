@@ -11,6 +11,12 @@ export const DEFAULT_CONSTRAINTS: CustomizerConstraints = {
     scale: { min: 0.05, max: 0.45 }
 };
 
+export const DEFAULT_TOTE_CONSTRAINTS: CustomizerConstraints = {
+    x: { min: -1.8, max: 1.8 }, 
+    y: { min: -2.0, max: 0.3 },
+    scale: { min: 0.05, max: 3.5 }
+};
+
 export const DEFAULT_UPLOAD_LIMITS: UploadLimits = {
     maxFileSizeMB: 5
 };
@@ -62,6 +68,45 @@ export const saveCustomizerConstraints = async (constraints: CustomizerConstrain
         return true;
     } catch (e) {
         console.error("Exception saving constraints:", e);
+        return false;
+    }
+};
+
+export const getToteCustomizerConstraints = async (): Promise<CustomizerConstraints> => {
+    try {
+        const { data, error } = await supabase
+            .from('app_settings')
+            .select('value')
+            .eq('id', 'tote_customizer_constraints')
+            .single();
+
+        if (error || !data) {
+            return DEFAULT_TOTE_CONSTRAINTS;
+        }
+
+        return data.value as CustomizerConstraints;
+    } catch (e) {
+        console.error("Error fetching tote constraints:", e);
+        return DEFAULT_TOTE_CONSTRAINTS;
+    }
+};
+
+export const saveToteCustomizerConstraints = async (constraints: CustomizerConstraints): Promise<boolean> => {
+    try {
+        const { error } = await supabase
+            .from('app_settings')
+            .upsert({
+                id: 'tote_customizer_constraints',
+                value: constraints
+            });
+
+        if (error) {
+            console.error("Error saving tote constraints:", error);
+            return false;
+        }
+        return true;
+    } catch (e) {
+        console.error("Exception saving tote constraints:", e);
         return false;
     }
 };

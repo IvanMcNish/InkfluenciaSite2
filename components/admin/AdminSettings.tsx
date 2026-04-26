@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ImageIcon, Smartphone, Monitor, Layout, Upload, Loader2, Database, Copy, Check, Trash2, AlertTriangle, Layers, Ruler, Save, HardDrive, Palette, Instagram } from 'lucide-react';
 import { uploadAppLogo, APP_LOGO_URL, APP_DESKTOP_LOGO_URL, APP_LANDING_LOGO_URL } from '../../lib/supabaseClient';
-import { getCustomizerConstraints, saveCustomizerConstraints, getUploadLimits, saveUploadLimits, getAppearanceSettings, saveAppearanceSettings, DEFAULT_CONSTRAINTS, DEFAULT_UPLOAD_LIMITS, DEFAULT_APPEARANCE } from '../../services/settingsService';
+import { getCustomizerConstraints, saveCustomizerConstraints, getToteCustomizerConstraints, saveToteCustomizerConstraints, getUploadLimits, saveUploadLimits, getAppearanceSettings, saveAppearanceSettings, DEFAULT_CONSTRAINTS, DEFAULT_TOTE_CONSTRAINTS, DEFAULT_UPLOAD_LIMITS, DEFAULT_APPEARANCE } from '../../services/settingsService';
 import { CustomizerConstraints, UploadLimits, AppearanceSettings } from '../../types';
 
 export const AdminSettings: React.FC = () => {
@@ -18,11 +18,13 @@ export const AdminSettings: React.FC = () => {
 
   // Settings State
   const [constraints, setConstraints] = useState<CustomizerConstraints>(DEFAULT_CONSTRAINTS);
+  const [toteConstraints, setToteConstraints] = useState<CustomizerConstraints>(DEFAULT_TOTE_CONSTRAINTS);
   const [uploadLimits, setUploadLimits] = useState<UploadLimits>(DEFAULT_UPLOAD_LIMITS);
   const [appearance, setAppearance] = useState<AppearanceSettings>(DEFAULT_APPEARANCE);
   
   const [isLoadingConstraints, setIsLoadingConstraints] = useState(true);
   const [isSavingConstraints, setIsSavingConstraints] = useState(false);
+  const [isSavingToteConstraints, setIsSavingToteConstraints] = useState(false);
   const [isSavingLimits, setIsSavingLimits] = useState(false);
   const [isSavingAppearance, setIsSavingAppearance] = useState(false);
 
@@ -33,12 +35,14 @@ export const AdminSettings: React.FC = () => {
   useEffect(() => {
     const loadSettings = async () => {
         setIsLoadingConstraints(true);
-        const [constraintsData, limitsData, appearanceData] = await Promise.all([
+        const [constraintsData, toteConstraintsData, limitsData, appearanceData] = await Promise.all([
             getCustomizerConstraints(),
+            getToteCustomizerConstraints(),
             getUploadLimits(),
             getAppearanceSettings()
         ]);
         setConstraints(constraintsData);
+        setToteConstraints(toteConstraintsData);
         setUploadLimits(limitsData);
         setAppearance(appearanceData);
         setIsLoadingConstraints(false);
@@ -59,15 +63,39 @@ export const AdminSettings: React.FC = () => {
       }));
   };
 
+  const handleToteConstraintChange = (section: keyof CustomizerConstraints, key: 'min' | 'max', value: string) => {
+      const numValue = parseFloat(value);
+      if (isNaN(numValue)) return;
+      
+      setToteConstraints(prev => ({
+          ...prev,
+          [section]: {
+              ...prev[section],
+              [key]: numValue
+          }
+      }));
+  };
+
   const saveConstraints = async () => {
       setIsSavingConstraints(true);
       const success = await saveCustomizerConstraints(constraints);
       if (success) {
-          alert('Configuración de área guardada exitosamente');
+          alert('Configuración de área (Camisetas) guardada exitosamente');
       } else {
           alert('Error al guardar. Asegúrate de ejecutar el Script SQL de "Configuración General".');
       }
       setIsSavingConstraints(false);
+  };
+
+  const saveToteConstraints = async () => {
+      setIsSavingToteConstraints(true);
+      const success = await saveToteCustomizerConstraints(toteConstraints);
+      if (success) {
+          alert('Configuración de área (Tote Bags) guardada exitosamente');
+      } else {
+          alert('Error al guardar. Asegúrate de ejecutar el Script SQL de "Configuración General".');
+      }
+      setIsSavingToteConstraints(false);
   };
 
   const saveLimits = async () => {
@@ -272,13 +300,13 @@ export const AdminSettings: React.FC = () => {
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
             <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-pink-100 dark:bg-pink-900/20 rounded-lg text-pink-600"><Ruler className="w-6 h-6" /></div>
-                <div><h2 className="text-xl font-bold text-gray-900 dark:text-white">Área de Impresión (Restricciones)</h2><p className="text-gray-500 dark:text-gray-400 text-sm">Define los bordes del área imprimible. La imagen no podrá salirse de estos límites.</p></div>
+                <div><h2 className="text-xl font-bold text-gray-900 dark:text-white">Área de Impresión - Camisetas</h2><p className="text-gray-500 dark:text-gray-400 text-sm">Define los bordes del área imprimible para las camisetas.</p></div>
             </div>
 
             {isLoadingConstraints ? (
                 <div className="p-8 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-pink-500" /></div>
             ) : (
-                <div className="space-y-6">
+                <div className="space-y-6 mb-12">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* X Axis */}
                         <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
@@ -332,7 +360,74 @@ export const AdminSettings: React.FC = () => {
                     <div className="flex justify-end">
                         <button onClick={saveConstraints} disabled={isSavingConstraints} className="px-6 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg font-bold shadow-lg shadow-pink-500/20 flex items-center gap-2 transition-colors">
                             {isSavingConstraints ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            {isSavingConstraints ? 'Guardando...' : 'Guardar Configuración'}
+                            {isSavingConstraints ? 'Guardando...' : 'Guardar Camisetas'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <div className="flex items-start justify-between mb-6 mt-12 border-t border-gray-100 dark:border-gray-800 pt-8">
+                <div><h2 className="text-xl font-bold text-gray-900 dark:text-white">Área de Impresión - Tote Bags</h2><p className="text-gray-500 dark:text-gray-400 text-sm">Define los bordes del área imprimible para los Tote Bags.</p></div>
+            </div>
+
+            {isLoadingConstraints ? (
+                <div className="p-8 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-pink-500" /></div>
+            ) : (
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* X Axis */}
+                        <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                            <h3 className="font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2 text-sm uppercase"><Layout className="w-4 h-4"/> Límite Horizontal (X)</h3>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="text-xs text-gray-500 block mb-1">Borde Izquierdo (Mín)</label>
+                                    <input type="number" step="0.01" value={toteConstraints.x.min} onChange={(e) => handleToteConstraintChange('x', 'min', e.target.value)} className="w-full p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-pink-500 outline-none text-sm" />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-500 block mb-1">Borde Derecho (Máx)</label>
+                                    <input type="number" step="0.01" value={toteConstraints.x.max} onChange={(e) => handleToteConstraintChange('x', 'max', e.target.value)} className="w-full p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-pink-500 outline-none text-sm" />
+                                </div>
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-2">Valores recomendados: -1.8 a 1.8</p>
+                        </div>
+
+                        {/* Y Axis */}
+                        <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                            <h3 className="font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2 text-sm uppercase"><Layout className="w-4 h-4 rotate-90"/> Límite Vertical (Y)</h3>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="text-xs text-gray-500 block mb-1">Borde Inferior (Mín)</label>
+                                    <input type="number" step="0.01" value={toteConstraints.y.min} onChange={(e) => handleToteConstraintChange('y', 'min', e.target.value)} className="w-full p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-pink-500 outline-none text-sm" />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-500 block mb-1">Borde Superior (Máx)</label>
+                                    <input type="number" step="0.01" value={toteConstraints.y.max} onChange={(e) => handleToteConstraintChange('y', 'max', e.target.value)} className="w-full p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-pink-500 outline-none text-sm" />
+                                </div>
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-2">Valores recomendados: -2.0 a 0.3</p>
+                        </div>
+
+                        {/* Scale */}
+                        <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                            <h3 className="font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2 text-sm uppercase"><Layers className="w-4 h-4"/> Tamaño Imagen (Escala)</h3>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="text-xs text-gray-500 block mb-1">Mínimo (Pequeño)</label>
+                                    <input type="number" step="0.01" value={toteConstraints.scale.min} onChange={(e) => handleToteConstraintChange('scale', 'min', e.target.value)} className="w-full p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-pink-500 outline-none text-sm" />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-500 block mb-1">Máximo (Grande)</label>
+                                    <input type="number" step="0.01" value={toteConstraints.scale.max} onChange={(e) => handleToteConstraintChange('scale', 'max', e.target.value)} className="w-full p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-pink-500 outline-none text-sm" />
+                                </div>
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-2">Valores recomendados: 0.05 a 3.5</p>
+                        </div>
+                    </div>
+                    
+                    <div className="flex justify-end">
+                        <button onClick={saveToteConstraints} disabled={isSavingToteConstraints} className="px-6 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg font-bold shadow-lg shadow-pink-500/20 flex items-center gap-2 transition-colors">
+                            {isSavingToteConstraints ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            {isSavingToteConstraints ? 'Guardando...' : 'Guardar Tote Bags'}
                         </button>
                     </div>
                 </div>

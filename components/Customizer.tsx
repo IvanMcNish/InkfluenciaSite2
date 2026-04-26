@@ -1,10 +1,10 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt, Ruler, Lock, Unlock, MousePointer2, HelpCircle, X, Hand } from 'lucide-react';
+import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt, Ruler, Lock, Unlock, MousePointer2, HelpCircle, X, Hand, Video } from 'lucide-react';
 import { TShirtConfig, CustomizerConstraints } from '../types';
 import { Scene } from './Scene';
 import { PRICES, formatCurrency } from '../constants';
-import { getCustomizerConstraints, DEFAULT_CONSTRAINTS, getUploadLimits, DEFAULT_UPLOAD_LIMITS } from '../services/settingsService';
+import { getCustomizerConstraints, getToteCustomizerConstraints, DEFAULT_CONSTRAINTS, DEFAULT_TOTE_CONSTRAINTS, getUploadLimits, DEFAULT_UPLOAD_LIMITS } from '../services/settingsService';
 
 interface CustomizerProps {
   config: TShirtConfig;
@@ -28,23 +28,29 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   // New States for UX improvements
   const [showTutorial, setShowTutorial] = useState(true);
   const [isViewLocked, setIsViewLocked] = useState(false);
+  const [cameraOffset, setCameraOffset] = useState({ x: 0, y: 0, zoom: 0 });
 
   const [constraints, setConstraints] = useState<CustomizerConstraints>(DEFAULT_CONSTRAINTS);
+  const [toteConstraints, setToteConstraints] = useState<CustomizerConstraints>(DEFAULT_TOTE_CONSTRAINTS);
   const [maxFileSizeMB, setMaxFileSizeMB] = useState<number>(DEFAULT_UPLOAD_LIMITS.maxFileSizeMB);
   const [constraintsLoaded, setConstraintsLoaded] = useState(false);
 
   useEffect(() => {
       const loadSettings = async () => {
-          const [constraintsData, limitsData] = await Promise.all([
+          const [constraintsData, toteConstraintsData, limitsData] = await Promise.all([
               getCustomizerConstraints(),
+              getToteCustomizerConstraints(),
               getUploadLimits()
           ]);
           setConstraints(constraintsData);
+          setToteConstraints(toteConstraintsData);
           setMaxFileSizeMB(limitsData.maxFileSizeMB);
           setConstraintsLoaded(true);
       };
       loadSettings();
   }, []);
+
+  const activeConstraints = config.productType === 'totebag' ? toteConstraints : constraints;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, slotIndex: number) => {
     const file = e.target.files?.[0];
@@ -139,8 +145,8 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
 
   const getDynamicBounds = (scale: number, axis: 'x' | 'y') => {
       const halfSize = scale / 2;
-      const min = constraints[axis].min + halfSize;
-      const max = constraints[axis].max - halfSize;
+      const min = activeConstraints[axis].min + halfSize;
+      const max = activeConstraints[axis].max - halfSize;
       if (min > max) return { min: 0, max: 0 };
       return { min, max };
   };
@@ -199,7 +205,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
 
         const currentLayer = newLayers[activeLayerIndex];
         let newScale = currentLayer.position.scale + delta;
-        newScale = Math.max(constraints.scale.min, Math.min(newScale, constraints.scale.max));
+        newScale = Math.max(activeConstraints.scale.min, Math.min(newScale, activeConstraints.scale.max));
 
         const xBounds = getDynamicBounds(newScale, 'x');
         const yBounds = getDynamicBounds(newScale, 'y');
@@ -226,7 +232,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         if (!newLayers[activeLayerIndex]) return prev;
 
         const currentLayer = newLayers[activeLayerIndex];
-        const newScale = Math.max(constraints.scale.min, Math.min(value, constraints.scale.max));
+        const newScale = Math.max(activeConstraints.scale.min, Math.min(value, activeConstraints.scale.max));
 
         const xBounds = getDynamicBounds(newScale, 'x');
         const yBounds = getDynamicBounds(newScale, 'y');
@@ -383,6 +389,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
             lockView={isViewLocked}
             onPositionChange={handleDragPosition}
             onLayerSelect={setActiveLayerIndex}
+            cameraOffset={cameraOffset}
         />
         
         {/* Top Controls Overlay */}
@@ -617,7 +624,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
 
             <div className="space-y-2">
               <label className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2 uppercase tracking-wide">
-                <ZoomIn className="w-4 h-4" /> Tamaño {constraintsLoaded && <span className="text-[10px] normal-case text-gray-300">(Mín: {constraints.scale.min.toFixed(2)}, Máx: {constraints.scale.max.toFixed(2)})</span>}
+                <ZoomIn className="w-4 h-4" /> Tamaño {constraintsLoaded && <span className="text-[10px] normal-case text-gray-300">(Mín: {activeConstraints.scale.min.toFixed(2)}, Máx: {activeConstraints.scale.max.toFixed(2)})</span>}
               </label>
               <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
                 <button 
@@ -628,8 +635,8 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 </button>
                 <input 
                   type="range" 
-                  min={constraints.scale.min} 
-                  max={constraints.scale.max} 
+                  min={activeConstraints.scale.min} 
+                  max={activeConstraints.scale.max} 
                   step="0.01" 
                   value={activeLayer.position.scale}
                   onChange={(e) => setScaleValue(parseFloat(e.target.value))}
@@ -643,6 +650,23 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 </button>
               </div>
             </div>
+            
+            {isViewLocked && (
+            <div className="space-y-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+               <label className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2 uppercase tracking-wide">
+                 <Video className="w-4 h-4" /> Ajustar Cámara
+               </label>
+               <div className="flex gap-2">
+                 <button onClick={() => setCameraOffset(p => ({...p, y: p.y + 0.5}))} className="flex-1 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-300">Subir</button>
+                 <button onClick={() => setCameraOffset(p => ({...p, y: p.y - 0.5}))} className="flex-1 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-300">Bajar</button>
+               </div>
+               <div className="flex gap-2 mt-2">
+                 <button onClick={() => setCameraOffset(p => ({...p, zoom: p.zoom - 0.5}))} className="flex-1 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-300">Acercar</button>
+                 <button onClick={() => setCameraOffset(p => ({...p, zoom: p.zoom + 0.5}))} className="flex-1 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-300">Alejar</button>
+                 <button onClick={() => setCameraOffset({x:0, y:0, zoom:0})} className="ml-2 px-3 py-2 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 hover:bg-pink-200 rounded-lg text-xs font-bold"><RefreshCw className="w-4 h-4" /></button>
+               </div>
+            </div>
+            )}
           </div>
         )}
 

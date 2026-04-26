@@ -26,6 +26,7 @@ interface SceneProps {
   showMeasurements?: boolean;
   onPositionChange?: (x: number, y: number) => void;
   onLayerSelect?: (index: number) => void;
+  cameraOffset?: { x: number; y: number; zoom: number };
 }
 
 function Loader() {
@@ -422,13 +423,6 @@ const ToteBagMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cus
       let x = point.x;
       let y = point.y;
 
-      // Restrict dragging bounding box for the Tote Bag body
-      // Adjust limits to only cover the body, avoiding the straps
-      if (y > 0.4) y = 0.4; // Top boundary
-      if (y < -1.8) y = -1.8; // Bottom boundary
-      if (x > 1.2) x = 1.2; // Right boundary
-      if (x < -1.2) x = -1.2; // Left boundary
-
       if (activeLayerSide === 'back') {
           x = -x;
       }
@@ -487,7 +481,7 @@ const ProductMesh: React.FC<ProductMeshProps> = (props) => {
     return props.config.productType === 'totebag' ? <ToteBagMesh {...props} /> : <TShirtMesh {...props} />;
 };
 
-export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front', lockView = false, showMeasurements = false, onPositionChange, onLayerSelect }) => {
+export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front', lockView = false, showMeasurements = false, onPositionChange, onLayerSelect, cameraOffset }) => {
   const controlsRef = useRef<any>(null);
   const isDraggingRef = useRef(false); // Global dragging state for this scene
   const [blackColor, setBlackColor] = useState(DEFAULT_APPEARANCE.blackShirtHex);
@@ -519,24 +513,35 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
     };
   }, []);
 
+  const isToteBag = config.productType === 'totebag';
+
   const initialCameraPosition: [number, number, number] = useMemo(() => {
-      return activeLayerSide === 'back' ? [0, 0, -5.8] : [0, 0, 5.8];
-  }, [activeLayerSide]);
+      const zBase = isToteBag ? 8.0 : 5.8;
+      return activeLayerSide === 'back' ? [0, 0, -zBase] : [0, 0, zBase];
+  }, [activeLayerSide, isToteBag]);
 
   // Handle View Locking and Camera Reset
   useEffect(() => {
     if (controlsRef.current) {
         if (lockView) {
             controlsRef.current.reset();
-            const zPos = activeLayerSide === 'back' ? -5.8 : 5.8;
+            const zBase = isToteBag ? 8.0 : 5.8;
+            
+            // Apply offset if any
+            const offX = cameraOffset?.x || 0;
+            const offY = cameraOffset?.y || 0;
+            const offZ = cameraOffset?.zoom || 0;
+            
+            const targetZ = activeLayerSide === 'back' ? -(zBase + offZ) : (zBase + offZ);
+            
             const camera = controlsRef.current.object;
-            camera.position.set(0, 0, zPos);
-            camera.lookAt(0, 0, 0);
-            controlsRef.current.target.set(0, 0, 0);
+            camera.position.set(offX, offY, targetZ);
+            camera.lookAt(offX, offY, 0);
+            controlsRef.current.target.set(offX, offY, 0);
             controlsRef.current.update();
         }
     }
-  }, [activeLayerSide, lockView]);
+  }, [activeLayerSide, lockView, isToteBag, cameraOffset]);
 
   return (
     <div className="w-full h-full min-h-[250px] md:min-h-[400px] relative bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden shadow-inner">

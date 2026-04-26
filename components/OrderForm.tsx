@@ -184,7 +184,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                 className="w-full aspect-square object-contain rounded-lg bg-white shadow-sm border border-gray-200 mb-4"
             />
             ) : (
-            <div className={`w-full aspect-square rounded-lg border border-gray-200 mb-4 ${config.color === 'white' ? 'bg-white' : 'bg-black'}`} />
+            <div className={`w-full aspect-square rounded-lg border border-gray-200 mb-4 ${config.productType === 'totebag' ? 'bg-[#f3eddf]' : (config.color === 'white' ? 'bg-white' : 'bg-black')}`} />
             )}
             
             <div className="space-y-2">
@@ -201,7 +201,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                 )}
                 <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                     <span>Color Base:</span>
-                    <span className="font-medium text-gray-900 dark:text-white capitalize">{config.color === 'white' ? 'Blanca' : 'Negra'}</span>
+                    <span className="font-medium text-gray-900 dark:text-white capitalize">{config.productType === 'totebag' ? 'Natural' : (config.color === 'white' ? 'Blanca' : 'Negra')}</span>
                 </div>
                 {config.productType === 'totebag' ? (
                     <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">

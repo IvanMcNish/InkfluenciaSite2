@@ -156,7 +156,7 @@ const App: React.FC = () => {
           <OrderForm 
             config={config} 
             onSuccess={handleOrderSuccess} 
-            onBack={() => setView('gallery')} 
+            onBack={() => setView('customizer')} 
           />
         );
       case 'success':

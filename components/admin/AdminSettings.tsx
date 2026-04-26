@@ -439,8 +439,8 @@ export const AdminSettings: React.FC = () => {
             <h2 className="text-xl font-bold mb-4">Scripts de Configuración</h2>
             <p className="text-gray-500 mb-6">Usa estos scripts en el editor SQL de Supabase para configurar la base de datos.</p>
             
-            <div className="space-y-6">
-                <div>
+            <div className="space-y-6 min-w-0">
+                <div className="min-w-0">
                     <h3 className="font-bold flex items-center gap-2"><Instagram className="w-4 h-4" /> Muro Social (Comunidad)</h3>
                     <div className="relative mt-2">
                         <button onClick={() => copyToClipboard(`
@@ -481,7 +481,7 @@ create policy "Admin Delete Posts" on social_posts for delete using (auth.role()
                     </div>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                     <h3 className="font-bold flex items-center gap-2"><Database className="w-4 h-4" /> Configuración General (Tabla Settings)</h3>
                      <div className="relative mt-2">
                         <button onClick={() => copyToClipboard(`
@@ -506,7 +506,7 @@ create policy "Admin Insert Settings" on app_settings for insert with check (aut
                      </div>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                     <h3 className="font-bold flex items-center gap-2"><Database className="w-4 h-4" /> Storage</h3>
                     <div className="relative mt-2">
                         <button onClick={() => copyToClipboard(`-- 1. Asegurar que el bucket existe y es público
@@ -518,7 +518,7 @@ CREATE POLICY "Public Access Inkfluencia" ON storage.objects FOR ALL TO public U
                         <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL Storage...</pre>
                     </div>
                 </div>
-                 <div>
+                 <div className="min-w-0">
                     <h3 className="font-bold flex items-center gap-2"><Layers className="w-4 h-4" /> Inventario (Actualizado con Género)</h3>
                     <div className="relative mt-2">
                         <button onClick={() => copyToClipboard(`
@@ -550,7 +550,7 @@ create policy "Public All Inventory" on inventory for all to public using (true)
                         <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL Inventory (Incluye migración de género)</pre>
                     </div>
                 </div>
-                <div>
+                <div className="min-w-0">
                      <h3 className="font-bold flex items-center gap-2 text-red-600"><AlertTriangle className="w-4 h-4" /> Ordenes: FIX ELIMINACIÓN (Copiar y Ejecutar)</h3>
                      <div className="relative mt-2">
                         <button onClick={() => copyToClipboard(`

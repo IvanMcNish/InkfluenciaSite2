@@ -417,18 +417,25 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                 {/* Structured Address Fields */}
                 <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
                     <label className="block text-sm font-bold flex items-center gap-2 text-gray-700 dark:text-gray-200"><MapPin className="w-4 h-4 text-pink-500" /> Dirección de Entrega</label>
-                    <div className="grid grid-cols-12 gap-2 items-center">
-                        <div className="col-span-5 sm:col-span-4"><select name="type" value={addressParts.type} onChange={handleAddressChange} className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm"><option value="Calle">Calle</option><option value="Carrera">Carrera</option><option value="Diagonal">Diagonal</option><option value="Transversal">Transversal</option><option value="Avenida">Avenida</option><option value="Circular">Circular</option></select></div>
-                        <div className="col-span-3 sm:col-span-3"><input type="text" name="n1" value={addressParts.n1} onChange={handleAddressChange} placeholder="12A" className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" /></div>
-                        <div className="col-span-1 text-center font-bold text-gray-400 mt-4">#</div>
-                        <div className="col-span-3 sm:col-span-4"><input type="text" name="n2" value={addressParts.n2} onChange={handleAddressChange} placeholder="45" className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" /></div>
+                    <div className="flex items-center gap-1 w-full">
+                        <select name="type" value={addressParts.type} onChange={handleAddressChange} className="w-[80px] sm:w-[100px] p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-xs sm:text-sm">
+                            <option value="Calle">Calle</option>
+                            <option value="Carrera">Carrera</option>
+                            <option value="Diagonal">Diagonal</option>
+                            <option value="Transversal">Transversal</option>
+                            <option value="Avenida">Avenida</option>
+                            <option value="Circular">Circular</option>
+                        </select>
+                        <input type="text" name="n1" value={addressParts.n1} onChange={handleAddressChange} placeholder="12A" className="w-[45px] sm:w-[60px] p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-xs sm:text-sm text-center" />
+                        <span className="font-bold text-gray-400 text-xs sm:text-sm">#</span>
+                        <input type="text" name="n2" value={addressParts.n2} onChange={handleAddressChange} placeholder="45" className="w-[45px] sm:w-[60px] p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-xs sm:text-sm text-center" />
+                        <span className="font-bold text-gray-400 text-xs sm:text-sm">-</span>
+                        <input type="text" name="n3" value={addressParts.n3} onChange={handleAddressChange} placeholder="67" className="w-[45px] sm:w-[60px] p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-xs sm:text-sm text-center" />
                     </div>
-                    <div className="grid grid-cols-12 gap-2 items-center">
-                        <div className="col-span-1 text-center font-bold text-gray-400 pt-4">-</div>
-                         <div className="col-span-4 sm:col-span-3"><input type="text" name="n3" value={addressParts.n3} onChange={handleAddressChange} placeholder="67" className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" /></div>
-                         <div className="col-span-7 sm:col-span-8"><input type="text" name="city" value={addressParts.city} onChange={handleAddressChange} placeholder="Bucaramanga, Santander" className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" /></div>
+                    <div className="grid grid-cols-1 gap-2 mt-2">
+                         <input type="text" name="city" value={addressParts.city} onChange={handleAddressChange} placeholder="Bucaramanga, Santander" className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" />
+                         <input type="text" name="details" value={addressParts.details} onChange={handleAddressChange} placeholder="Torre 1 Apto 502, Barrio Centro..." className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" />
                     </div>
-                    <div><input type="text" name="details" value={addressParts.details} onChange={handleAddressChange} placeholder="Torre 1 Apto 502, Barrio Centro..." className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" /></div>
                     <div className="text-xs text-gray-500 pt-1 px-1">Resultado: <span className="font-medium text-gray-800 dark:text-gray-300">{formData.address || '...'}</span></div>
                 </div>
             </div>

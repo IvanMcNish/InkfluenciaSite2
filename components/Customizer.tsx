@@ -439,17 +439,40 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
             </div>
             
             <div className="flex gap-2">
-                <button
-                onClick={() => handleColorChange('white')}
-                className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 transition-all ${config.color === 'white' ? 'border-pink-500 ring-2 ring-pink-200 scale-110' : 'border-gray-200'} bg-white shadow-sm`}
-                title="Blanco"
-                />
-                <button
-                onClick={() => handleColorChange('black')}
-                className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 transition-all ${config.color === 'black' ? 'border-pink-500 ring-2 ring-pink-200 scale-110' : 'border-gray-600'} bg-black shadow-sm`}
-                title="Negro"
-                />
+                {config.productType === 'totebag' ? (
+                     <div className="text-xs text-gray-500 font-medium px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center shadow-sm border border-gray-200 dark:border-gray-700">
+                         Color: Hueso
+                     </div>
+                ) : (
+                    <>
+                    <button
+                    onClick={() => handleColorChange('white')}
+                    className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 transition-all ${config.color === 'white' ? 'border-pink-500 ring-2 ring-pink-200 scale-110' : 'border-gray-200'} bg-white shadow-sm`}
+                    title="Blanco"
+                    />
+                    <button
+                    onClick={() => handleColorChange('black')}
+                    className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 transition-all ${config.color === 'black' ? 'border-pink-500 ring-2 ring-pink-200 scale-110' : 'border-gray-600'} bg-black shadow-sm`}
+                    title="Negro"
+                    />
+                    </>
+                )}
             </div>
+        </div>
+
+        <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-lg shrink-0 mt-[-0.5rem] mb-1">
+            <button
+                onClick={() => setConfig(prev => ({ ...prev, productType: 'tshirt', color: prev.color === 'bone' ? 'white' : prev.color }))}
+                className={`flex-1 py-1.5 text-xs lg:text-sm font-bold rounded-md transition-all ${(!config.productType || config.productType === 'tshirt') ? 'bg-white dark:bg-gray-700 shadow text-pink-500' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+            >
+                👕 Camiseta
+            </button>
+            <button
+                onClick={() => setConfig(prev => ({ ...prev, productType: 'totebag', color: 'bone' }))}
+                className={`flex-1 py-1.5 text-xs lg:text-sm font-bold rounded-md transition-all ${config.productType === 'totebag' ? 'bg-white dark:bg-gray-700 shadow text-pink-500' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+            >
+                👜 Tote Bag
+            </button>
         </div>
 
         <div className="space-y-2 lg:space-y-3">

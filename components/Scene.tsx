@@ -4,7 +4,7 @@ import { Canvas, useLoader, useThree, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Decal, Environment, Center, useTexture, Html, useProgress, Text, Line } from '@react-three/drei';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import * as THREE from 'three';
-import { TSHIRT_OBJ_URL } from '../constants';
+import { TSHIRT_OBJ_URL, TOTEBAG_OBJ_URL } from '../constants';
 import { TShirtConfig as ConfigType, Position } from '../types';
 import { getAppearanceSettings, DEFAULT_APPEARANCE } from '../services/settingsService';
 
@@ -272,7 +272,7 @@ const DecalImage: React.FC<{
   );
 };
 
-interface TShirtMeshProps {
+interface ProductMeshProps {
     config: ConfigType;
     showMeasurements?: boolean;
     customBlackColor?: string;
@@ -283,8 +283,11 @@ interface TShirtMeshProps {
     isDraggingRef: React.MutableRefObject<boolean>;
 }
 
-const TShirtMesh: React.FC<TShirtMeshProps> = ({ config, showMeasurements, customBlackColor, lockView, onPositionChange, onLayerSelect, activeLayerSide, isDraggingRef }) => {
-  const obj = useLoader(OBJLoader, TSHIRT_OBJ_URL);
+const ProductMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, customBlackColor, lockView, onPositionChange, onLayerSelect, activeLayerSide, isDraggingRef }) => {
+  const isToteBag = config.productType === 'totebag';
+  const objUrl = isToteBag ? TOTEBAG_OBJ_URL : TSHIRT_OBJ_URL;
+  
+  const obj = useLoader(OBJLoader, objUrl);
   
   const { geometry, zFront, zBack } = useMemo(() => {
     let foundGeom: THREE.BufferGeometry | null = null;
@@ -334,7 +337,10 @@ const TShirtMesh: React.FC<TShirtMeshProps> = ({ config, showMeasurements, custo
 
   if (!geometry) return null;
 
-  const materialColor = config.color === 'white' ? '#ffffff' : (customBlackColor || '#050505');
+  let materialColor = config.color === 'white' ? '#ffffff' : (customBlackColor || '#050505');
+  if (config.productType === 'totebag' || config.color === 'bone') {
+      materialColor = '#f3eddf'; // Bone/Hueso color
+  }
   
   return (
     <Mesh 
@@ -441,7 +447,7 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
 
         <Suspense fallback={<Loader />}>
             <Center>
-                <TShirtMesh 
+                <ProductMesh 
                     config={config} 
                     showMeasurements={showMeasurements} 
                     customBlackColor={blackColor} 

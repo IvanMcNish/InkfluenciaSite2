@@ -1,7 +1,9 @@
 
 export const TSHIRT_OBJ_URL = "https://raw.githubusercontent.com/IvanMcNish/camiseta/refs/heads/main/T-shirt-male-obj.obj";
+export const TOTEBAG_OBJ_URL = "/tote.obj";
 
 export const DEFAULT_CONFIG = {
+  productType: 'tshirt' as const,
   color: 'white' as const,
   layers: [], // Empty array for layers
   snapshotUrl: null
@@ -11,6 +13,14 @@ export const PRICES = {
   '150g': 50000,
   '200g': 65000
 };
+
+export const TOTEBAG_PRICES = {
+  'pequeño': 22000,
+  'grande': 40000,
+  'combo': 60000
+};
+
+export const TOTEBAG_SIZES = ['pequeño', 'grande', 'combo'];
 
 // Número de WhatsApp oficial para notificaciones (Colombia: +57)
 export const WHATSAPP_PHONE = '573203191152';

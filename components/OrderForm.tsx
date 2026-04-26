@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { SIZES, PRICES, SHIPPING, formatCurrency } from '../constants';
+import { SIZES, PRICES, SHIPPING, formatCurrency, TOTEBAG_PRICES, TOTEBAG_SIZES } from '../constants';
 import { TShirtConfig, Order, InventoryItem, Gender } from '../types';
 import { submitOrder } from '../services/orderService';
 import { getInventory } from '../services/inventoryService';
@@ -65,6 +65,13 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
 
   // 3. Auto-select logic
   useEffect(() => {
+    if (config.productType === 'totebag') {
+        if (!TOTEBAG_SIZES.includes(formData.size)) {
+             setFormData(prev => ({ ...prev, size: 'grande' }));
+        }
+        return;
+    }
+    
     if (inventoryLoaded) {
         if (availableSizes.length > 0) {
             if (!availableSizes.includes(formData.size)) {
@@ -74,7 +81,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
             setFormData(prev => ({ ...prev, size: '' }));
         }
     }
-  }, [availableSizes, formData.size, inventoryLoaded]);
+  }, [availableSizes, formData.size, inventoryLoaded, config.productType]);
 
   // 4. Update Full Address String
   useEffect(() => {
@@ -100,7 +107,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
     setFormData(prev => ({ ...prev, gender: g }));
   };
 
-  const basePrice = PRICES[formData.grammage];
+  const basePrice = config.productType === 'totebag' 
+    ? (TOTEBAG_PRICES[formData.size as keyof typeof TOTEBAG_PRICES] || TOTEBAG_PRICES['grande'])
+    : PRICES[formData.grammage];
   const shippingCost = SHIPPING;
   const shippingDiscount = SHIPPING; 
   const total = basePrice + shippingCost - shippingDiscount;
@@ -108,7 +117,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.size) {
+    if (config.productType !== 'totebag' && !formData.size) {
         setError("Por favor selecciona una talla disponible.");
         return;
     }
@@ -122,13 +131,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
     setError(null);
 
     try {
+      const finalSize = formData.size;
+      const finalGender = config.productType === 'totebag' ? ('unisex' as Gender) : formData.gender;
+      
       const newOrder = await submitOrder({
         customerName: formData.name,
         email: formData.email,
         phone: formData.phone,
         address: formData.address,
-        size: formData.size,
-        gender: formData.gender,
+        size: finalSize,
+        gender: finalGender,
         grammage: formData.grammage,
         config: config,
         total: total
@@ -165,29 +177,40 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
             )}
             
             <div className="space-y-2">
-                <h3 className="font-bold text-lg">Camiseta Inkfluencia</h3>
+                <h3 className="font-bold text-lg">{config.productType === 'totebag' ? 'Tote Bag Inkfluencia' : 'Camiseta Inkfluencia'}</h3>
                 <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                     <span>Diseños:</span>
                     <span className="font-medium text-gray-900 dark:text-white capitalize">{config.layers.length} imagen(es)</span>
                 </div>
-                <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
-                    <span>Género:</span>
-                    <span className="font-medium text-gray-900 dark:text-white capitalize">{formData.gender === 'male' ? 'Hombre' : 'Mujer'}</span>
-                </div>
+                {config.productType !== 'totebag' && (
+                    <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                        <span>Género:</span>
+                        <span className="font-medium text-gray-900 dark:text-white capitalize">{formData.gender === 'male' ? 'Hombre' : 'Mujer'}</span>
+                    </div>
+                )}
                 <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                     <span>Color Base:</span>
                     <span className="font-medium text-gray-900 dark:text-white capitalize">{config.color === 'white' ? 'Blanca' : 'Negra'}</span>
                 </div>
-                <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
-                    <span>Talla:</span>
-                    <span className="font-medium text-gray-900 dark:text-white font-mono">
-                        {formData.size || <span className="text-red-500 italic">Sin Stock</span>}
-                    </span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
-                    <span>Gramaje:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{formData.grammage}</span>
-                </div>
+                {config.productType === 'totebag' ? (
+                    <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                        <span>Tamaño/Combo:</span>
+                        <span className="font-medium text-gray-900 dark:text-white capitalize">{formData.size}</span>
+                    </div>
+                ) : (
+                    <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                        <span>Talla:</span>
+                        <span className="font-medium text-gray-900 dark:text-white font-mono">
+                            {formData.size || <span className="text-red-500 italic">Sin Stock</span>}
+                        </span>
+                    </div>
+                )}
+                {config.productType !== 'totebag' && (
+                    <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                        <span>Gramaje:</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{formData.grammage}</span>
+                    </div>
+                )}
             </div>
 
             <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4 space-y-2">
@@ -207,9 +230,33 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
             <div className="space-y-4">
                 <h3 className="text-lg font-bold border-b border-gray-100 dark:border-gray-800 pb-2 flex items-center gap-2">
                     <span className="bg-gray-100 dark:bg-gray-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span> 
-                    Detalles de la Prenda
+                    Detalles del Producto
                 </h3>
                 
+                {config.productType === 'totebag' ? (
+                    <div>
+                        <label className="block text-sm font-medium mb-3 flex items-center gap-2">
+                            <Weight className="w-4 h-4" /> Tamaño / Combo
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {TOTEBAG_SIZES.map(s => (
+                                <div 
+                                    key={s}
+                                    onClick={() => setFormData(prev => ({ ...prev, size: s }))}
+                                    className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col justify-center items-center ${
+                                        formData.size === s 
+                                        ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600' 
+                                        : 'border-gray-200 dark:border-gray-700 hover:border-pink-300'
+                                    }`}
+                                >
+                                    <span className="font-bold capitalize">{s}</span>
+                                    <span className="text-sm mt-1">{formatCurrency(TOTEBAG_PRICES[s as keyof typeof TOTEBAG_PRICES])}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ) : (
+                <>
                 {/* Gender Selector */}
                 <div>
                      <label className="block text-sm font-medium mb-2 flex items-center gap-2">
@@ -299,6 +346,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                         )}
                     </select>
                 </div>
+                </>
+                )}
             </div>
 
             {/* Step 2 */}
@@ -353,10 +402,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                 <button type="button" onClick={onBack} disabled={loading} className="w-1/3 py-4 px-4 border border-gray-300 dark:border-gray-600 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">Volver</button>
                 <button 
                     type="submit" 
-                    disabled={loading || availableSizes.length === 0} 
+                    disabled={loading || (config.productType !== 'totebag' && availableSizes.length === 0)} 
                     className={`w-2/3 py-4 px-4 bg-gradient-to-r from-pink-600 to-orange-500 text-white rounded-xl font-bold hover:shadow-lg hover:from-pink-500 hover:to-orange-400 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed`}
                 >
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : availableSizes.length === 0 ? 'Sin Stock' : 'Confirmar Pedido'}
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (config.productType !== 'totebag' && availableSizes.length === 0) ? 'Sin Stock' : 'Confirmar Pedido'}
                 </button>
             </div>
             

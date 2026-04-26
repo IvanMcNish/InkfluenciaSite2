@@ -13,7 +13,8 @@ export interface DesignLayer {
 }
 
 export interface TShirtConfig {
-  color: 'white' | 'black';
+  productType?: 'tshirt' | 'totebag'; // New property for product type
+  color: 'white' | 'black' | 'bone';
   layers: DesignLayer[];
   snapshotUrl?: string | null;
 }

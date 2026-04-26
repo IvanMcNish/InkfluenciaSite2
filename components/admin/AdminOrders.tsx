@@ -460,10 +460,9 @@ export const AdminOrders: React.FC = () => {
                                 <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 uppercase tracking-wider text-gray-500 font-semibold">
                                     <th className="p-2 lg:p-4">ID/Fecha</th>
                                     <th className="p-2 lg:p-4">Cliente</th>
-                                    <th className="p-2 lg:p-4 hidden xl:table-cell">Color/Gramaje</th>
-                                    <th className="p-2 lg:p-4">Opciones</th>
-                                    <th className="p-2 lg:p-4 hidden md:table-cell">Ciudad</th>
-                                    <th className="p-2 lg:p-4">Producto</th>
+                                    <th className="p-2 lg:p-4">Color/Gramaje</th>
+                                    <th className="p-2 lg:p-4">Ciudad</th>
+                                    <th className="p-2 lg:p-4">Producto/Talla</th>
                                     <th className="p-2 lg:p-4">Total</th>
                                     <th className="p-2 text-center lg:p-4">Estado</th>
                                     <th className="p-2 text-center lg:p-4">Acciones</th>
@@ -484,7 +483,7 @@ export const AdminOrders: React.FC = () => {
                                             <div className="font-medium text-gray-900 dark:text-white truncate max-w-[80px] lg:max-w-[150px]">{order.customerName}</div>
                                             <div className="text-[9px] md:text-[10px] text-gray-500 truncate max-w-[80px] lg:max-w-[150px]">{order.email}</div>
                                         </td>
-                                        <td className="p-2 lg:p-4 hidden xl:table-cell">
+                                        <td className="p-2 lg:p-4">
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex items-center gap-1.5">
                                                     <div className={`w-2.5 h-2.5 rounded-full border border-gray-200 shadow-sm ${order.config.color === 'white' ? 'bg-white' : order.config.color === 'black' ? 'bg-black' : 'bg-[#f3eddf]'}`}></div>
@@ -499,13 +498,7 @@ export const AdminOrders: React.FC = () => {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="p-2 lg:p-4 xl:hidden">
-                                            <div className="flex items-center gap-1">
-                                                 <div className={`shrink-0 w-2 h-2 rounded-full border border-gray-200 shadow-sm ${order.config.color === 'white' ? 'bg-white' : order.config.color === 'black' ? 'bg-black' : 'bg-[#f3eddf]'}`}></div>
-                                                 {order.config.productType !== 'totebag' && <span className="text-[9px] text-gray-500">{order.grammage}</span>}
-                                            </div>
-                                        </td>
-                                        <td className="p-2 lg:p-4 hidden md:table-cell">
+                                        <td className="p-2 lg:p-4">
                                             <div className="text-gray-600 dark:text-gray-300 font-medium truncate max-w-[70px] lg:max-w-[120px]" title={order.address}>
                                                 {getCityFromAddress(order.address)}
                                             </div>

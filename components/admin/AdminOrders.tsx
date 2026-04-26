@@ -292,17 +292,19 @@ export const AdminOrders: React.FC = () => {
                             </h3>
                             <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                                 <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                    <span className="block text-gray-500 text-xs uppercase">Género / Talla</span>
-                                    <span className="font-bold text-lg capitalize">{selectedOrder.gender === 'male' ? 'H' : 'M'} - {selectedOrder.size}</span>
+                                    <span className="block text-gray-500 text-xs uppercase">{selectedOrder.config.productType === 'totebag' ? 'Producto' : 'Género / Talla'}</span>
+                                    <span className="font-bold text-lg capitalize">{selectedOrder.config.productType === 'totebag' ? `Tote Bag - ${selectedOrder.size}` : `${selectedOrder.gender === 'male' ? 'H' : 'M'} - ${selectedOrder.size}`}</span>
                                 </div>
                                 <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                                     <span className="block text-gray-500 text-xs uppercase">Color Base</span>
-                                    <span className="font-bold text-lg capitalize">{selectedOrder.config.color === 'white' ? 'Blanca' : 'Negra'}</span>
+                                    <span className="font-bold text-lg capitalize">{selectedOrder.config.color === 'white' ? 'Blanca' : selectedOrder.config.color === 'black' ? 'Negra' : 'Hueso'}</span>
                                 </div>
+                                {selectedOrder.config.productType !== 'totebag' && (
                                 <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg col-span-2">
                                     <span className="block text-gray-500 text-xs uppercase">Gramaje</span>
                                     <span className="font-bold">{selectedOrder.grammage}</span>
                                 </div>
+                                )}
                             </div>
 
                             <div className="space-y-2">
@@ -417,13 +419,13 @@ export const AdminOrders: React.FC = () => {
                                 <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded">
                                     <span className="text-gray-400 block">Color</span>
                                     <div className="flex items-center gap-1">
-                                        <div className={`w-2.5 h-2.5 rounded-full border border-gray-300 ${order.config.color === 'white' ? 'bg-white' : 'bg-black'}`}></div>
-                                        <span className="font-bold text-gray-700 dark:text-gray-200 capitalize">{order.config.color === 'white' ? 'Blanca' : 'Negra'}</span>
+                                        <div className={`w-2.5 h-2.5 rounded-full border border-gray-300 ${order.config.color === 'white' ? 'bg-white' : order.config.color === 'black' ? 'bg-black' : 'bg-[#f3eddf]'}`}></div>
+                                        <span className="font-bold text-gray-700 dark:text-gray-200 capitalize">{order.config.color === 'white' ? 'Blanca' : order.config.color === 'black' ? 'Negra' : 'Hueso'}</span>
                                     </div>
                                 </div>
                                 <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded">
-                                    <span className="text-gray-400 block">Gramaje</span>
-                                    <span className="font-bold text-gray-700 dark:text-gray-200">{order.grammage}</span>
+                                    <span className="text-gray-400 block">{order.config.productType === 'totebag' ? 'Producto' : 'Gramaje'}</span>
+                                    <span className="font-bold text-gray-700 dark:text-gray-200">{order.config.productType === 'totebag' ? 'Tote Bag' : order.grammage}</span>
                                 </div>
                                 <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded col-span-2">
                                     <span className="text-gray-400 block">Ciudad</span>
@@ -484,24 +486,28 @@ export const AdminOrders: React.FC = () => {
                                         </td>
                                         <td className="p-4">
                                             <div className="flex items-center gap-2 text-sm">
-                                                <div className={`w-3.5 h-3.5 rounded-full border border-gray-200 shadow-sm ${order.config.color === 'white' ? 'bg-white' : 'bg-black'}`}></div>
+                                                <div className={`w-3.5 h-3.5 rounded-full border border-gray-200 shadow-sm ${order.config.color === 'white' ? 'bg-white' : order.config.color === 'black' ? 'bg-black' : 'bg-[#f3eddf]'}`}></div>
                                                 <span className="capitalize font-medium text-gray-700 dark:text-gray-300">
-                                                    {order.config.color === 'white' ? 'Blanca' : 'Negra'}
+                                                    {order.config.color === 'white' ? 'Blanca' : order.config.color === 'black' ? 'Negra' : 'Hueso'}
                                                 </span>
                                             </div>
                                         </td>
                                         <td className="p-4">
-                                            <span className="text-sm font-medium px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-300">
-                                                {order.grammage}
-                                            </span>
+                                            {order.config.productType === 'totebag' ? (
+                                                <span className="text-sm font-bold text-gray-500 italic">Tote Bag</span>
+                                            ) : (
+                                                <span className="text-sm font-medium px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-300">
+                                                    {order.grammage}
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="p-4">
                                             <div className="text-sm text-gray-600 dark:text-gray-300 font-medium truncate max-w-[120px]" title={order.address}>
                                                 {getCityFromAddress(order.address)}
                                             </div>
                                         </td>
-                                        <td className="p-4 text-sm">
-                                            {order.gender === 'male' ? 'H' : 'M'} / {order.size}
+                                        <td className="p-4 text-sm capitalize">
+                                            {order.config.productType === 'totebag' ? `Tote - ${order.size}` : `${order.gender === 'male' ? 'H' : 'M'} / ${order.size}`}
                                         </td>
                                         <td className="p-4">
                                             <div className="font-bold text-gray-900 dark:text-white">

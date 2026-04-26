@@ -20,7 +20,7 @@ export interface TShirtConfig {
 }
 
 export type OrderStatus = 'pending' | 'processing' | 'shipped';
-export type Gender = 'male' | 'female';
+export type Gender = 'male' | 'female' | 'unisex';
 
 export interface Order {
   id: string;
@@ -30,7 +30,7 @@ export interface Order {
   address: string;
   size: string;
   gender: Gender;
-  grammage: '150g' | '200g';
+  grammage: '150g' | '200g' | 'tote';
   config: TShirtConfig;
   total: number;
   date: string;
@@ -51,9 +51,9 @@ export interface Customer {
 export interface InventoryItem {
   id: string;
   gender: Gender;
-  color: 'white' | 'black';
+  color: 'white' | 'black' | 'bone';
   size: string;
-  grammage: '150g' | '200g';
+  grammage: '150g' | '200g' | 'tote';
   quantity: number;
 }
 

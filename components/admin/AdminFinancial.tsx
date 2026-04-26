@@ -95,7 +95,10 @@ export const AdminFinancial: React.FC = () => {
   const pendingPercentage = totalOrdersCount > 0 ? (pendingOrdersCount / totalOrdersCount) * 100 : 0;
 
   // Helper to calculate displayed quantity based on filter
-  const getDisplayedQty = (color: 'white' | 'black', size: string, grammage: '150g' | '200g') => {
+  const getDisplayedQty = (color: 'white' | 'black' | 'bone', size: string, grammage: '150g' | '200g' | 'tote') => {
+      if (grammage === 'tote') {
+          return getQuantity('unisex', 'bone', size, 'tote');
+      }
       if (viewGender === 'all') {
           return getQuantity('male', color, size, grammage) + getQuantity('female', color, size, grammage);
       }
@@ -103,9 +106,10 @@ export const AdminFinancial: React.FC = () => {
   };
 
   // Helper for sub-total count in headers
-  const getSubTotal = (grammage: '150g' | '200g') => {
+  const getSubTotal = (grammage: '150g' | '200g' | 'tote') => {
       if (viewGender === 'all') {
           if (grammage === '150g') return metrics.white150 + metrics.black150;
+          if (grammage === 'tote') return metrics.toteTotal;
           return metrics.white200 + metrics.black200;
       }
       
@@ -338,7 +342,23 @@ export const AdminFinancial: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Card 4: Estimated Cost Value */}
+                                {/* Card 4: Tote Bags */}
+                                <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 border border-gray-200 dark:border-gray-700">
+                                            <ShoppingBag className="w-5 h-5 text-emerald-500" />
+                                        </div>
+                                        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Stock Tote Bags</h3>
+                                    </div>
+                                    <div className="text-3xl font-black text-gray-900 dark:text-white">
+                                        {metrics.toteTotal}
+                                    </div>
+                                    <div className="text-xs text-gray-500 mt-1 font-medium flex gap-2">
+                                        <span className="text-emerald-600">Color: Hueso</span>
+                                    </div>
+                                </div>
+
+                                {/* Card 5: Estimated Cost Value */}
                                 <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
                                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                         <DollarSign className="w-16 h-16 text-green-500" />
@@ -385,10 +405,18 @@ export const AdminFinancial: React.FC = () => {
                                     >
                                         Mujer
                                     </button>
+                                    <button 
+                                        onClick={() => setViewGender('unisex')} 
+                                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${viewGender === 'unisex' ? 'bg-white dark:bg-gray-700 shadow text-emerald-600' : 'text-gray-500'}`}
+                                    >
+                                        Totes
+                                    </button>
                                 </div>
                             </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {viewGender !== 'unisex' && (
+                                    <>
                                 {/* Panel 1: 150g (Standard) */}
                                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
                                     <div className="bg-purple-50 dark:bg-purple-900/20 p-4 border-b border-purple-100 dark:border-purple-800/30 flex justify-between items-center">
@@ -486,6 +514,41 @@ export const AdminFinancial: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
+                                    </>
+                                )}
+
+                                {viewGender !== 'male' && viewGender !== 'female' && (
+                                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm md:col-span-2">
+                                    {/* Panel 3: Tote Bags */}
+                                    <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 border-b border-emerald-100 dark:border-emerald-800/30 flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                            <ShoppingBag className="w-5 h-5 text-emerald-600" />
+                                            <h4 className="font-bold text-gray-900 dark:text-white">Producto Tote Bags</h4>
+                                        </div>
+                                        <span className="text-xs bg-white dark:bg-gray-800 px-2 py-1 rounded border border-emerald-100 dark:border-emerald-800 text-emerald-600 font-bold">{getSubTotal('tote')} Unds</span>
+                                    </div>
+                                    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {/* Bone Tote */}
+                                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-100 dark:border-gray-700">
+                                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
+                                                <div className="w-3 h-3 rounded-full bg-[#f3eddf] border border-gray-300"></div>
+                                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Hueso</span>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {['pequeño', 'grande'].map(size => {
+                                                     const qty = getDisplayedQty('bone' as any, size, 'tote');
+                                                     return (
+                                                         <div key={size} className="text-center">
+                                                             <div className="text-[10px] text-gray-400 uppercase font-bold">{size}</div>
+                                                             <div className={`text-sm font-bold ${qty > 0 ? 'text-gray-800 dark:text-white' : 'text-red-400'}`}>{qty}</div>
+                                                         </div>
+                                                     )
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                )}
                             </div>
                         </div>
                 

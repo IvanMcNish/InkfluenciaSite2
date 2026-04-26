@@ -52,6 +52,23 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
   const availableSizes = useMemo(() => {
     if (!inventoryLoaded) return [];
 
+    if (config.productType === 'totebag') {
+        const getToteQty = (size: string) => {
+            const item = inventory.find(i => i.gender === 'unisex' && i.size === size);
+            return item ? item.quantity : 0;
+        };
+
+        const qtyPequeño = getToteQty('pequeño');
+        const qtyGrande = getToteQty('grande');
+
+        const available = [];
+        if (qtyPequeño > 0) available.push('pequeño');
+        if (qtyGrande > 0) available.push('grande');
+        if (qtyPequeño > 0 && qtyGrande > 0) available.push('combo');
+
+        return available;
+    }
+
     return SIZES.filter(size => {
         const item = inventory.find(i => 
             i.gender === formData.gender &&
@@ -61,17 +78,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
         );
         return item ? item.quantity > 0 : false;
     });
-  }, [inventory, inventoryLoaded, config.color, formData.grammage, formData.gender]);
+  }, [inventory, inventoryLoaded, config.color, formData.grammage, formData.gender, config.productType]);
 
   // 3. Auto-select logic
   useEffect(() => {
-    if (config.productType === 'totebag') {
-        if (!TOTEBAG_SIZES.includes(formData.size)) {
-             setFormData(prev => ({ ...prev, size: 'grande' }));
-        }
-        return;
-    }
-    
     if (inventoryLoaded) {
         if (availableSizes.length > 0) {
             if (!availableSizes.includes(formData.size)) {
@@ -133,6 +143,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
     try {
       const finalSize = formData.size;
       const finalGender = config.productType === 'totebag' ? ('unisex' as Gender) : formData.gender;
+      const finalGrammage = config.productType === 'totebag' ? 'tote' : formData.grammage;
       
       const newOrder = await submitOrder({
         customerName: formData.name,
@@ -141,7 +152,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
         address: formData.address,
         size: finalSize,
         gender: finalGender,
-        grammage: formData.grammage,
+        grammage: finalGrammage as any,
         config: config,
         total: total
       });
@@ -238,22 +249,48 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                         <label className="block text-sm font-medium mb-3 flex items-center gap-2">
                             <Weight className="w-4 h-4" /> Tamaño / Combo
                         </label>
+                        {availableSizes.length === 0 && inventoryLoaded ? (
+                             <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl border border-red-200 dark:border-red-800 text-center flex flex-col items-center gap-2">
+                                 <AlertCircle className="w-6 h-6" />
+                                 <div>
+                                     <h4 className="font-bold">Totalmente Agotado</h4>
+                                     <p className="text-sm">En este momento no contamos con stock disponible para Tote Bags.</p>
+                                 </div>
+                             </div>
+                        ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            {TOTEBAG_SIZES.map(s => (
+                            {TOTEBAG_SIZES.map(s => {
+                                const isAvailable = availableSizes.includes(s);
+                                return (
                                 <div 
                                     key={s}
-                                    onClick={() => setFormData(prev => ({ ...prev, size: s }))}
-                                    className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col justify-center items-center ${
-                                        formData.size === s 
-                                        ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600' 
-                                        : 'border-gray-200 dark:border-gray-700 hover:border-pink-300'
+                                    onClick={() => isAvailable && setFormData(prev => ({ ...prev, size: s }))}
+                                    className={`relative p-4 rounded-xl border-2 transition-all flex flex-col justify-center items-center ${
+                                        !isAvailable
+                                        ? 'border-gray-100 bg-gray-50/50 text-gray-400 dark:border-gray-800 dark:bg-gray-800/20 cursor-not-allowed opacity-60'
+                                        : formData.size === s 
+                                            ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600 cursor-pointer' 
+                                            : 'border-gray-200 dark:border-gray-700 hover:border-pink-300 cursor-pointer'
                                     }`}
                                 >
+                                    {!isAvailable && (
+                                        <div className="absolute top-2 right-2 flex space-x-1">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>
+                                        </div>
+                                    )}
+                                    {isAvailable && formData.size === s && (
+                                         <div className="absolute top-2 right-2">
+                                             <CheckCircle2 className="w-4 h-4" />
+                                         </div>
+                                    )}
                                     <span className="font-bold capitalize">{s}</span>
                                     <span className="text-sm mt-1">{formatCurrency(TOTEBAG_PRICES[s as keyof typeof TOTEBAG_PRICES])}</span>
+                                    {!isAvailable && <span className="text-[10px] uppercase font-bold tracking-wider mt-1 text-red-400">Agotado</span>}
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
+                        )}
                     </div>
                 ) : (
                 <>
@@ -402,10 +439,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                 <button type="button" onClick={onBack} disabled={loading} className="w-1/3 py-4 px-4 border border-gray-300 dark:border-gray-600 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">Volver</button>
                 <button 
                     type="submit" 
-                    disabled={loading || (config.productType !== 'totebag' && availableSizes.length === 0)} 
+                    disabled={loading || availableSizes.length === 0} 
                     className={`w-2/3 py-4 px-4 bg-gradient-to-r from-pink-600 to-orange-500 text-white rounded-xl font-bold hover:shadow-lg hover:from-pink-500 hover:to-orange-400 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed`}
                 >
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (config.productType !== 'totebag' && availableSizes.length === 0) ? 'Sin Stock' : 'Confirmar Pedido'}
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (availableSizes.length === 0) ? 'Sin Stock' : 'Confirmar Pedido'}
                 </button>
             </div>
             

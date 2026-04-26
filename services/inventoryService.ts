@@ -19,8 +19,14 @@ export const getInventory = async (): Promise<InventoryItem[]> => {
   return data as InventoryItem[];
 };
 
-export const adjustInventoryQuantity = async (gender: Gender, color: 'white' | 'black', size: string, grammage: string = '150g', amount: number): Promise<boolean> => {
+export const adjustInventoryQuantity = async (gender: Gender, color: 'white' | 'black' | 'bone', size: string, grammage: string = '150g', amount: number): Promise<boolean> => {
   try {
+    if (gender === 'unisex' && size === 'combo') {
+        const success1 = await adjustInventoryQuantity('unisex', 'bone', 'grande', 'tote', amount);
+        const success2 = await adjustInventoryQuantity('unisex', 'bone', 'pequeño', 'tote', amount);
+        return success1 && success2;
+    }
+
     // 1. Obtener el ítem actual
     const { data: item, error: fetchError } = await supabase
       .from('inventory')

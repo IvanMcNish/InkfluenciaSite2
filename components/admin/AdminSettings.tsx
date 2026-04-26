@@ -428,14 +428,19 @@ CREATE POLICY "Public Access Inkfluencia" ON storage.objects FOR ALL TO public U
                     <div className="relative mt-2">
                         <button onClick={() => copyToClipboard(`
 -- 1. Crear tabla si no existe
-create table if not exists inventory ( id uuid default gen_random_uuid() primary key, gender text check (gender in ('male', 'female')) default 'male', color text check (color in ('white', 'black')), size text, grammage text check (grammage in ('150g', '200g')) default '150g', quantity integer default 0, created_at timestamp with time zone default timezone('utc'::text, now()) );
+create table if not exists inventory ( id uuid default gen_random_uuid() primary key, gender text default 'male', color text, size text, grammage text default '150g', quantity integer default 0, created_at timestamp with time zone default timezone('utc'::text, now()) );
 
 -- 2. Actualizar estructura si ya existe (Migration)
 do $$ begin
   if not exists (select 1 from information_schema.columns where table_name='inventory' and column_name='gender') then
-    alter table inventory add column gender text check (gender in ('male', 'female')) default 'male';
+    alter table inventory add column gender text default 'male';
   end if;
 end $$;
+
+-- 2.1 Remover restricciones previas (Para soportar Tote Bags)
+alter table inventory drop constraint if exists inventory_gender_check;
+alter table inventory drop constraint if exists inventory_color_check;
+alter table inventory drop constraint if exists inventory_grammage_check;
 
 -- 3. Actualizar llave única
 alter table inventory drop constraint if exists inventory_color_size_grammage_key;

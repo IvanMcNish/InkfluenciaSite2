@@ -41,6 +41,48 @@
         }
       }
     </script>
+    <style>
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.05);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(236, 72, 153, 0.5); /* pink-500 with opacity */
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(236, 72, 153, 0.8); /* pink-500 */
+      }
+      
+      .dark ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .dark ::-webkit-scrollbar-thumb {
+        background: rgba(236, 72, 153, 0.5); /* pink-500 with opacity */
+      }
+      .dark ::-webkit-scrollbar-thumb:hover {
+        background: rgba(236, 72, 153, 0.8); /* pink-500 */
+      }
+      
+      /* Ensure HTML block scroll works well */
+      html {
+        scrollbar-color: rgba(236, 72, 153, 0.5) transparent;
+        scrollbar-width: thin;
+      }
+
+      /* Hide scrollbar for elements with .no-scrollbar */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
   <script type="importmap">
 {
   "imports": {

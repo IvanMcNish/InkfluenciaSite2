@@ -165,12 +165,21 @@ export const toggleOrderDiscount = async (orderId: string, currentTotal: number,
 };
 
 export const generateWhatsAppLink = (order: Order) => {
+    let productDetails = '';
+    
+    if (order.config.productType === 'totebag') {
+        productDetails = `👕 *Prenda:* Tote Bag Hueso\n` +
+                         `📏 *Tamaño:* ${order.size}\n`;
+    } else {
+        productDetails = `👕 *Prenda:* Camiseta ${order.config.color === 'white' ? 'Blanca' : 'Negra'} (${order.gender === 'male' ? 'Hombre' : 'Mujer'})\n` +
+                         `📏 *Talla:* ${order.size}\n` +
+                         `🧶 *Gramaje:* ${order.grammage}\n`;
+    }
+
     const message = `¡Hola *Inkfluencia*! 👋 Acabo de realizar un nuevo pedido.\n\n` +
                     `📦 *ID del Pedido:* #${order.id}\n` +
                     `👤 *Cliente:* ${order.customerName}\n` +
-                    `👕 *Prenda:* Camiseta ${order.config.color === 'white' ? 'Blanca' : 'Negra'} (${order.gender === 'male' ? 'Hombre' : 'Mujer'})\n` +
-                    `📏 *Talla:* ${order.size}\n` +
-                    `🧶 *Gramaje:* ${order.grammage}\n` +
+                    productDetails +
                     `📍 *Dirección:* ${order.address}\n` +
                     `💰 *Total:* ${formatCurrency(order.total)}`;
     

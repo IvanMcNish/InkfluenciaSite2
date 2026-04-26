@@ -51,6 +51,9 @@ export const useInventory = () => {
       .filter(i => i.color === 'black' && i.grammage === '200g')
       .reduce((acc, i) => acc + i.quantity, 0);
 
+    // Tote Breakdown
+    const toteTotal = inventory.filter(i => i.gender === 'unisex').reduce((acc, i) => acc + i.quantity, 0);
+
     // Financial Value (Cost Calculation)
     const estimatedValue = inventory.reduce((acc, item) => {
       const unitCost = getItemCost(item.gender, item.size, item.grammage);
@@ -66,6 +69,7 @@ export const useInventory = () => {
       blackTotal,
       black150,
       black200,
+      toteTotal,
       estimatedValue
     };
   }, [inventory]);

@@ -21,6 +21,7 @@ export const TOTEBAG_PRICES = {
 };
 
 export const TOTEBAG_SIZES = ['pequeño', 'grande', 'combo'];
+export const TOTEBAG_INVENTORY_SIZES = ['pequeño', 'grande'];
 
 // Número de WhatsApp oficial para notificaciones (Colombia: +57)
 export const WHATSAPP_PHONE = '573203191152';
@@ -35,11 +36,20 @@ export const INVENTORY_COSTS = {
   female: {
     '150g': 17000,
     '200g': 22000
+  },
+  unisex: {
+    'pequeño': 10000,
+    'grande': 15000,
+    'combo': 25000
   }
 };
 
 // Helper para calcular costo de una unidad específica
 export const getItemCost = (gender: string, size: string, grammage: string) => {
+  if (gender === 'unisex') {
+      return INVENTORY_COSTS.unisex[size as keyof typeof INVENTORY_COSTS.unisex] || 10000;
+  }
+
   // Rule 1: XS Size override (regardless of gender or grammage)
   if (size === 'XS') {
     return INVENTORY_COSTS.XS_ALL;

@@ -36,7 +36,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewGallery
           Viste tu <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-orange-400 to-yellow-400">Influencia</span>.
         </h1>
         <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl mb-12 leading-relaxed relative z-20">
-          Diseños únicos, colores vibrantes y tecnología 3D. Personaliza tu estilo con Inkfluencia y deja huella donde vayas.
+          Camisetas personalizadas DTF en Bucaramanga. Diseños únicos elaborados con algodón peruano, colores vibrantes y tecnología 3D. Personaliza tu estilo con Inkfluencia desde 1 unidad y resalta en todo Santander.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 relative z-20">
             <button
@@ -79,9 +79,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewGallery
           <div className="w-14 h-14 bg-yellow-100 dark:bg-yellow-900/30 rounded-2xl flex items-center justify-center mb-6 text-yellow-500">
             <Sparkles className="w-8 h-8" />
           </div>
-          <h3 className="text-2xl font-bold mb-3">Calidad Premium</h3>
+          <h3 className="text-2xl font-bold mb-3">Estampado DTF y Algodón</h3>
           <p className="text-gray-600 dark:text-gray-400">
-            Algodón 100% orgánico y acabados profesionales. No solo vendemos camisetas, vendemos tu marca personal.
+            Usamos algodón peruano y tecnología DTF de alta durabilidad para tus camisetas corporativas, grupos o eventos. Impresión impecable garantizada.
           </p>
         </div>
       </div>

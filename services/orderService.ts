@@ -168,7 +168,7 @@ export const generateWhatsAppLink = (order: Order) => {
     let productDetails = '';
     
     if (order.config.productType === 'totebag') {
-        productDetails = `👕 *Prenda:* Tote Bag Hueso\n` +
+        productDetails = `👕 *Prenda:* Tote Bag Natural\n` +
                          `📏 *Tamaño:* ${order.size}\n`;
     } else {
         productDetails = `👕 *Prenda:* Camiseta ${order.config.color === 'white' ? 'Blanca' : 'Negra'} (${order.gender === 'male' ? 'Hombre' : 'Mujer'})\n` +

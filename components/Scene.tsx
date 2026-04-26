@@ -183,7 +183,8 @@ const DecalImage: React.FC<{
     lockView: boolean;
     isDraggingRef: React.MutableRefObject<boolean>;
     onLayerSelect?: (index: number) => void;
-}> = ({ textureUrl, position, zPos, side, showMeasurements, index, lockView, isDraggingRef, onLayerSelect }) => {
+    isToteBag?: boolean;
+}> = ({ textureUrl, position, zPos, side, showMeasurements, index, lockView, isDraggingRef, onLayerSelect, isToteBag }) => {
   const texture = useTexture(textureUrl);
   const [hovered, setHovered] = useState(false);
   
@@ -237,12 +238,14 @@ const DecalImage: React.FC<{
       }
   }
 
+  const decalDepth = isToteBag ? 0.3 : 2;
+
   return (
     <>
         <Decal 
             position={[finalX, position.y, finalZ]} 
             rotation={rotation} 
-            scale={[scaleX, scaleY, 2]} 
+            scale={[scaleX, scaleY, decalDepth]} 
             debug={false}
             renderOrder={renderPriority}
             onPointerDown={handlePointerDown}
@@ -327,6 +330,12 @@ const ProductMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cus
       let x = point.x;
       let y = point.y;
 
+      if (isToteBag) {
+          // Restrict dragging bounding box for the Tote Bag body
+          // to prevent decals from reaching up to the handles
+          if (y > 0.4) y = 0.4;
+      }
+
       // Invert X for back view logic to match decal coordinate system
       if (activeLayerSide === 'back') {
           x = -x;
@@ -339,7 +348,7 @@ const ProductMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cus
 
   let materialColor = config.color === 'white' ? '#ffffff' : (customBlackColor || '#050505');
   if (config.productType === 'totebag' || config.color === 'bone') {
-      materialColor = '#f3eddf'; // Bone/Hueso color
+      materialColor = '#f3eddf'; // Bone/Natural color
   }
   
   return (
@@ -370,6 +379,7 @@ const ProductMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cus
             lockView={!!lockView}
             isDraggingRef={isDraggingRef}
             onLayerSelect={onLayerSelect}
+            isToteBag={isToteBag}
         />
       ))}
     </Mesh>

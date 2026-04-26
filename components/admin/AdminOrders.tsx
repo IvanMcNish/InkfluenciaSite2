@@ -297,7 +297,7 @@ export const AdminOrders: React.FC = () => {
                                 </div>
                                 <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                                     <span className="block text-gray-500 text-xs uppercase">Color Base</span>
-                                    <span className="font-bold text-lg capitalize">{selectedOrder.config.color === 'white' ? 'Blanca' : selectedOrder.config.color === 'black' ? 'Negra' : 'Hueso'}</span>
+                                    <span className="font-bold text-lg capitalize">{selectedOrder.config.color === 'white' ? 'Blanca' : selectedOrder.config.color === 'black' ? 'Negra' : 'Natural'}</span>
                                 </div>
                                 {selectedOrder.config.productType !== 'totebag' && (
                                 <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg col-span-2">
@@ -420,7 +420,7 @@ export const AdminOrders: React.FC = () => {
                                     <span className="text-gray-400 block">Color</span>
                                     <div className="flex items-center gap-1">
                                         <div className={`w-2.5 h-2.5 rounded-full border border-gray-300 ${order.config.color === 'white' ? 'bg-white' : order.config.color === 'black' ? 'bg-black' : 'bg-[#f3eddf]'}`}></div>
-                                        <span className="font-bold text-gray-700 dark:text-gray-200 capitalize">{order.config.color === 'white' ? 'Blanca' : order.config.color === 'black' ? 'Negra' : 'Hueso'}</span>
+                                        <span className="font-bold text-gray-700 dark:text-gray-200 capitalize">{order.config.color === 'white' ? 'Blanca' : order.config.color === 'black' ? 'Negra' : 'Natural'}</span>
                                     </div>
                                 </div>
                                 <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded">
@@ -488,7 +488,7 @@ export const AdminOrders: React.FC = () => {
                                             <div className="flex items-center gap-2 text-sm">
                                                 <div className={`w-3.5 h-3.5 rounded-full border border-gray-200 shadow-sm ${order.config.color === 'white' ? 'bg-white' : order.config.color === 'black' ? 'bg-black' : 'bg-[#f3eddf]'}`}></div>
                                                 <span className="capitalize font-medium text-gray-700 dark:text-gray-300">
-                                                    {order.config.color === 'white' ? 'Blanca' : order.config.color === 'black' ? 'Negra' : 'Hueso'}
+                                                    {order.config.color === 'white' ? 'Blanca' : order.config.color === 'black' ? 'Negra' : 'Natural'}
                                                 </span>
                                             </div>
                                         </td>

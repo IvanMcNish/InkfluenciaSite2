@@ -441,7 +441,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
             <div className="flex gap-2">
                 {config.productType === 'totebag' ? (
                      <div className="text-xs text-gray-500 font-medium px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center shadow-sm border border-gray-200 dark:border-gray-700">
-                         Color: Hueso
+                         Color: Natural
                      </div>
                 ) : (
                     <>

@@ -200,7 +200,7 @@ export const AdminInventory: React.FC = () => {
                     ) : (
                         <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
                              <h4 className="font-bold text-gray-700 dark:text-gray-300 mb-2 border-b border-gray-200 dark:border-gray-600 pb-2">Configuración Tote Bag</h4>
-                             <p className="text-sm font-medium text-gray-500 mb-2">Color: <span className="text-gray-800 dark:text-white">Hueso</span></p>
+                             <p className="text-sm font-medium text-gray-500 mb-2">Color: <span className="text-gray-800 dark:text-white">Natural</span></p>
                              <p className="text-sm font-medium text-gray-500 mb-2">Material: <span className="text-gray-800 dark:text-white">Lienzo 100% Algodón</span></p>
                         </div>
                     )}
@@ -253,7 +253,7 @@ export const AdminInventory: React.FC = () => {
                         Vista Previa del Stock
                     </h3>
                     <p className="text-sm text-gray-500 mt-1">
-                        Mostrando para: <strong className="capitalize text-indigo-600 dark:text-indigo-400">{selectedGender === 'male' ? 'Hombre' : selectedGender === 'female' ? 'Mujer' : 'Tote Bags'}</strong> - <strong className="capitalize">{mgmtColor === 'white' ? 'Blanco' : mgmtColor === 'black' ? 'Negro' : 'Hueso'}</strong> - <strong className="capitalize">{mgmtGrammage === 'tote' ? 'Tote' : mgmtGrammage}</strong>
+                        Mostrando para: <strong className="capitalize text-indigo-600 dark:text-indigo-400">{selectedGender === 'male' ? 'Hombre' : selectedGender === 'female' ? 'Mujer' : 'Tote Bags'}</strong> - <strong className="capitalize">{mgmtColor === 'white' ? 'Blanco' : mgmtColor === 'black' ? 'Negro' : 'Natural'}</strong> - <strong className="capitalize">{mgmtGrammage === 'tote' ? 'Tote' : mgmtGrammage}</strong>
                     </p>
                 </div>
                 

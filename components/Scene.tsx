@@ -184,7 +184,8 @@ const DecalImage: React.FC<{
     isDraggingRef: React.MutableRefObject<boolean>;
     onLayerSelect?: (index: number) => void;
     isToteBag?: boolean;
-}> = ({ textureUrl, position, zPos, side, showMeasurements, index, lockView, isDraggingRef, onLayerSelect, isToteBag }) => {
+    customDepth?: number;
+}> = ({ textureUrl, position, zPos, side, showMeasurements, index, lockView, isDraggingRef, onLayerSelect, isToteBag, customDepth }) => {
   const texture = useTexture(textureUrl);
   const [hovered, setHovered] = useState(false);
   
@@ -206,7 +207,10 @@ const DecalImage: React.FC<{
     scaleX = position.scale * ratio;
   }
 
-  const finalZ = side === 'back' ? -zPos : zPos;
+  // Use zPos directly, since ToteBagMesh passes the correct center sign automatically
+  // For TShirt it passes zFront/zBack values, so we still invert for back if customDepth is missing
+  const finalZ = customDepth !== undefined ? zPos : (side === 'back' ? -zPos : zPos);
+  
   const rotation: [number, number, number] = side === 'back' ? [0, Math.PI, 0] : [0, 0, 0];
   const finalX = side === 'back' ? -position.x : position.x;
   
@@ -238,7 +242,13 @@ const DecalImage: React.FC<{
       }
   }
 
-  const decalDepth = isToteBag ? 0.3 : 2;
+  const decalDepth = customDepth !== undefined ? customDepth : (isToteBag ? 0.3 : 2);
+
+  // The true surface level where measurement guides should be drawn
+  let guideZ = finalZ;
+  if (customDepth !== undefined) {
+      guideZ = side === 'back' ? finalZ - (customDepth / 2) : finalZ + (customDepth / 2);
+  }
 
   return (
     <>
@@ -267,7 +277,7 @@ const DecalImage: React.FC<{
             <MeasurementGuides 
                 width={scaleX}
                 height={scaleY}
-                position={[finalX, position.y, finalZ + (side === 'back' ? -0.05 : 0.05)]}
+                position={[finalX, position.y, guideZ + (side === 'back' ? -0.05 : 0.05)]}
                 rotation={rotation}
             />
         )}
@@ -286,10 +296,8 @@ interface ProductMeshProps {
     isDraggingRef: React.MutableRefObject<boolean>;
 }
 
-const ProductMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, customBlackColor, lockView, onPositionChange, onLayerSelect, activeLayerSide, isDraggingRef }) => {
-  const isToteBag = config.productType === 'totebag';
-  const objUrl = isToteBag ? TOTEBAG_OBJ_URL : TSHIRT_OBJ_URL;
-  
+const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, customBlackColor, lockView, onPositionChange, onLayerSelect, activeLayerSide, isDraggingRef }) => {
+  const objUrl = TSHIRT_OBJ_URL;
   const obj = useLoader(OBJLoader, objUrl);
   
   const { geometry, zFront, zBack } = useMemo(() => {
@@ -320,8 +328,6 @@ const ProductMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cus
   }, [obj]);
 
   const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
-      // Logic: If locked AND user has initiated a drag on the decal (isDraggingRef),
-      // then dragging anywhere on the mesh updates the position.
       if (!lockView || !onPositionChange || !isDraggingRef.current) return;
       
       e.stopPropagation();
@@ -330,13 +336,6 @@ const ProductMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cus
       let x = point.x;
       let y = point.y;
 
-      if (isToteBag) {
-          // Restrict dragging bounding box for the Tote Bag body
-          // to prevent decals from reaching up to the handles
-          if (y > 0.4) y = 0.4;
-      }
-
-      // Invert X for back view logic to match decal coordinate system
       if (activeLayerSide === 'back') {
           x = -x;
       }
@@ -347,9 +346,6 @@ const ProductMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cus
   if (!geometry) return null;
 
   let materialColor = config.color === 'white' ? '#ffffff' : (customBlackColor || '#050505');
-  if (config.productType === 'totebag' || config.color === 'bone') {
-      materialColor = '#f3eddf'; // Bone/Natural color
-  }
   
   return (
     <Mesh 
@@ -358,9 +354,6 @@ const ProductMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cus
         geometry={geometry} 
         dispose={null}
         onPointerMove={handlePointerMove}
-        // Removed onPointerLeave/Up from here. 
-        // We rely on the global listener in Scene to stop dragging.
-        // This ensures moving the mouse quickly off the mesh doesn't "drop" the item.
     >
       <MeshStandardMaterial 
         color={materialColor} 
@@ -379,11 +372,119 @@ const ProductMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cus
             lockView={!!lockView}
             isDraggingRef={isDraggingRef}
             onLayerSelect={onLayerSelect}
-            isToteBag={isToteBag}
+            isToteBag={false}
         />
       ))}
     </Mesh>
   );
+};
+
+const ToteBagMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, customBlackColor, lockView, onPositionChange, onLayerSelect, activeLayerSide, isDraggingRef }) => {
+  const objUrl = TOTEBAG_OBJ_URL;
+  const obj = useLoader(OBJLoader, objUrl);
+  
+  const { geometry, zFront, zBack } = useMemo(() => {
+    let foundGeom: THREE.BufferGeometry | null = null;
+    obj.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh && !foundGeom) {
+        foundGeom = (child as THREE.Mesh).geometry;
+      }
+    });
+
+    if (!foundGeom) return { geometry: null, zFront: 0, zBack: 0 };
+
+    const geo = foundGeom.clone();
+    geo.computeVertexNormals(); // Ensure smooth normals for wavy surface
+    geo.center(); 
+    geo.computeBoundingBox();
+    const box = geo.boundingBox!;
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    
+    // Scale totebag appropriately
+    const scaleFactor = 4 / maxDim;
+    geo.scale(scaleFactor, scaleFactor, scaleFactor);
+    
+    geo.computeBoundingBox();
+    const zFront = geo.boundingBox!.max.z;
+    const zBack = Math.abs(geo.boundingBox!.min.z);
+
+    return { geometry: geo, zFront, zBack };
+  }, [obj]);
+
+  const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
+      if (!lockView || !onPositionChange || !isDraggingRef.current) return;
+      
+      e.stopPropagation();
+      const point = e.point;
+      
+      let x = point.x;
+      let y = point.y;
+
+      // Restrict dragging bounding box for the Tote Bag body
+      // Adjust limits to only cover the body, avoiding the straps
+      if (y > 0.4) y = 0.4; // Top boundary
+      if (y < -1.8) y = -1.8; // Bottom boundary
+      if (x > 1.2) x = 1.2; // Right boundary
+      if (x < -1.2) x = -1.2; // Left boundary
+
+      if (activeLayerSide === 'back') {
+          x = -x;
+      }
+
+      onPositionChange(x, y);
+  };
+
+  if (!geometry) return null;
+
+  const materialColor = '#f3eddf'; // Bone/Natural color
+  
+  return (
+    <Mesh 
+        castShadow 
+        receiveShadow 
+        geometry={geometry} 
+        dispose={null}
+        onPointerMove={handlePointerMove}
+    >
+      <MeshStandardMaterial 
+        color={materialColor} 
+        roughness={0.9}
+        metalness={0.05}
+        side={THREE.DoubleSide} 
+      />
+      {config.layers.map((layer, index) => {
+          // For the front side, z moves from 0 to zFront. So the center is zFront / 2, depth is zFront + 0.1
+          // For the back side, z moves from -zBack to 0. So the center is -zBack / 2, depth is zBack + 0.1
+          const isBack = layer.side === 'back';
+          const zDepthOffset = index * 0.001; 
+          const projZCenter = isBack ? -(zBack / 2) - zDepthOffset : (zFront / 2) + zDepthOffset;
+          const projDepth = (isBack ? zBack : zFront) + 0.1;
+          
+          return (
+            <DecalImage 
+                key={layer.id} 
+                index={index} 
+                textureUrl={layer.textureUrl} 
+                position={layer.position} 
+                side={layer.side || 'front'} 
+                zPos={projZCenter} 
+                showMeasurements={showMeasurements}
+                lockView={!!lockView}
+                isDraggingRef={isDraggingRef}
+                onLayerSelect={onLayerSelect}
+                isToteBag={true}
+                customDepth={projDepth}
+            />
+          );
+      })}
+    </Mesh>
+  );
+};
+
+const ProductMesh: React.FC<ProductMeshProps> = (props) => {
+    return props.config.productType === 'totebag' ? <ToteBagMesh {...props} /> : <TShirtMesh {...props} />;
 };
 
 export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front', lockView = false, showMeasurements = false, onPositionChange, onLayerSelect }) => {

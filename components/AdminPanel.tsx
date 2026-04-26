@@ -28,10 +28,10 @@ export const AdminPanel: React.FC = () => {
   ] as const;
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-6 md:h-[calc(100vh-85px)] md:flex md:flex-col">
+    <div className="max-w-7xl mx-auto p-4 md:p-6 md:h-[calc(100vh-85px)] md:flex md:flex-col min-w-0 w-full overflow-x-hidden">
       {/* SECCIÓN FIJA: Cabecera y Pestañas */}
-      <div className="shrink-0 mb-4 z-10">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+      <div className="shrink-0 mb-4 z-10 min-w-0">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 min-w-0">
             <div>
                 <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Panel Administrativo</h1>
                 <p className="text-gray-500 dark:text-gray-400">Control de Pedidos y Base de Datos de Clientes</p>
@@ -49,31 +49,31 @@ export const AdminPanel: React.FC = () => {
             </div>
         </div>
 
-        {/* MOBILE GRID MENU */}
-        <div className="grid grid-cols-4 gap-2 mb-6 md:hidden">
+        {/* MOBILE & TABLET GRID MENU */}
+        <div className="grid grid-cols-4 md:grid-cols-7 gap-2 mb-6 lg:hidden">
             {tabs.map(tab => (
                 <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex flex-col items-center justify-center p-2 rounded-xl text-[10px] font-bold transition-all ${
+                className={`flex flex-col items-center justify-center p-2 rounded-xl text-[10px] sm:text-xs font-bold transition-all ${
                     activeTab === tab.id
                     ? 'bg-pink-600 text-white shadow-lg shadow-pink-500/30'
                     : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-800'
                 }`}
                 >
                 <tab.icon className="w-5 h-5 mb-1.5" />
-                {tab.label}
+                <span className="text-center">{tab.label}</span>
                 </button>
             ))}
         </div>
 
         {/* DESKTOP TABS */}
-        <div className="hidden md:flex gap-4 mb-2 border-b border-gray-200 dark:border-gray-800 overflow-x-auto no-scrollbar">
+        <div className="hidden lg:flex gap-4 mb-2 border-b border-gray-200 dark:border-gray-800 overflow-x-auto no-scrollbar">
             {tabs.map(tab => (
                 <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === tab.id ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
+                    className={`shrink-0 pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === tab.id ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'}`}
                 >
                     <tab.icon className="w-4 h-4" />
                     {tab.label}
@@ -83,7 +83,7 @@ export const AdminPanel: React.FC = () => {
       </div>
 
       {/* SECCIÓN SCROLLABLE: Contenido */}
-      <div className="md:flex-1 md:overflow-y-auto md:min-h-0 md:pr-1 pb-4">
+      <div className="md:flex-1 md:overflow-y-auto md:min-h-0 md:pr-1 pb-4 min-w-0 w-full overflow-x-hidden">
         {activeTab === 'financial' && <AdminFinancial />}
         {activeTab === 'orders' && <AdminOrders />}
         {activeTab === 'inventory' && <AdminInventory />}

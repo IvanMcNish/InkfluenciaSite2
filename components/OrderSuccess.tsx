@@ -74,25 +74,25 @@ export const OrderSuccess: React.FC<OrderSuccessProps> = ({ order, onReset }) =>
       {/* Receipt Card */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden print:shadow-none print:border print:border-gray-300 print:text-black print:dark:bg-white print:dark:text-black print:w-full">
         {/* Receipt Header */}
-        <div className="bg-gray-50 dark:bg-gray-800/50 p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-start print:bg-gray-100">
-            <div className="flex items-center gap-4">
+        <div className="bg-gray-50 dark:bg-gray-800/50 p-4 sm:p-6 border-b border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:bg-gray-100">
+            <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
                 <img 
                     src={`${APP_LOGO_URL}?t=${new Date().getHours()}`} 
                     alt="Logo" 
-                    className="w-16 h-16 object-contain"
+                    className="w-12 h-12 sm:w-16 sm:h-16 object-contain shrink-0"
                     onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none'; 
                     }}
                 />
-                <div>
-                    <h3 className="text-2xl font-black tracking-tight text-pink-600">INKFLUENCIA</h3>
-                    <p className="text-sm text-gray-500 mt-1 uppercase tracking-wide font-bold">Comprobante de Pedido</p>
+                <div className="min-w-0">
+                    <h3 className="text-xl sm:text-2xl font-black tracking-tight text-pink-600 truncate">INKFLUENCIA</h3>
+                    <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 uppercase tracking-wide font-bold">Comprobante de Pedido</p>
                 </div>
             </div>
-            <div className="text-right">
-                <div className="font-mono font-black text-xl text-gray-900 dark:text-white">#{order.id}</div>
-                <div className="text-sm text-gray-500 flex items-center justify-end gap-1 mt-1">
+            <div className="text-left sm:text-right w-full sm:w-auto pb-2 sm:pb-0">
+                <div className="font-mono font-black text-lg sm:text-xl text-gray-900 dark:text-white">#{order.id}</div>
+                <div className="text-xs sm:text-sm text-gray-500 flex items-center sm:justify-end gap-1 mt-1">
                     <Calendar className="w-3 h-3" />
                     {new Date(order.date).toLocaleDateString()}
                 </div>

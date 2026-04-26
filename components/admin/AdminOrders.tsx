@@ -453,20 +453,20 @@ export const AdminOrders: React.FC = () => {
                 </div>
 
                 {/* Desktop View */}
-                <div className="hidden md:block bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                <div className="hidden md:block bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in w-full">
+                    <div className="overflow-x-auto w-full">
+                        <table className="w-full text-left border-collapse text-[10px] md:text-xs xl:text-sm">
                             <thead>
-                                <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                                    <th className="p-4">ID / Fecha</th>
-                                    <th className="p-4">Cliente</th>
-                                    <th className="p-4">Color</th>
-                                    <th className="p-4">Gramaje</th>
-                                    <th className="p-4">Ciudad</th>
-                                    <th className="p-4">Detalle</th>
-                                    <th className="p-4">Total</th>
-                                    <th className="p-4 text-center">Estado</th>
-                                    <th className="p-4 text-center">Acciones</th>
+                                <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 uppercase tracking-wider text-gray-500 font-semibold">
+                                    <th className="p-2 lg:p-4">ID/Fecha</th>
+                                    <th className="p-2 lg:p-4">Cliente</th>
+                                    <th className="p-2 lg:p-4 hidden xl:table-cell">Color/Gramaje</th>
+                                    <th className="p-2 lg:p-4">Opciones</th>
+                                    <th className="p-2 lg:p-4 hidden md:table-cell">Ciudad</th>
+                                    <th className="p-2 lg:p-4">Producto</th>
+                                    <th className="p-2 lg:p-4">Total</th>
+                                    <th className="p-2 text-center lg:p-4">Estado</th>
+                                    <th className="p-2 text-center lg:p-4">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -476,67 +476,71 @@ export const AdminOrders: React.FC = () => {
                                     order.email.toLowerCase().includes(searchTerm.toLowerCase())
                                 ).map((order) => (
                                     <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
-                                        <td className="p-4">
-                                            <div className="font-mono text-sm font-bold text-pink-600">#{order.id}</div>
-                                            <div className="text-xs text-gray-400 mt-1">{formatDate(order.date)}</div>
+                                        <td className="p-2 lg:p-4">
+                                            <div className="font-mono font-bold text-pink-600">#{order.id}</div>
+                                            <div className="text-[9px] md:text-[10px] text-gray-400 mt-0.5">{formatDate(order.date)}</div>
                                         </td>
-                                        <td className="p-4">
-                                            <div className="font-medium text-gray-900 dark:text-white">{order.customerName}</div>
-                                            <div className="text-sm text-gray-500">{order.email}</div>
+                                        <td className="p-2 lg:p-4">
+                                            <div className="font-medium text-gray-900 dark:text-white truncate max-w-[80px] lg:max-w-[150px]">{order.customerName}</div>
+                                            <div className="text-[9px] md:text-[10px] text-gray-500 truncate max-w-[80px] lg:max-w-[150px]">{order.email}</div>
                                         </td>
-                                        <td className="p-4">
-                                            <div className="flex items-center gap-2 text-sm">
-                                                <div className={`w-3.5 h-3.5 rounded-full border border-gray-200 shadow-sm ${order.config.color === 'white' ? 'bg-white' : order.config.color === 'black' ? 'bg-black' : 'bg-[#f3eddf]'}`}></div>
-                                                <span className="capitalize font-medium text-gray-700 dark:text-gray-300">
-                                                    {order.config.color === 'white' ? 'Blanca' : order.config.color === 'black' ? 'Negra' : 'Natural'}
-                                                </span>
+                                        <td className="p-2 lg:p-4 hidden xl:table-cell">
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className={`w-2.5 h-2.5 rounded-full border border-gray-200 shadow-sm ${order.config.color === 'white' ? 'bg-white' : order.config.color === 'black' ? 'bg-black' : 'bg-[#f3eddf]'}`}></div>
+                                                    <span className="capitalize font-medium text-gray-700 dark:text-gray-300">
+                                                        {order.config.color === 'white' ? 'Blanca' : order.config.color === 'black' ? 'Negra' : 'Natural'}
+                                                    </span>
+                                                </div>
+                                                {order.config.productType !== 'totebag' && (
+                                                    <span className="text-[9px] font-medium px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-300 w-fit">
+                                                        {order.grammage}
+                                                    </span>
+                                                )}
                                             </div>
                                         </td>
-                                        <td className="p-4">
-                                            {order.config.productType === 'totebag' ? (
-                                                <span className="text-sm font-bold text-gray-500 italic">Tote Bag</span>
-                                            ) : (
-                                                <span className="text-sm font-medium px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-300">
-                                                    {order.grammage}
-                                                </span>
-                                            )}
+                                        <td className="p-2 lg:p-4 xl:hidden">
+                                            <div className="flex items-center gap-1">
+                                                 <div className={`shrink-0 w-2 h-2 rounded-full border border-gray-200 shadow-sm ${order.config.color === 'white' ? 'bg-white' : order.config.color === 'black' ? 'bg-black' : 'bg-[#f3eddf]'}`}></div>
+                                                 {order.config.productType !== 'totebag' && <span className="text-[9px] text-gray-500">{order.grammage}</span>}
+                                            </div>
                                         </td>
-                                        <td className="p-4">
-                                            <div className="text-sm text-gray-600 dark:text-gray-300 font-medium truncate max-w-[120px]" title={order.address}>
+                                        <td className="p-2 lg:p-4 hidden md:table-cell">
+                                            <div className="text-gray-600 dark:text-gray-300 font-medium truncate max-w-[70px] lg:max-w-[120px]" title={order.address}>
                                                 {getCityFromAddress(order.address)}
                                             </div>
                                         </td>
-                                        <td className="p-4 text-sm capitalize">
+                                        <td className="p-2 lg:p-4 capitalize whitespace-nowrap">
                                             {order.config.productType === 'totebag' ? `Tote - ${order.size}` : `${order.gender === 'male' ? 'H' : 'M'} / ${order.size}`}
                                         </td>
-                                        <td className="p-4">
-                                            <div className="font-bold text-gray-900 dark:text-white">
+                                        <td className="p-2 lg:p-4">
+                                            <div className="font-bold text-gray-900 dark:text-white whitespace-nowrap">
                                                 {formatCurrency(order.total)}
                                             </div>
                                         </td>
-                                        <td className="p-4 text-center">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
+                                        <td className="p-2 lg:p-4 text-center">
+                                            <span className={`inline-flex items-center px-1.5 lg:px-2.5 py-0.5 rounded-full text-[9px] lg:text-[10px] font-medium border whitespace-nowrap ${getStatusColor(order.status)}`}>
                                                 {order.status === 'pending' && 'Pendiente'}
                                                 {order.status === 'processing' && 'Procesando'}
                                                 {order.status === 'shipped' && 'Enviado'}
                                             </span>
                                         </td>
-                                        <td className="p-4 text-center">
-                                            <div className="flex items-center justify-center gap-2">
+                                        <td className="p-2 lg:p-4 text-center">
+                                            <div className="flex items-center justify-center gap-1">
                                                 <button 
                                                     onClick={() => setSelectedOrder(order)}
-                                                    className="inline-flex items-center gap-1 text-sm font-bold text-pink-600 hover:text-pink-700 bg-pink-50 hover:bg-pink-100 dark:bg-pink-900/20 dark:hover:bg-pink-900/40 px-3 py-1.5 rounded-lg transition-colors"
+                                                    className="inline-flex items-center justify-center text-pink-600 hover:text-pink-700 bg-pink-50 hover:bg-pink-100 dark:bg-pink-900/20 dark:hover:bg-pink-900/40 w-6 h-6 lg:w-auto lg:px-3 lg:py-1.5 rounded-lg transition-colors"
                                                 >
-                                                    <Eye className="w-4 h-4" />
-                                                    Ver
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                    <span className="hidden xl:inline lg:ml-1 font-bold text-xs">Ver</span>
                                                 </button>
                                                 <button 
                                                     onClick={() => setOrderToDelete(order)}
                                                     disabled={isDeleting === order.id}
-                                                    className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+                                                    className="flex justify-center items-center w-6 h-6 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
                                                     title="Eliminar Pedido"
                                                 >
-                                                    {isDeleting === order.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                                    {isDeleting === order.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                                                 </button>
                                             </div>
                                         </td>

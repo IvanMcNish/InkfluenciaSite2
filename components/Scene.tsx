@@ -77,28 +77,33 @@ const SnapshotHandler = ({
           controlsRef.current.reset();
         }
         
-        camera.updateMatrixWorld();
+        // Force a square aspect ratio for a standard snapshot
+        const originalAspect = camera.aspect;
+        const originalWidth = gl.domElement.width;
+        const originalHeight = gl.domElement.height;
+        const pixelRatio = gl.getPixelRatio();
+
+        // Set to 500x500 logical size
+        camera.aspect = 1;
+        camera.updateProjectionMatrix();
+        gl.setSize(500, 500, false);
+
         gl.render(scene, camera);
 
+        let dataUrl = "";
         try {
-            const screenshotCanvas = document.createElement('canvas');
-            const targetWidth = 500; 
-            const aspect = gl.domElement.width / gl.domElement.height;
-            const targetHeight = targetWidth / aspect;
-
-            screenshotCanvas.width = targetWidth;
-            screenshotCanvas.height = targetHeight;
-            
-            const ctx = screenshotCanvas.getContext('2d');
-            if (ctx) {
-                ctx.drawImage(gl.domElement, 0, 0, targetWidth, targetHeight);
-                return screenshotCanvas.toDataURL('image/webp', 0.7);
-            }
+            dataUrl = gl.domElement.toDataURL('image/webp', 0.8);
         } catch (e) {
             console.warn("Snapshot optimization failed", e);
         }
 
-        return gl.domElement.toDataURL('image/jpeg', 0.5);
+        // Revert to original dimensions
+        camera.aspect = originalAspect;
+        camera.updateProjectionMatrix();
+        gl.setSize(originalWidth / pixelRatio, originalHeight / pixelRatio, false);
+        gl.render(scene, camera);
+
+        return dataUrl;
       };
     }
   }, [gl, scene, camera, captureRef, controlsRef]);

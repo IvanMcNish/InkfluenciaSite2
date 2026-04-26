@@ -167,7 +167,7 @@ export const AdminSettings: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto animate-fade-in space-y-8 pb-10">
+    <div className="max-w-6xl mx-auto animate-fade-in space-y-8 pb-10 w-full min-w-0">
         
         {/* Logo Management Section */}
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
@@ -176,7 +176,7 @@ export const AdminSettings: React.FC = () => {
                 <div><h2 className="text-xl font-bold text-gray-900 dark:text-white">Identidad de Marca (Logos)</h2><p className="text-gray-500 dark:text-gray-400 text-sm">Gestiona las imágenes oficiales de la marca.</p></div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {/* Mobile Logo */}
                 <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl border border-gray-100 dark:border-gray-700 flex flex-col items-center">
                     <div className="flex items-center gap-2 mb-4 text-gray-600 dark:text-gray-300 font-bold uppercase text-xs tracking-wider"><Smartphone className="w-4 h-4" /> Logo Móvil (Icono)</div>
@@ -219,8 +219,8 @@ export const AdminSettings: React.FC = () => {
                 <div className="space-y-6">
                      <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
                         <h3 className="font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2 text-sm uppercase"><Palette className="w-4 h-4"/> Color Base Camiseta Negra</h3>
-                        <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer">
+                        <div className="flex items-center gap-4 w-full">
+                            <div className="h-12 w-12 rounded-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer shrink-0">
                                 <input 
                                     type="color" 
                                     value={appearance.blackShirtHex} 
@@ -228,13 +228,13 @@ export const AdminSettings: React.FC = () => {
                                     className="w-[150%] h-[150%] -translate-x-1/4 -translate-y-1/4 p-0 border-0 cursor-pointer" 
                                 />
                             </div>
-                            <div className="flex-1">
-                                <label className="text-xs text-gray-500 block mb-1">Código Hexadecimal</label>
+                            <div className="flex-1 min-w-0">
+                                <label className="text-xs text-gray-500 block mb-1 truncate">Código Hexadecimal</label>
                                 <input 
                                     type="text" 
                                     value={appearance.blackShirtHex} 
                                     onChange={(e) => setAppearance({...appearance, blackShirtHex: e.target.value})} 
-                                    className="w-full md:w-48 p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-cyan-500 outline-none text-sm font-mono uppercase" 
+                                    className="w-full p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-cyan-500 outline-none text-sm font-mono uppercase" 
                                 />
                             </div>
                         </div>
@@ -307,7 +307,7 @@ export const AdminSettings: React.FC = () => {
                 <div className="p-8 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-pink-500" /></div>
             ) : (
                 <div className="space-y-6 mb-12">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {/* X Axis */}
                         <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
                             <h3 className="font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2 text-sm uppercase"><Layout className="w-4 h-4"/> Límite Horizontal (X)</h3>
@@ -374,7 +374,7 @@ export const AdminSettings: React.FC = () => {
                 <div className="p-8 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-pink-500" /></div>
             ) : (
                 <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {/* X Axis */}
                         <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
                             <h3 className="font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2 text-sm uppercase"><Layout className="w-4 h-4"/> Límite Horizontal (X)</h3>
@@ -477,7 +477,7 @@ create policy "Admin Update Posts" on social_posts for update using (auth.role()
 drop policy if exists "Admin Delete Posts" on social_posts;
 create policy "Admin Delete Posts" on social_posts for delete using (auth.role() = 'authenticated');
 `, 'community')} className="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 rounded text-xs">{copiedCommunity ? 'Copiado' : 'Copiar'}</button>
-                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL Social Community (Muro)</pre>
+                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto w-full max-w-full box-border whitespace-pre-wrap break-words">-- SQL Social Community (Muro)</pre>
                     </div>
                 </div>
 
@@ -502,7 +502,7 @@ create policy "Public Read Settings" on app_settings for select using (true);
 create policy "Admin Update Settings" on app_settings for update using (auth.role() = 'authenticated');
 create policy "Admin Insert Settings" on app_settings for insert with check (auth.role() = 'authenticated');
 `, 'settings')} className="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 rounded text-xs">{copiedSettings ? 'Copiado' : 'Copiar'}</button>
-                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL App Settings (Tabla para guardar variables)</pre>
+                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto w-full max-w-full box-border whitespace-pre-wrap break-words">-- SQL App Settings (Tabla para guardar variables)</pre>
                      </div>
                 </div>
 
@@ -515,7 +515,7 @@ INSERT INTO storage.buckets (id, name, public) VALUES ('inkfluencia-images', 'in
 DROP POLICY IF EXISTS "Public Access Inkfluencia" ON storage.objects;
 -- 3. Crear política maestra
 CREATE POLICY "Public Access Inkfluencia" ON storage.objects FOR ALL TO public USING ( bucket_id = 'inkfluencia-images' ) WITH CHECK ( bucket_id = 'inkfluencia-images' );`, 'storage')} className="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 rounded text-xs">{copiedStorage ? 'Copiado' : 'Copiar'}</button>
-                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL Storage...</pre>
+                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto w-full max-w-full box-border whitespace-pre-wrap break-words">-- SQL Storage...</pre>
                     </div>
                 </div>
                  <div className="min-w-0">
@@ -547,7 +547,7 @@ alter table inventory enable row level security;
 drop policy if exists "Public All Inventory" on inventory;
 create policy "Public All Inventory" on inventory for all to public using (true) with check (true);
 `, 'inventory')} className="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 rounded text-xs">{copiedInventory ? 'Copiado' : 'Copiar'}</button>
-                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">-- SQL Inventory (Incluye migración de género)</pre>
+                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto w-full max-w-full box-border whitespace-pre-wrap break-words">-- SQL Inventory (Incluye migración de género)</pre>
                     </div>
                 </div>
                 <div className="min-w-0">
@@ -587,7 +587,7 @@ do $$ begin
   end if;
 end $$;
 `, 'orders')} className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-bold">{copiedOrders ? 'Copiado' : 'Copiar FIX'}</button>
-                        <pre className="bg-gray-900 text-red-100 p-4 rounded-lg text-xs overflow-x-auto border border-red-900/50">-- SQL FIX: ESTE SCRIPT PERMITE EL BORRADO EN SUPABASE</pre>
+                        <pre className="bg-gray-900 text-red-100 p-4 rounded-lg text-xs overflow-x-auto w-full max-w-full box-border whitespace-pre-wrap break-words border border-red-900/50">-- SQL FIX: ESTE SCRIPT PERMITE EL BORRADO EN SUPABASE</pre>
                      </div>
                 </div>
             </div>

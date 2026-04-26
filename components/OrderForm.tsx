@@ -167,16 +167,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
   const displayImage = config.snapshotUrl || (config.layers.length > 0 ? config.layers[0].textureUrl : null);
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl mt-4 border border-gray-100 dark:border-gray-800 flex flex-col lg:flex-row gap-8">
+    <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 md:p-8 bg-white dark:bg-gray-900 rounded-2xl shadow-xl lg:shadow-2xl mt-4 border border-gray-100 dark:border-gray-800 flex flex-col lg:flex-row gap-8 overflow-hidden">
       
       {/* Left Column: Summary */}
       <div className="lg:w-1/3 space-y-6">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
+        <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
           <CheckCircle2 className="text-pink-500" />
           Resumen
         </h2>
 
-        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 sticky top-24">
+        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 lg:sticky lg:top-24">
             {displayImage ? (
             <img 
                 src={displayImage} 
@@ -417,37 +417,41 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                 {/* Structured Address Fields */}
                 <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
                     <label className="block text-sm font-bold flex items-center gap-2 text-gray-700 dark:text-gray-200"><MapPin className="w-4 h-4 text-pink-500" /> Dirección de Entrega</label>
-                    <div className="flex items-center gap-1 w-full">
-                        <select name="type" value={addressParts.type} onChange={handleAddressChange} className="w-[80px] sm:w-[100px] p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-xs sm:text-sm">
-                            <option value="Calle">Calle</option>
-                            <option value="Carrera">Carrera</option>
-                            <option value="Diagonal">Diagonal</option>
-                            <option value="Transversal">Transversal</option>
-                            <option value="Avenida">Avenida</option>
-                            <option value="Circular">Circular</option>
-                        </select>
-                        <input type="text" name="n1" value={addressParts.n1} onChange={handleAddressChange} placeholder="12A" className="w-[45px] sm:w-[60px] p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-xs sm:text-sm text-center" />
-                        <span className="font-bold text-gray-400 text-xs sm:text-sm">#</span>
-                        <input type="text" name="n2" value={addressParts.n2} onChange={handleAddressChange} placeholder="45" className="w-[45px] sm:w-[60px] p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-xs sm:text-sm text-center" />
-                        <span className="font-bold text-gray-400 text-xs sm:text-sm">-</span>
-                        <input type="text" name="n3" value={addressParts.n3} onChange={handleAddressChange} placeholder="67" className="w-[45px] sm:w-[60px] p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-xs sm:text-sm text-center" />
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full">
+                        <div className="flex items-center gap-2 w-full md:w-1/2">
+                            <select name="type" value={addressParts.type} onChange={handleAddressChange} className="w-[40%] md:w-1/3 p-2.5 md:p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm">
+                                <option value="Calle">Calle</option>
+                                <option value="Carrera">Carrera</option>
+                                <option value="Diagonal">Diag.</option>
+                                <option value="Transversal">Transv.</option>
+                                <option value="Avenida">Av.</option>
+                                <option value="Circular">Circ.</option>
+                            </select>
+                            <input type="text" name="n1" value={addressParts.n1} onChange={handleAddressChange} placeholder="12A" className="flex-1 min-w-0 p-2.5 md:p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm text-center font-bold" />
+                        </div>
+                        <div className="flex items-center gap-2 w-full md:w-1/2 mt-1 md:mt-0">
+                            <span className="font-bold text-gray-400 text-sm shrink-0 pl-1 md:pl-0 w-4 text-center">#</span>
+                            <input type="text" name="n2" value={addressParts.n2} onChange={handleAddressChange} placeholder="45" className="flex-1 min-w-0 p-2.5 md:p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm text-center font-bold" />
+                            <span className="font-bold text-gray-400 text-sm shrink-0 w-4 text-center">-</span>
+                            <input type="text" name="n3" value={addressParts.n3} onChange={handleAddressChange} placeholder="67" className="flex-1 min-w-0 p-2.5 md:p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm text-center font-bold" />
+                        </div>
                     </div>
-                    <div className="grid grid-cols-1 gap-2 mt-2">
-                         <input type="text" name="city" value={addressParts.city} onChange={handleAddressChange} placeholder="Bucaramanga, Santander" className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                         <input type="text" name="city" value={addressParts.city} onChange={handleAddressChange} placeholder="Ciudad (ej. Bucaramanga, Santander)" className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" />
                          <input type="text" name="details" value={addressParts.details} onChange={handleAddressChange} placeholder="Torre 1 Apto 502, Barrio Centro..." className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" />
                     </div>
-                    <div className="text-xs text-gray-500 pt-1 px-1">Resultado: <span className="font-medium text-gray-800 dark:text-gray-300">{formData.address || '...'}</span></div>
+                    <div className="text-xs text-gray-500 pt-1 px-1">Dirección Generada: <span className="font-medium text-pink-600 dark:text-pink-400">{formData.address || '...'}</span></div>
                 </div>
             </div>
 
             {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative flex items-center gap-2 text-sm"><AlertCircle className="w-4 h-4" /><span>{error}</span></div>}
 
-            <div className="flex gap-4 pt-4">
-                <button type="button" onClick={onBack} disabled={loading} className="w-1/3 py-4 px-4 border border-gray-300 dark:border-gray-600 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">Volver</button>
+            <div className="flex gap-3 sm:gap-4 pt-4">
+                <button type="button" onClick={onBack} disabled={loading} className="flex-1 py-3.5 md:py-4 px-4 border border-gray-200 dark:border-gray-700 rounded-xl font-bold text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50">Volver</button>
                 <button 
                     type="submit" 
                     disabled={loading || availableSizes.length === 0} 
-                    className={`w-2/3 py-4 px-4 bg-gradient-to-r from-pink-600 to-orange-500 text-white rounded-xl font-bold hover:shadow-lg hover:from-pink-500 hover:to-orange-400 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed`}
+                    className="flex-[2] py-3.5 md:py-4 px-4 bg-gradient-to-r from-pink-600 to-orange-500 text-white rounded-xl font-bold text-sm md:text-base hover:shadow-lg hover:from-pink-500 hover:to-orange-400 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (availableSizes.length === 0) ? 'Sin Stock' : 'Confirmar Pedido'}
                 </button>

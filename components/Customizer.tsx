@@ -354,8 +354,8 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                   <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Crea tu Estilo Único</h2>
                   <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">Sigue estos pasos para diseñar la camiseta perfecta:</p>
                   
-                  <div className="space-y-4 text-left mb-8">
-                      <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                  <div className="space-y-3 text-left mb-8 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+                      <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-transparent hover:border-pink-200 transition-colors">
                           <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-blue-600 shrink-0">
                               <Upload className="w-5 h-5" />
                           </div>
@@ -364,22 +364,40 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                               <p className="text-xs text-gray-500">Puedes añadir hasta 2 diseños diferentes.</p>
                           </div>
                       </div>
-                      <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                      <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-transparent hover:border-pink-200 transition-colors">
+                          <div className="w-10 h-10 bg-pink-100 dark:bg-pink-900/30 rounded-full flex items-center justify-center text-pink-600 shrink-0">
+                              <Scissors className="w-5 h-5" />
+                          </div>
+                          <div>
+                              <h4 className="font-bold text-gray-900 dark:text-white text-sm">2. Edición Avanzada</h4>
+                              <p className="text-xs text-gray-500">Usa el botón <span className="font-bold text-pink-500">Editar Imagen</span> para quitar fondos y ajustar colores.</p>
+                          </div>
+                      </div>
+                      <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-transparent hover:border-pink-200 transition-colors">
                           <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center text-purple-600 shrink-0">
                               <Lock className="w-5 h-5" />
                           </div>
                           <div>
-                              <h4 className="font-bold text-gray-900 dark:text-white text-sm">2. Modo Edición</h4>
-                              <p className="text-xs text-gray-500">Activa el candado para <span className="font-bold text-purple-500">arrastrar y mover</span> la imagen.</p>
+                              <h4 className="font-bold text-gray-900 dark:text-white text-sm">3. Modo Edición</h4>
+                              <p className="text-xs text-gray-500">Activa el candado para <span className="font-bold text-purple-500">arrastrar y mover</span> la imagen sobre la prenda.</p>
                           </div>
                       </div>
-                      <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                      <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-transparent hover:border-pink-200 transition-colors">
                           <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center text-orange-600 shrink-0">
+                              <Hand className="w-5 h-5" />
+                          </div>
+                          <div>
+                              <h4 className="font-bold text-gray-900 dark:text-white text-sm">4. Transparencia</h4>
+                              <p className="text-xs text-gray-500">Ajusta la opacidad del diseño para un efecto desvanecido o vintage.</p>
+                          </div>
+                      </div>
+                      <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-transparent hover:border-pink-200 transition-colors">
+                          <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600 shrink-0">
                               <RefreshCw className="w-5 h-5" />
                           </div>
                           <div>
-                              <h4 className="font-bold text-gray-900 dark:text-white text-sm">3. Vista 360°</h4>
-                              <p className="text-xs text-gray-500">Desbloquea el candado para rotar la camiseta.</p>
+                              <h4 className="font-bold text-gray-900 dark:text-white text-sm">5. Vista 360°</h4>
+                              <p className="text-xs text-gray-500">Desbloquea el candado para rotar y ver tu diseño desde cualquier ángulo.</p>
                           </div>
                       </div>
                   </div>

@@ -1,11 +1,12 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt, Ruler, Lock, Unlock, MousePointer2, HelpCircle, X, Hand, Video } from 'lucide-react';
+import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt, Ruler, Lock, Unlock, MousePointer2, HelpCircle, X, Hand, Video, Scissors } from 'lucide-react';
 import { TShirtConfig, CustomizerConstraints } from '../types';
 import { Scene } from './Scene';
 import { PRICES, formatCurrency } from '../constants';
 import { getAppearanceSettings, getCustomizerConstraints, getToteCustomizerConstraints, DEFAULT_CONSTRAINTS, DEFAULT_TOTE_CONSTRAINTS, getUploadLimits, DEFAULT_UPLOAD_LIMITS, DEFAULT_APPEARANCE } from '../services/settingsService';
 import { updateGalleryItem } from '../services/galleryService';
+import { ImageEditor } from './ImageEditor';
 
 interface CustomizerProps {
   config: TShirtConfig;
@@ -36,6 +37,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const [maxFileSizeMB, setMaxFileSizeMB] = useState<number>(DEFAULT_UPLOAD_LIMITS.maxFileSizeMB);
   const [appearance, setAppearance] = useState(DEFAULT_APPEARANCE);
   const [constraintsLoaded, setConstraintsLoaded] = useState(false);
+  const [editingLayer, setEditingLayer] = useState<DesignLayer | null>(null);
 
   useEffect(() => {
       const loadSettings = async () => {
@@ -97,12 +99,13 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 const newLayer = {
                     id: `layer-${Date.now()}`,
                     textureUrl: url,
+                    originalUrl: url,
                     side: 'front' as const, 
                     position: { x: 0, y: 0.1, scale: 0.25 }
                 };
                 
                 if (newLayers[slotIndex]) {
-                    newLayers[slotIndex] = { ...newLayers[slotIndex], textureUrl: url };
+                    newLayers[slotIndex] = { ...newLayers[slotIndex], textureUrl: url, originalUrl: url, filters: undefined, chromaKey: undefined };
                 } else {
                     if (slotIndex === 1 && !newLayers[0]) return prev; 
                     newLayers[slotIndex] = newLayer;
@@ -687,6 +690,15 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 />
               </div>
             </div>
+
+            <div className="pt-2 border-t border-gray-100 dark:border-gray-800 flex gap-2">
+                <button 
+                  onClick={() => setEditingLayer(activeLayer)}
+                  className="flex-1 py-3 bg-pink-50 hover:bg-pink-100 dark:bg-pink-900/10 dark:hover:bg-pink-900/20 text-pink-600 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all border border-pink-100 dark:border-pink-900/30"
+                >
+                  <Scissors className="w-4 h-4" /> Editar Imagen
+                </button>
+            </div>
             
             {isViewLocked && (
             <div className="space-y-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
@@ -760,6 +772,19 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
               </button>
           )}
         </div>
+        
+        {editingLayer && (
+            <ImageEditor 
+                layer={editingLayer}
+                onSave={(updatedLayer) => {
+                    const newLayers = [...config.layers];
+                    newLayers[activeLayerIndex] = updatedLayer;
+                    setConfig({...config, layers: newLayers});
+                    setEditingLayer(null);
+                }}
+                onClose={() => setEditingLayer(null)}
+            />
+        )}
       </div>
     </div>
   );

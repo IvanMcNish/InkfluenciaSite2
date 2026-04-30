@@ -8,8 +8,20 @@ export interface Position {
 export interface DesignLayer {
   id: string;
   textureUrl: string;
+  originalUrl?: string; // Store original for re-editing
   position: Position;
-  side: 'front' | 'back'; // New property
+  side: 'front' | 'back';
+  opacity?: number;
+  filters?: {
+    brightness: number;
+    contrast: number;
+    saturation: number;
+  };
+  chromaKey?: {
+    enabled: boolean;
+    color: string;
+    tolerance: number;
+  };
 }
 
 export interface TShirtConfig {

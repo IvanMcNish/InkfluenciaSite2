@@ -16,7 +16,10 @@ export interface DesignLayer {
     brightness: number;
     contrast: number;
     saturation: number;
+    hueRotation?: number;
+    tint?: string;
   };
+  mask?: 'none' | 'circle' | 'square' | 'heart' | 'star' | 'hexagon' | 'triangle' | 'torn';
   chromaKey?: {
     enabled: boolean;
     color: string;

@@ -370,7 +370,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                           </div>
                           <div>
                               <h4 className="font-bold text-gray-900 dark:text-white text-sm">2. Edición Avanzada</h4>
-                              <p className="text-xs text-gray-500">Usa el botón <span className="font-bold text-pink-500">Editar Imagen</span> para quitar fondos y ajustar colores.</p>
+                              <p className="text-xs text-gray-500">Usa <span className="font-bold text-pink-500">Editar Imagen</span> para filtros de color, tintado y <span className="font-bold text-pink-500">máscaras de recorte (bordes rasgados)</span>.</p>
                           </div>
                       </div>
                       <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-transparent hover:border-pink-200 transition-colors">

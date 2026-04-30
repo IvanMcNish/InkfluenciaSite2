@@ -103,7 +103,10 @@ const App: React.FC = () => {
   };
 
   const handleSaveDesign = async (name: string, designConfig: TShirtConfig) => {
-    await saveDesignToCollection(name, designConfig);
+    // If it has an ID, it was already updated in Customizer
+    if (!designConfig.id) {
+       await saveDesignToCollection(name, designConfig);
+    }
     setConfig(DEFAULT_CONFIG);
     setView('gallery');
   };
@@ -173,7 +176,14 @@ const App: React.FC = () => {
       case 'track-order':
         return <TrackOrderPage />;
       case 'admin':
-        return session ? <AdminPanel /> : <AdminLogin />;
+        return session ? (
+          <AdminPanel 
+            onEditDesign={(design) => {
+              setConfig({ ...design.config, id: design.id, designName: design.name });
+              setView('designer');
+            }} 
+          />
+        ) : <AdminLogin />;
       default:
         return <LandingPage onStart={() => setView('customizer')} onViewGallery={() => setView('gallery')} />;
     }

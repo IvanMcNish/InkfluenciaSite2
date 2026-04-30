@@ -22,7 +22,8 @@ export const DEFAULT_UPLOAD_LIMITS: UploadLimits = {
 };
 
 export const DEFAULT_APPEARANCE: AppearanceSettings = {
-    blackShirtHex: '#050505' // Default deep black
+    blackShirtHex: '#050505', // Default deep black
+    designOpacity: 1.0 // Default fully opaque
 };
 
 export const DEFAULT_FINANCIALS: FinancialSettings = {

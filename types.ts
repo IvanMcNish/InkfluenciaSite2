@@ -13,8 +13,11 @@ export interface DesignLayer {
 }
 
 export interface TShirtConfig {
+  id?: string; // Reference for editing existing designs
+  designName?: string; // Temporary name storage for editing
   productType?: 'tshirt' | 'totebag'; // New property for product type
   color: 'white' | 'black' | 'bone';
+  designOpacity?: number; // Per-design opacity setting
   layers: DesignLayer[];
   snapshotUrl?: string | null;
 }
@@ -89,6 +92,7 @@ export interface UploadLimits {
 
 export interface AppearanceSettings {
     blackShirtHex: string;
+    designOpacity: number;
 }
 
 export interface FinancialSettings {

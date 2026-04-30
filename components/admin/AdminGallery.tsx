@@ -1,18 +1,24 @@
 
 import React, { useEffect, useState } from 'react';
-import { Grid, Search, Eye, Check, Trash2, CheckCircle2, AlertCircle, Loader2, Calendar, Layers, X, Rotate3d } from 'lucide-react';
-import { getAdminCollection, deleteDesignFromCollection, approveDesign } from '../../services/galleryService';
+import { Grid, Search, Eye, Check, Trash2, CheckCircle2, AlertCircle, Loader2, Calendar, Layers, X, Rotate3d, Pencil, Save } from 'lucide-react';
+import { getAdminCollection, deleteDesignFromCollection, approveDesign, updateGalleryItem } from '../../services/galleryService';
 import { CollectionItem } from '../../types';
 import { Scene } from '../Scene';
 
-export const AdminGallery: React.FC = () => {
+interface AdminGalleryProps {
+  onEditDesign: (design: CollectionItem) => void;
+}
+
+export const AdminGallery: React.FC<AdminGalleryProps> = ({ onEditDesign }) => {
   const [galleryItems, setGalleryItems] = useState<CollectionItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [itemToDelete, setItemToDelete] = useState<{id: string, name: string} | null>(null);
   const [previewDesign, setPreviewDesign] = useState<CollectionItem | null>(null);
+  const [editingItem, setEditingItem] = useState<CollectionItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   const loadGallery = async () => {
     setIsLoading(true);
@@ -60,6 +66,19 @@ export const AdminGallery: React.FC = () => {
       setApprovingId(null);
   };
 
+  const handleUpdateItem = async (id: string, name: string, approved: boolean) => {
+      if (!editingItem) return;
+      setIsSaving(true);
+      const success = await updateGalleryItem(id, name, approved, editingItem.config);
+      if (success) {
+          setGalleryItems(prev => prev.map(item => item.id === id ? { ...item, name, approved } : item));
+          setEditingItem(null);
+      } else {
+          alert("Error al actualizar el diseño.");
+      }
+      setIsSaving(false);
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-CO', {
       day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -85,6 +104,70 @@ export const AdminGallery: React.FC = () => {
                 <div className="flex justify-end gap-3">
                     <button onClick={() => setItemToDelete(null)} className="px-4 py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors">Cancelar</button>
                     <button onClick={confirmDeleteGalleryItem} className="px-4 py-2 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20">Sí, Eliminar</button>
+                </div>
+            </div>
+        </div>
+      );
+  }
+
+  const EditDesignModal = () => {
+      if (!editingItem) return null;
+      
+      const [editName, setEditName] = useState(editingItem.name);
+      const [editApproved, setEditApproved] = useState(editingItem.approved);
+
+      return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl p-6 border border-gray-200 dark:border-gray-800">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3 text-cyan-600 font-bold text-xl">
+                        <Pencil className="w-6 h-6" />
+                        <h3>Editar Diseño</h3>
+                    </div>
+                    <button onClick={() => setEditingItem(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"><X className="w-5 h-5"/></button>
+                </div>
+
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Nombre del Diseño</label>
+                        <input 
+                            type="text" 
+                            value={editName} 
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-cyan-500 outline-none font-medium"
+                            placeholder="Nombre del diseño..."
+                        />
+                    </div>
+
+                    <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                        <input 
+                            type="checkbox" 
+                            id="approved-check"
+                            checked={editApproved}
+                            onChange={(e) => setEditApproved(e.target.checked)}
+                            className="w-5 h-5 rounded text-cyan-600 focus:ring-cyan-500 cursor-pointer"
+                        />
+                        <label htmlFor="approved-check" className="text-sm font-bold text-gray-700 dark:text-gray-300 cursor-pointer flex-1">
+                            Aprobado (Público en Galería)
+                        </label>
+                    </div>
+
+                    <div className="pt-4 flex gap-3">
+                        <button 
+                            onClick={() => setEditingItem(null)} 
+                            className="flex-1 px-4 py-3 rounded-xl font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button 
+                            onClick={() => handleUpdateItem(editingItem.id, editName, editApproved)}
+                            disabled={isSaving || !editName.trim()}
+                            className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/20"
+                        >
+                            {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                            Guardar Cambios
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -150,6 +233,7 @@ export const AdminGallery: React.FC = () => {
 
         {itemToDelete && <DeleteConfirmationModal />}
         {previewDesign && <GalleryPreviewModal />}
+        {editingItem && <EditDesignModal />}
 
         {galleryItems.length === 0 && !isLoading ? (
             <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
@@ -172,9 +256,11 @@ export const AdminGallery: React.FC = () => {
                                     <div className="text-xs text-gray-500 mt-1 flex flex-col"><span>{formatDate(item.createdAt)}</span></div>
                                 </div>
                                 <div className="flex justify-end gap-2 mt-2">
-                                    <button onClick={() => setPreviewDesign(item)} className="p-2 text-gray-600 bg-gray-100 rounded-lg"><Eye className="w-4 h-4" /></button>
-                                    {!item.approved && <button onClick={() => handleApproveDesign(item.id)} className="p-2 text-white bg-green-500 rounded-lg">{approvingId === item.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4" />}</button>}
-                                    <button onClick={() => requestDeleteGalleryItem(item.id, item.name)} className="p-2 text-white bg-red-500 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                                    <button onClick={() => setPreviewDesign(item)} className="p-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200" title="Vista Previa"><Eye className="w-4 h-4" /></button>
+                                    <button onClick={() => onEditDesign(item)} className="p-2 text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100" title="Editar en Diseñador 3D"><Rotate3d className="w-4 h-4" /></button>
+                                    <button onClick={() => setEditingItem(item)} className="p-2 text-cyan-600 bg-cyan-50 rounded-lg hover:bg-cyan-100" title="Editar Info"><Pencil className="w-4 h-4" /></button>
+                                    {!item.approved && <button onClick={() => handleApproveDesign(item.id)} className="p-2 text-white bg-green-500 rounded-lg hover:bg-green-600">{approvingId === item.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4" />}</button>}
+                                    <button onClick={() => requestDeleteGalleryItem(item.id, item.name)} className="p-2 text-white bg-red-500 rounded-lg hover:bg-red-600"><Trash2 className="w-4 h-4" /></button>
                                 </div>
                             </div>
                         </div>
@@ -213,6 +299,8 @@ export const AdminGallery: React.FC = () => {
                                         <td className="p-4 text-center">
                                             <div className="flex items-center justify-center gap-2">
                                                 <button onClick={() => setPreviewDesign(item)} className="p-1.5 text-gray-500 hover:text-blue-500 bg-gray-100 hover:bg-blue-50 dark:bg-gray-800 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title="Vista Previa"><Eye className="w-4 h-4" /></button>
+                                                <button onClick={() => onEditDesign(item)} className="p-1.5 text-indigo-500 hover:text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 rounded-lg transition-colors" title="Editar en Diseñador 3D"><Rotate3d className="w-4 h-4" /></button>
+                                                <button onClick={() => setEditingItem(item)} className="p-1.5 text-cyan-500 hover:text-cyan-600 bg-cyan-50 hover:bg-cyan-100 dark:bg-cyan-900/20 dark:hover:bg-cyan-900/40 rounded-lg transition-colors" title="Editar Info"><Pencil className="w-4 h-4" /></button>
                                                 {!item.approved && <button onClick={() => handleApproveDesign(item.id)} disabled={approvingId === item.id} className="p-1.5 text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40 rounded-lg transition-colors" title="Aprobar Diseño">{approvingId === item.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4" />}</button>}
                                                 <button onClick={() => requestDeleteGalleryItem(item.id, item.name)} disabled={deletingId === item.id} className="p-1.5 text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded-lg transition-colors" title="Eliminar">{deletingId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}</button>
                                             </div>

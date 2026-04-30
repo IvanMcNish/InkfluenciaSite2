@@ -103,6 +103,19 @@ export const approveDesign = async (id: string): Promise<boolean> => {
     return true;
 };
 
+export const updateGalleryItem = async (id: string, name: string, approved: boolean, config: TShirtConfig): Promise<boolean> => {
+    const { error } = await supabase
+        .from('gallery')
+        .update({ name, approved, config })
+        .eq('id', id);
+
+    if (error) {
+        console.error("Error updating gallery item:", error);
+        return false;
+    }
+    return true;
+};
+
 export const deleteDesignFromCollection = async (id: string): Promise<{ success: boolean; error?: string }> => {
     const { error } = await supabase
       .from('gallery')

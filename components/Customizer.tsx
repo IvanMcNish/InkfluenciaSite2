@@ -4,7 +4,8 @@ import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRigh
 import { TShirtConfig, CustomizerConstraints } from '../types';
 import { Scene } from './Scene';
 import { PRICES, formatCurrency } from '../constants';
-import { getCustomizerConstraints, getToteCustomizerConstraints, DEFAULT_CONSTRAINTS, DEFAULT_TOTE_CONSTRAINTS, getUploadLimits, DEFAULT_UPLOAD_LIMITS } from '../services/settingsService';
+import { getAppearanceSettings, getCustomizerConstraints, getToteCustomizerConstraints, DEFAULT_CONSTRAINTS, DEFAULT_TOTE_CONSTRAINTS, getUploadLimits, DEFAULT_UPLOAD_LIMITS, DEFAULT_APPEARANCE } from '../services/settingsService';
+import { updateGalleryItem } from '../services/galleryService';
 
 interface CustomizerProps {
   config: TShirtConfig;
@@ -20,7 +21,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const captureRef = useRef<(() => string) | null>(null);
   
   const [activeLayerIndex, setActiveLayerIndex] = useState<number>(0);
-  const [designName, setDesignName] = useState('');
+  const [designName, setDesignName] = useState(config.designName || '');
   const [saveError, setSaveError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showGuides, setShowGuides] = useState(true);
@@ -33,18 +34,21 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const [constraints, setConstraints] = useState<CustomizerConstraints>(DEFAULT_CONSTRAINTS);
   const [toteConstraints, setToteConstraints] = useState<CustomizerConstraints>(DEFAULT_TOTE_CONSTRAINTS);
   const [maxFileSizeMB, setMaxFileSizeMB] = useState<number>(DEFAULT_UPLOAD_LIMITS.maxFileSizeMB);
+  const [appearance, setAppearance] = useState(DEFAULT_APPEARANCE);
   const [constraintsLoaded, setConstraintsLoaded] = useState(false);
 
   useEffect(() => {
       const loadSettings = async () => {
-          const [constraintsData, toteConstraintsData, limitsData] = await Promise.all([
+          const [constraintsData, toteConstraintsData, limitsData, appearanceData] = await Promise.all([
               getCustomizerConstraints(),
               getToteCustomizerConstraints(),
-              getUploadLimits()
+              getUploadLimits(),
+              getAppearanceSettings()
           ]);
           setConstraints(constraintsData);
           setToteConstraints(toteConstraintsData);
           setMaxFileSizeMB(limitsData.maxFileSizeMB);
+          setAppearance(appearanceData);
           setConstraintsLoaded(true);
       };
       loadSettings();
@@ -291,14 +295,27 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         const configWithSnapshot = { ...config, snapshotUrl: snapshot };
         setConfig(configWithSnapshot);
         
-        if (isDesignerMode && onSaveToGallery) {
+        if (isDesignerMode) {
              if (!designName.trim()) {
                  setSaveError('Por favor, ingresa un nombre para tu diseño.');
                  setIsProcessing(false);
                  return;
              }
              try {
-                onSaveToGallery(designName, configWithSnapshot);
+                if (config.id) {
+                    // Update existing design
+                    const success = await updateGalleryItem(config.id, designName, true, configWithSnapshot);
+                    if (success) {
+                        alert("Diseño actualizado con éxito.");
+                        // We could redirect or just reset
+                        if (onSaveToGallery) onSaveToGallery(designName, configWithSnapshot);
+                    } else {
+                        throw new Error("Update failed");
+                    }
+                } else {
+                    // Create new design
+                    if (onSaveToGallery) onSaveToGallery(designName, configWithSnapshot);
+                }
              } catch (e: any) {
                  console.error("Gallery save error:", e);
                  if (e.name === 'QuotaExceededError' || e.message?.includes('exceeded the quota')) {
@@ -648,6 +665,26 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 >
                   <ZoomIn className="w-4 h-4" />
                 </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2 uppercase tracking-wide">
+                  <Hand className="w-4 h-4" /> Transparencia
+                </label>
+                <span className="text-[10px] font-bold text-pink-500">{Math.round((config.designOpacity ?? appearance.designOpacity) * 100)}%</span>
+              </div>
+              <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
+                <input 
+                  type="range" 
+                  min="0.1" 
+                  max="1" 
+                  step="0.01" 
+                  value={config.designOpacity ?? appearance.designOpacity}
+                  onChange={(e) => setConfig(prev => ({ ...prev, designOpacity: parseFloat(e.target.value) }))}
+                  className="w-full accent-pink-500 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                />
               </div>
             </div>
             

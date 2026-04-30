@@ -191,7 +191,8 @@ const DecalImage: React.FC<{
     onLayerSelect?: (index: number) => void;
     isToteBag?: boolean;
     customDepth?: number;
-}> = ({ textureUrl, position, zPos, side, showMeasurements, index, lockView, isDraggingRef, onLayerSelect, isToteBag, customDepth }) => {
+    opacity?: number;
+}> = ({ textureUrl, position, zPos, side, showMeasurements, index, lockView, isDraggingRef, onLayerSelect, isToteBag, customDepth, opacity = 1 }) => {
   const texture = useTexture(textureUrl);
   const [hovered, setHovered] = useState(false);
   
@@ -271,6 +272,7 @@ const DecalImage: React.FC<{
         <MeshBasicMaterial 
             map={texture} 
             transparent 
+            opacity={opacity}
             polygonOffset 
             polygonOffsetFactor={polyOffset} 
             depthTest={true}
@@ -300,9 +302,10 @@ interface ProductMeshProps {
     onLayerSelect?: (index: number) => void;
     activeLayerSide: 'front' | 'back';
     isDraggingRef: React.MutableRefObject<boolean>;
+    designOpacity?: number;
 }
 
-const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, customBlackColor, lockView, onPositionChange, onLayerSelect, activeLayerSide, isDraggingRef }) => {
+const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, customBlackColor, lockView, onPositionChange, onLayerSelect, activeLayerSide, isDraggingRef, designOpacity = 1 }) => {
   const objUrl = TSHIRT_OBJ_URL;
   const obj = useLoader(OBJLoader, objUrl);
   
@@ -379,13 +382,14 @@ const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cust
             isDraggingRef={isDraggingRef}
             onLayerSelect={onLayerSelect}
             isToteBag={false}
+            opacity={designOpacity}
         />
       ))}
     </Mesh>
   );
 };
 
-const ToteBagMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, customBlackColor, lockView, onPositionChange, onLayerSelect, activeLayerSide, isDraggingRef }) => {
+const ToteBagMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, customBlackColor, lockView, onPositionChange, onLayerSelect, activeLayerSide, isDraggingRef, designOpacity = 1 }) => {
   const objUrl = TOTEBAG_OBJ_URL;
   const obj = useLoader(OBJLoader, objUrl);
   
@@ -475,6 +479,7 @@ const ToteBagMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cus
                 onLayerSelect={onLayerSelect}
                 isToteBag={true}
                 customDepth={projDepth}
+                opacity={designOpacity}
             />
           );
       })}
@@ -489,11 +494,13 @@ const ProductMesh: React.FC<ProductMeshProps> = (props) => {
 export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front', lockView = false, showMeasurements = false, onPositionChange, onLayerSelect, cameraOffset }) => {
   const controlsRef = useRef<any>(null);
   const isDraggingRef = useRef(false); // Global dragging state for this scene
+  const [appearance, setAppearance] = useState(DEFAULT_APPEARANCE);
   const [blackColor, setBlackColor] = useState(DEFAULT_APPEARANCE.blackShirtHex);
 
   useEffect(() => {
     const loadSettings = async () => {
         const settings = await getAppearanceSettings();
+        setAppearance(settings);
         setBlackColor(settings.blackShirtHex);
     };
     loadSettings();
@@ -577,6 +584,7 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
                     onLayerSelect={onLayerSelect}
                     activeLayerSide={activeLayerSide}
                     isDraggingRef={isDraggingRef}
+                    designOpacity={config.designOpacity ?? appearance.designOpacity}
                 />
             </Center>
             <Environment preset="city" />

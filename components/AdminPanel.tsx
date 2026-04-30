@@ -10,7 +10,13 @@ import { AdminGallery } from './admin/AdminGallery';
 import { AdminSettings } from './admin/AdminSettings';
 import { AdminCommunity } from './admin/AdminCommunity';
 
-export const AdminPanel: React.FC = () => {
+import { CollectionItem } from '../types';
+
+interface AdminPanelProps {
+  onEditDesign: (design: CollectionItem) => void;
+}
+
+export const AdminPanel: React.FC<AdminPanelProps> = ({ onEditDesign }) => {
   const [activeTab, setActiveTab] = useState<'financial' | 'orders' | 'inventory' | 'customers' | 'gallery' | 'community' | 'settings'>('financial');
 
   const handleLogout = async () => {
@@ -88,7 +94,7 @@ export const AdminPanel: React.FC = () => {
         {activeTab === 'orders' && <AdminOrders />}
         {activeTab === 'inventory' && <AdminInventory />}
         {activeTab === 'customers' && <AdminCustomers />}
-        {activeTab === 'gallery' && <AdminGallery />}
+        {activeTab === 'gallery' && <AdminGallery onEditDesign={onEditDesign} />}
         {activeTab === 'community' && <AdminCommunity />}
         {activeTab === 'settings' && <AdminSettings />}
       </div>

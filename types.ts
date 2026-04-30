@@ -18,8 +18,13 @@ export interface DesignLayer {
     saturation: number;
     hueRotation?: number;
     tint?: string;
+    noise?: number;
+    vignette?: number;
+    lightLeak?: number;
+    grime?: number;
   };
   mask?: 'none' | 'circle' | 'square' | 'heart' | 'star' | 'hexagon' | 'triangle' | 'torn';
+  maskScale?: number;
   chromaKey?: {
     enabled: boolean;
     color: string;

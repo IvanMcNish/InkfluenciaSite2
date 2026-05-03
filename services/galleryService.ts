@@ -44,26 +44,41 @@ export const getAdminCollection = async (): Promise<CollectionItem[]> => {
   }));
 };
 
+const processConfigImages = async (config: TShirtConfig): Promise<TShirtConfig> => {
+  const processedConfig = { ...config };
+  
+  // Upload Snapshot
+  if (processedConfig.snapshotUrl && processedConfig.snapshotUrl.startsWith('data:')) {
+    const snapshotUrl = await uploadBase64Image(processedConfig.snapshotUrl, 'renders');
+    if (snapshotUrl) processedConfig.snapshotUrl = snapshotUrl;
+  }
+
+  // Upload Layers
+  const processedLayers = await Promise.all(processedConfig.layers.map(async (layer) => {
+    let textureUrl = layer.textureUrl;
+    let originalUrl = layer.originalUrl;
+
+    if (textureUrl.startsWith('data:')) {
+      const url = await uploadBase64Image(textureUrl, 'uploads');
+      if (url) textureUrl = url;
+    }
+
+    if (originalUrl && originalUrl.startsWith('data:')) {
+      const url = await uploadBase64Image(originalUrl, 'uploads');
+      if (url) originalUrl = url;
+    }
+
+    return { ...layer, textureUrl, originalUrl };
+  }));
+
+  processedConfig.layers = processedLayers;
+  return processedConfig;
+};
+
 export const saveDesignToCollection = async (name: string, config: TShirtConfig): Promise<CollectionItem | null> => {
   try {
     // 1. Prepare Config: Upload all base64 images to Supabase and replace with URLs
-    const processedConfig = { ...config };
-    
-    // Upload Snapshot (The 3D Render)
-    if (processedConfig.snapshotUrl && processedConfig.snapshotUrl.startsWith('data:')) {
-      const snapshotUrl = await uploadBase64Image(processedConfig.snapshotUrl, 'renders');
-      if (snapshotUrl) processedConfig.snapshotUrl = snapshotUrl;
-    }
-
-    // Upload Layers (User uploaded images)
-    const processedLayers = await Promise.all(processedConfig.layers.map(async (layer) => {
-      if (layer.textureUrl.startsWith('data:')) {
-        const textureUrl = await uploadBase64Image(layer.textureUrl, 'uploads');
-        return { ...layer, textureUrl: textureUrl || layer.textureUrl };
-      }
-      return layer;
-    }));
-    processedConfig.layers = processedLayers;
+    const processedConfig = await processConfigImages(config);
 
     // 2. Insert into Database (approved defaults to false in DB or implicitly null which we treat as false)
     const { data, error } = await supabase
@@ -104,16 +119,22 @@ export const approveDesign = async (id: string): Promise<boolean> => {
 };
 
 export const updateGalleryItem = async (id: string, name: string, approved: boolean, config: TShirtConfig): Promise<boolean> => {
-    const { error } = await supabase
-        .from('gallery')
-        .update({ name, approved, config })
-        .eq('id', id);
+    try {
+        const processedConfig = await processConfigImages(config);
+        const { error } = await supabase
+            .from('gallery')
+            .update({ name, approved, config: processedConfig })
+            .eq('id', id);
 
-    if (error) {
-        console.error("Error updating gallery item:", error);
+        if (error) {
+            console.error("Error updating gallery item:", error);
+            return false;
+        }
+        return true;
+    } catch(err) {
+        console.error("Error updating gallery item:", err);
         return false;
     }
-    return true;
 };
 
 export const deleteDesignFromCollection = async (id: string): Promise<{ success: boolean; error?: string }> => {

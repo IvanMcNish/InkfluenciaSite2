@@ -12,7 +12,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewGallery
   return (
     <div className="flex flex-col min-h-[calc(100vh-80px)] overflow-x-hidden">
       {/* Hero Section */}
-      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-12 md:py-20 bg-gradient-to-b from-transparent to-pink-50 dark:to-gray-900/50 overflow-visible">
+      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-12 md:py-20 overflow-visible">
         
         {/* Main Brand Logo */}
         <div className="mb-12 relative group z-10 perspective-1000">

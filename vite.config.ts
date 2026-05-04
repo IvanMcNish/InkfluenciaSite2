@@ -24,18 +24,19 @@ export default defineConfig({
         icons: [
           {
             src: 'LogoInk.svg',
-            sizes: '192x192 512x512',
+            sizes: '192x192 256x256 512x512',
+            type: 'image/svg+xml',
+            purpose: 'any maskable'
+          },
+          {
+            src: 'LogoInk.svg',
+            sizes: '192x192',
             type: 'image/svg+xml'
           },
           {
-            src: 'Logo2T.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'Logo2T.png',
+            src: 'LogoInk.svg',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/svg+xml'
           }
         ]
       }

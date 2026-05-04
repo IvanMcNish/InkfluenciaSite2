@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import './index.css';
 
 // Unregister old manual Service Worker to clear stuck caches
 if ('serviceWorker' in navigator) {

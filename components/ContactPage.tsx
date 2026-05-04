@@ -13,12 +13,16 @@ export const ContactPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate sending email
+    
+    const subject = `Nuevo mensaje de contacto de ${formData.name}`;
+    const body = `Nombre: ${formData.name}\nEmail: ${formData.email}\n\nMensaje:\n${formData.message}`;
+    
+    window.location.href = `mailto:inkfluencia@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
     setIsSent(true);
     setTimeout(() => {
         setIsSent(false);
         setFormData({ name: '', email: '', message: '' });
-        alert("¡Mensaje enviado! Nos pondremos en contacto contigo pronto.");
     }, 2000);
   };
 
@@ -86,7 +90,7 @@ export const ContactPage: React.FC = () => {
                         </div>
                         <h3 className="font-bold text-gray-900 dark:text-white mb-1">Email</h3>
                         <p className="text-sm text-gray-500 mb-3">Soporte y Ventas</p>
-                        <a href="mailto:hola@inkfluencia.com" className="text-blue-600 font-bold text-sm hover:underline">hola@inkfluencia.com</a>
+                        <a href="mailto:inkfluencia@gmail.com" className="text-blue-600 font-bold text-sm hover:underline">inkfluencia@gmail.com</a>
                     </div>
 
                      <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">

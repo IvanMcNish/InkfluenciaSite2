@@ -23,18 +23,18 @@ export default defineConfig({
         display: 'standalone',
         icons: [
           {
-            src: 'LogoInk.svg',
+            src: 'LogoInkApp.svg',
             sizes: '192x192 256x256 512x512',
             type: 'image/svg+xml',
             purpose: 'any maskable'
           },
           {
-            src: 'LogoInk.svg',
+            src: 'LogoInkApp.svg',
             sizes: '192x192',
             type: 'image/svg+xml'
           },
           {
-            src: 'LogoInk.svg',
+            src: 'LogoInkApp.svg',
             sizes: '512x512',
             type: 'image/svg+xml'
           }

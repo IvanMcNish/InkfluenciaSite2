@@ -7,7 +7,8 @@ export const getCollection = async (): Promise<CollectionItem[]> => {
     .from('gallery')
     .select('*')
     .eq('approved', true) // FILTER: Only approved items
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(30);
 
   if (error) {
     console.error('Error fetching gallery:', error);
@@ -28,7 +29,8 @@ export const getAdminCollection = async (): Promise<CollectionItem[]> => {
   const { data, error } = await supabase
     .from('gallery')
     .select('*')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(50);
 
   if (error) {
     console.error('Error fetching admin gallery:', error);

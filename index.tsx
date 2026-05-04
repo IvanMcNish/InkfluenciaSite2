@@ -2,16 +2,18 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-// Register Service Worker
+// Unregister old manual Service Worker to clear stuck caches
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then((registration) => {
-        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-      })
-      .catch((error) => {
-        console.log('ServiceWorker registration failed: ', error);
-      });
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    for(let registration of registrations) {
+      if (registration.active?.scriptURL.includes('service-worker.js')) {
+        registration.unregister().then(() => {
+          console.log('Unregistered old service worker');
+          // Reload the page to ensure fresh start
+          window.location.reload();
+        });
+      }
+    }
   });
 }
 

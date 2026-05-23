@@ -119,4 +119,4 @@ export interface FinancialSettings {
     totalHistoricalInvestment: number;
 }
 
-export type ViewState = 'landing' | 'customizer' | 'checkout' | 'success' | 'admin' | 'designer' | 'gallery' | 'track-order' | 'community' | 'contact';
+export type ViewState = 'landing' | 'customizer' | 'checkout' | 'success' | 'admin' | 'designer' | 'gallery' | 'track-order' | 'community' | 'contact' | 'image-editor';

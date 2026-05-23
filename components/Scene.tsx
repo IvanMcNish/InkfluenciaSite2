@@ -528,7 +528,11 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
   const isToteBag = config.productType === 'totebag';
 
   const initialCameraPosition: [number, number, number] = useMemo(() => {
-      const zBase = isToteBag ? 8.0 : 5.8;
+      const isMobileOrTablet = typeof window !== 'undefined' && window.innerWidth < 1024;
+      let zBase = isToteBag ? 8.0 : 5.8;
+      if (isMobileOrTablet) {
+          zBase += isToteBag ? 5.5 : 4.5; // Zoom out even more so the model fits beautifully in the vertical space
+      }
       return activeLayerSide === 'back' ? [0, 0, -zBase] : [0, 0, zBase];
   }, [activeLayerSide, isToteBag]);
 
@@ -537,7 +541,11 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
     if (controlsRef.current) {
         if (lockView) {
             controlsRef.current.reset();
-            const zBase = isToteBag ? 8.0 : 5.8;
+            const isMobileOrTablet = typeof window !== 'undefined' && window.innerWidth < 1024;
+            let zBase = isToteBag ? 8.0 : 5.8;
+            if (isMobileOrTablet) {
+                zBase += isToteBag ? 5.5 : 4.5;
+            }
             
             // Apply offset if any
             const offX = cameraOffset?.x || 0;
@@ -556,52 +564,55 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
   }, [activeLayerSide, lockView, isToteBag, cameraOffset]);
 
   return (
-    <div className="w-full h-full min-h-[250px] md:min-h-[400px] relative bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden shadow-inner">
-      <Canvas 
-        shadows 
-        camera={{ position: initialCameraPosition, fov: 35 }}
-        gl={{ 
-            preserveDrawingBuffer: true,
-            powerPreference: "high-performance",
-            antialias: true
-        }} 
-      >
-        <AmbientLight intensity={0.5} />
-        <SpotLight position={[10, 10, 10]} angle={0.15} penumbra={1} shadow-mapSize={2048} castShadow />
-        <SpotLight position={[-10, 5, 10]} intensity={0.5} />
-        <SpotLight position={[0, 5, -10]} intensity={0.5} />
-        
-        {captureRef && <SnapshotHandler captureRef={captureRef} controlsRef={controlsRef} />}
+    <div className="w-full h-full min-h-[250px] md:min-h-[400px] relative rounded-xl overflow-hidden shadow-inner flex items-center justify-center">
+      <div className="absolute inset-0 bg-[url('/light.jpeg')] dark:bg-[url('/dark.jpeg')] bg-cover bg-center blur-sm opacity-80 z-0 pointer-events-none" />
+      <div className="absolute inset-0 z-10">
+        <Canvas 
+          shadows 
+          camera={{ position: initialCameraPosition, fov: 35 }}
+          gl={{ 
+              preserveDrawingBuffer: true,
+              powerPreference: "high-performance",
+              antialias: true
+          }} 
+        >
+          <AmbientLight intensity={0.5} />
+          <SpotLight position={[10, 10, 10]} angle={0.15} penumbra={1} shadow-mapSize={2048} castShadow />
+          <SpotLight position={[-10, 5, 10]} intensity={0.5} />
+          <SpotLight position={[0, 5, -10]} intensity={0.5} />
+          
+          {captureRef && <SnapshotHandler captureRef={captureRef} controlsRef={controlsRef} />}
 
-        <Suspense fallback={<Loader />}>
-            <Center>
-                <ProductMesh 
-                    config={config} 
-                    showMeasurements={showMeasurements} 
-                    customBlackColor={blackColor} 
-                    lockView={lockView}
-                    onPositionChange={onPositionChange}
-                    onLayerSelect={onLayerSelect}
-                    activeLayerSide={activeLayerSide}
-                    isDraggingRef={isDraggingRef}
-                    designOpacity={config.designOpacity ?? appearance.designOpacity}
-                />
-            </Center>
-            <Environment preset="city" />
-        </Suspense>
-        <OrbitControls 
-          ref={controlsRef}
-          enablePan={false} 
-          enableRotate={!lockView} // Disable rotation when locked to allow drag
-          enableZoom={!lockView} // Disable zoom when locked to avoid messing up precision
-          minPolarAngle={Math.PI / 4} 
-          maxPolarAngle={Math.PI / 1.8}
-          minDistance={3}
-          maxDistance={9}
-        />
-      </Canvas>
+          <Suspense fallback={<Loader />}>
+              <Center>
+                  <ProductMesh 
+                      config={config} 
+                      showMeasurements={showMeasurements} 
+                      customBlackColor={blackColor} 
+                      lockView={lockView}
+                      onPositionChange={onPositionChange}
+                      onLayerSelect={onLayerSelect}
+                      activeLayerSide={activeLayerSide}
+                      isDraggingRef={isDraggingRef}
+                      designOpacity={config.designOpacity ?? appearance.designOpacity}
+                  />
+              </Center>
+              <Environment preset="city" />
+          </Suspense>
+          <OrbitControls 
+            ref={controlsRef}
+            enablePan={false} 
+            enableRotate={!lockView} // Disable rotation when locked to allow drag
+            enableZoom={!lockView} // Disable zoom when locked to avoid messing up precision
+            minPolarAngle={Math.PI / 4} 
+            maxPolarAngle={Math.PI / 1.8}
+            minDistance={3}
+            maxDistance={9}
+          />
+        </Canvas>
+      </div>
       {!lockView && (
-        <div className="absolute bottom-4 right-4 text-xs text-gray-400 pointer-events-none">
+        <div className="absolute bottom-4 right-4 text-xs text-black/50 dark:text-white/50 pointer-events-none z-20 font-medium">
             Arrastra para rotar • Rueda para zoom
         </div>
       )}

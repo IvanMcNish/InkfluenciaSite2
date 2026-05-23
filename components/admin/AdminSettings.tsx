@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ImageIcon, Smartphone, Monitor, Layout, Upload, Loader2, Database, Copy, Check, Trash2, AlertTriangle, Layers, Ruler, Save, HardDrive, Palette, Instagram } from 'lucide-react';
+import { ImageIcon, Smartphone, Monitor, Layout, Upload, Loader2, Database, Copy, Check, Trash2, AlertTriangle, Layers, Ruler, Save, HardDrive, Palette, Instagram, Download, Grid } from 'lucide-react';
 import { uploadAppLogo, APP_LOGO_URL, APP_DESKTOP_LOGO_URL, APP_LANDING_LOGO_URL } from '../../lib/supabaseClient';
 import { getCustomizerConstraints, saveCustomizerConstraints, getToteCustomizerConstraints, saveToteCustomizerConstraints, getUploadLimits, saveUploadLimits, getAppearanceSettings, saveAppearanceSettings, DEFAULT_CONSTRAINTS, DEFAULT_TOTE_CONSTRAINTS, DEFAULT_UPLOAD_LIMITS, DEFAULT_APPEARANCE } from '../../services/settingsService';
 import { CustomizerConstraints, UploadLimits, AppearanceSettings } from '../../types';
+import { getCollection } from '../../services/galleryService';
 
 export const AdminSettings: React.FC = () => {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
@@ -156,6 +157,271 @@ export const AdminSettings: React.FC = () => {
       if (newLogoUrl) { alert('¡Logo Landing Page actualizado! Recarga para ver cambios.'); window.location.reload(); }
   };
 
+  // Gallery compilation state & function
+  const [isGeneratingCatalog, setIsGeneratingCatalog] = useState(false);
+  const [catalogStatus, setCatalogStatus] = useState('');
+  const [catalogTitle, setCatalogTitle] = useState('Galería de la Comunidad');
+  const [catalogSub, setCatalogSub] = useState('Diseños Exclusivos - Inkfluencia');
+  const [catalogBg, setCatalogBg] = useState<'dark' | 'light'>('dark');
+  const [catalogCols, setCatalogCols] = useState<number>(4);
+  const [catalogShowLabels, setCatalogShowLabels] = useState(true);
+  const [catalogUseGaps, setCatalogUseGaps] = useState(true);
+
+  const generateCatalogImage = async () => {
+    setIsGeneratingCatalog(true);
+    setCatalogStatus('Obteniendo diseños aprobados de la galería...');
+    try {
+      const items = await getCollection();
+      const validItems = items.filter(item => item.config && item.config.snapshotUrl);
+      
+      if (validItems.length === 0) {
+        alert('No hay ningún diseño aprobado publicado en la galería para descargar. Ve a la sección de Galería y aprueba diseños primero.');
+        setIsGeneratingCatalog(false);
+        return;
+      }
+
+      setCatalogStatus(`Descargando ${validItems.length} renders de prendas...`);
+      
+      const cols = catalogCols;
+      const rows = Math.ceil(validItems.length / cols);
+      const cellWidth = 500;
+      const cellHeight = catalogShowLabels ? 400 : 500; 
+      const padding = 60;
+      const gap = catalogUseGaps ? (catalogShowLabels ? 30 : 15) : 0;
+      
+      const headerHeight = 220;
+      const footerHeight = 100;
+      
+      const totalWidth = padding * 2 + cols * cellWidth + (cols - 1) * gap;
+      const totalHeight = headerHeight + padding * 2 + rows * cellHeight + (rows - 1) * gap + footerHeight;
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = totalWidth;
+      canvas.height = totalHeight;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        throw new Error('No se pudo inicializar el renderizador de Canvas');
+      }
+      
+      const isDark = catalogBg === 'dark';
+      ctx.fillStyle = isDark ? '#0C0C0E' : '#FFFFFF';
+      ctx.fillRect(0, 0, totalWidth, totalHeight);
+      
+      ctx.strokeStyle = isDark ? 'rgba(236, 72, 153, 0.2)' : 'rgba(236, 72, 153, 0.25)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(30, 30, totalWidth - 60, totalHeight - 60);
+      
+      ctx.fillStyle = '#D946EF'; 
+      ctx.fillRect(totalWidth / 2 - 150, 60, 300, 6);
+      
+      ctx.textAlign = 'center';
+      ctx.fillStyle = isDark ? '#FFFFFF' : '#0F0F12';
+      ctx.font = 'bold 54px system-ui, -apple-system, sans-serif';
+      ctx.fillText(catalogTitle.toUpperCase(), totalWidth / 2, 130);
+      
+      ctx.fillStyle = isDark ? '#A1A1AA' : '#4B5563';
+      ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
+      ctx.fillText(catalogSub.toUpperCase(), totalWidth / 2, 172);
+      
+      const today = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+      ctx.fillStyle = '#D946EF';
+      ctx.font = 'bold 13px monospace';
+      ctx.fillText(`CANTIDAD: ${validItems.length} ARTÍCULOS • EMISIÓN: ${today.toUpperCase()}`, totalWidth / 2, 205);
+      
+      ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.1)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(padding, 230);
+      ctx.lineTo(totalWidth - padding, 230);
+      ctx.stroke();
+      
+      const loadImg = (url: string) => {
+        return new Promise<HTMLImageElement | null>((resolve) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => resolve(img);
+          img.onerror = (e) => {
+            console.error('Error cargando miniatura:', url, e);
+            resolve(null);
+          };
+          img.src = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+        });
+      };
+      
+      const loadedImages = await Promise.all(
+        validItems.map(item => loadImg(item.config.snapshotUrl!))
+      );
+      
+      setCatalogStatus('Renderezando lienzo...');
+      
+      validItems.forEach((item, index) => {
+        const img = loadedImages[index];
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        
+        const startX = padding + col * (cellWidth + gap);
+        const startY = headerHeight + padding + row * (cellHeight + gap);
+        
+        ctx.save();
+        
+        if (catalogShowLabels) {
+          const r = 24;
+          ctx.beginPath();
+          ctx.moveTo(startX + r, startY);
+          ctx.lineTo(startX + cellWidth - r, startY);
+          ctx.quadraticCurveTo(startX + cellWidth, startY, startX + cellWidth, startY + r);
+          ctx.lineTo(startX + cellWidth, startY + cellHeight - r);
+          ctx.quadraticCurveTo(startX + cellWidth, startY + cellHeight, startX + cellWidth - r, startY + cellHeight);
+          ctx.lineTo(startX + r, startY + cellHeight);
+          ctx.quadraticCurveTo(startX, startY + cellHeight, startX, startY + cellHeight - r);
+          ctx.lineTo(startX, startY + r);
+          ctx.quadraticCurveTo(startX, startY, startX + r, startY);
+          ctx.closePath();
+          
+          ctx.fillStyle = isDark ? '#141417' : '#FFFFFF';
+          ctx.fill();
+          
+          ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+          
+          ctx.clip();
+          
+          const imgHeight = cellHeight - 75; 
+          if (img) {
+            const sWidth = img.width;
+            const sHeight = img.height;
+            const sAspect = sWidth / sHeight;
+            const dAspect = cellWidth / imgHeight;
+            
+            let sw = sWidth;
+            let sh = sHeight;
+            let sx = 0;
+            let sy = 0;
+            
+            if (sAspect > dAspect) {
+              sw = sHeight * dAspect;
+              sx = (sWidth - sw) / 2;
+            } else {
+              sh = sWidth / dAspect;
+              sy = (sHeight - sh) / 2;
+            }
+            
+            ctx.drawImage(img, sx, sy, sw, sh, startX, startY, cellWidth, imgHeight);
+          } else {
+            ctx.fillStyle = isDark ? '#1E1E22' : '#F3F4F6';
+            ctx.fillRect(startX, startY, cellWidth, imgHeight);
+            ctx.font = 'bold 16px sans-serif';
+            ctx.fillStyle = isDark ? '#A1A1AA' : '#6B7280';
+            ctx.textAlign = 'center';
+            ctx.fillText('[Imagen No Cargada]', startX + cellWidth / 2, startY + imgHeight / 2);
+          }
+          
+          ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(startX, startY + imgHeight);
+          ctx.lineTo(startX + cellWidth, startY + imgHeight);
+          ctx.stroke();
+          
+          ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)';
+          ctx.fillRect(startX, startY + imgHeight, cellWidth, 75);
+          
+          ctx.textAlign = 'left';
+          ctx.fillStyle = isDark ? '#FFFFFF' : '#111827';
+          ctx.font = 'bold 18px Arial, sans-serif';
+          let displayName = item.name || 'Diseño de la Galería';
+          if (displayName.length > 24) {
+            displayName = displayName.substring(0, 22) + '...';
+          }
+          ctx.fillText(displayName, startX + 24, startY + imgHeight + 43);
+          
+          ctx.textAlign = 'right';
+          const isTote = item.config?.productType === 'totebag';
+          ctx.fillStyle = isTote ? '#EC4899' : '#3B82F6';
+          ctx.font = 'bold 12px monospace';
+          ctx.fillText(isTote ? 'TOTE BAG' : 'CAMISETA', startX + cellWidth - 24, startY + imgHeight + 40);
+        } else {
+          // Fully continuous exposition mode
+          ctx.beginPath();
+          ctx.rect(startX, startY, cellWidth, cellHeight);
+          ctx.closePath();
+          ctx.clip();
+
+          if (img) {
+            const sWidth = img.width;
+            const sHeight = img.height;
+            const sAspect = sWidth / sHeight;
+            const dAspect = cellWidth / cellHeight;
+            
+            let sw = sWidth;
+            let sh = sHeight;
+            let sx = 0;
+            let sy = 0;
+            
+            if (sAspect > dAspect) {
+              sw = sHeight * dAspect;
+              sx = (sWidth - sw) / 2;
+            } else {
+              sh = sWidth / dAspect;
+              sy = (sHeight - sh) / 2;
+            }
+            
+            ctx.drawImage(img, sx, sy, sw, sh, startX, startY, cellWidth, cellHeight);
+          } else {
+            ctx.fillStyle = isDark ? '#141417' : '#F3F4F6';
+            ctx.fillRect(startX, startY, cellWidth, cellHeight);
+            
+            ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(startX, startY, cellWidth, cellHeight);
+
+            ctx.font = 'bold 16px sans-serif';
+            ctx.fillStyle = isDark ? '#71717A' : '#9CA3AF';
+            ctx.textAlign = 'center';
+            ctx.fillText('[Imagen No Cargada]', startX + cellWidth / 2, startY + cellHeight / 2);
+          }
+        }
+        
+        ctx.restore();
+      });
+      
+      ctx.textAlign = 'center';
+      ctx.fillStyle = isDark ? '#52525B' : '#9CA3AF';
+      ctx.font = 'bold 14px system-ui, -apple-system, sans-serif';
+      ctx.fillText('DISEÑADO EN EL ESTUDIO INTERACTIVO INKFLUENCIA • TODOS LOS DERECHOS RESERVADOS', totalWidth / 2, totalHeight - 45);
+      
+      setCatalogStatus('Compilando imagen final de alta resolución...');
+      
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          alert('Error al compilar el lienzo.');
+          setIsGeneratingCatalog(false);
+          setCatalogStatus('');
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Catalogo_Galería_Inkfluencia_${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        setIsGeneratingCatalog(false);
+        setCatalogStatus('');
+      }, 'image/png');
+      
+    } catch (err: any) {
+      console.error('Error al generar catálogo:', err);
+      alert('Error de compilación de catálogo: ' + (err.message || err));
+      setIsGeneratingCatalog(false);
+      setCatalogStatus('');
+    }
+  };
+
   const copyToClipboard = (text: string, type: 'storage' | 'gallery' | 'inventory' | 'orders' | 'settings' | 'community') => {
     navigator.clipboard.writeText(text);
     if (type === 'storage') { setCopiedStorage(true); setTimeout(() => setCopiedStorage(false), 2000); }
@@ -203,6 +469,150 @@ export const AdminSettings: React.FC = () => {
                     <button onClick={() => landingLogoInputRef.current?.click()} disabled={isUploadingLandingLogo} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm">{isUploadingLandingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}{isUploadingLandingLogo ? 'Subiendo...' : 'Actualizar Landing'}</button>
                     <p className="text-[10px] text-gray-400 mt-2 text-center">PNG Transparente (Gran Formato)</p>
                 </div>
+            </div>
+        </div>
+
+        {/* Export Collage Section */}
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 font-sans">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-pink-100 dark:bg-pink-900/20 rounded-lg text-pink-600">
+                    <Grid className="w-6 h-6" />
+                </div>
+                <div>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Exportador de Catálogo de Galería</h2>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">Descarga un póster de alta definición con todas las camisetas y bolsos publicados en la galería.</p>
+                </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-xs text-gray-500 uppercase font-bold tracking-wider block mb-1">Título del Póster</label>
+                        <input
+                            type="text"
+                            value={catalogTitle}
+                            onChange={(e) => setCatalogTitle(e.target.value)}
+                            placeholder="Ej. Galería de Diseños"
+                            className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-pink-500 outline-none text-sm font-semibold text-gray-950 dark:text-white"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-xs text-gray-500 uppercase font-bold tracking-wider block mb-1">Subtítulo del Póster</label>
+                        <input
+                            type="text"
+                            value={catalogSub}
+                            onChange={(e) => setCatalogSub(e.target.value)}
+                            placeholder="Ej. Colección Exclusiva"
+                            className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-pink-500 outline-none text-sm text-gray-955 dark:text-white"
+                        />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-200/50 dark:border-gray-800 pt-3">
+                    <div>
+                        <label className="text-xs text-gray-500 uppercase font-bold tracking-wider block mb-1">Identificadores Visuales</label>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setCatalogShowLabels(true)}
+                                className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-lg border transition-all ${catalogShowLabels ? 'bg-pink-600 text-white border-pink-500 shadow-sm dark:bg-pink-600 dark:border-pink-500' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700'}`}
+                            >
+                                Tarjetas con Info (Nombre/Tipo)
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setCatalogShowLabels(false)}
+                                className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-lg border transition-all ${!catalogShowLabels ? 'bg-pink-600 text-white border-pink-500 shadow-sm dark:bg-pink-600 dark:border-pink-500' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700'}`}
+                            >
+                                Solo Imágenes (Exposición)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="text-xs text-gray-500 uppercase font-bold tracking-wider block mb-1">Distribución de Imágenes</label>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setCatalogUseGaps(false)}
+                                className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-lg border transition-all ${!catalogUseGaps ? 'bg-pink-600 text-white border-pink-500 shadow-sm dark:bg-pink-600 dark:border-pink-500' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700'}`}
+                            >
+                                Una junto a otra (Continuas)
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setCatalogUseGaps(true)}
+                                className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-lg border transition-all ${catalogUseGaps ? 'bg-pink-600 text-white border-pink-500 shadow-sm dark:bg-pink-600 dark:border-pink-500' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700'}`}
+                            >
+                                Con Separación (Gaps)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 border-t border-gray-200/50 dark:border-gray-800 pt-3">
+                    <div>
+                        <label className="text-xs text-gray-500 uppercase font-bold tracking-wider block mb-1">Fondo del Lienzo</label>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setCatalogBg('dark')}
+                                className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-lg border transition-all ${catalogBg === 'dark' ? 'bg-gray-900 text-white border-pink-500 shadow-sm dark:bg-black dark:border-pink-500' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700'}`}
+                            >
+                                Tema Negro
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setCatalogBg('light')}
+                                className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-lg border transition-all ${catalogBg === 'light' ? 'bg-white text-gray-900 border-pink-500 shadow-sm' : 'bg-gray-55 text-gray-400 border-gray-200 hover:bg-white dark:bg-gray-800 dark:border-gray-700'}`}
+                            >
+                                Tema Blanco
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="text-xs text-gray-500 uppercase font-bold tracking-wider block mb-1">Columnas de la Cuadrícula</label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="range"
+                                min="2"
+                                max="6"
+                                value={catalogCols}
+                                onChange={(e) => setCatalogCols(parseInt(e.target.value))}
+                                className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                            />
+                            <span className="font-mono text-sm font-bold shrink-0 text-pink-500 w-12 text-right">{catalogCols} cols</span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-end">
+                        <button
+                            type="button"
+                            onClick={generateCatalogImage}
+                            disabled={isGeneratingCatalog}
+                            className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-2.5 px-4 rounded-lg shadow-lg hover:shadow-pink-500/20 transition-all flex items-center justify-center gap-2 text-sm z-10"
+                        >
+                            {isGeneratingCatalog ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <span>Generando...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Download className="w-4 h-4" />
+                                    <span>Descargar Catálogo PNG</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+
+                {catalogStatus && (
+                    <div className="text-xs font-semibold text-center py-2 bg-pink-100 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 rounded-lg animate-pulse font-mono">
+                        {catalogStatus}
+                    </div>
+                )}
             </div>
         </div>
 

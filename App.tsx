@@ -12,6 +12,7 @@ import { CommunityPage } from "./components/CommunityPage";
 import { ContactPage } from "./components/ContactPage";
 import { saveDesignToCollection } from "./services/galleryService";
 import { DEFAULT_CONFIG } from "./constants";
+import { ImageEditor } from "./components/ImageEditor";
 import { TShirtConfig, ViewState, Order } from "./types";
 import { supabase } from "./lib/supabaseClient";
 import { Session } from "@supabase/supabase-js";
@@ -38,6 +39,10 @@ const App: React.FC = () => {
 
   // Last successfully created order
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
+
+  // Settings and other states
+  const [editImageLayerIndex, setEditImageLayerIndex] = useState<number | null>(null);
+  const [previousView, setPreviousView] = useState<ViewState | null>(null);
 
   // Auth State
   const [session, setSession] = useState<Session | null>(null);
@@ -134,21 +139,30 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (view) {
       case "landing":
-        return (
-          <LandingPage
-            onStart={() => setView("customizer")}
-            onViewGallery={() => setView("gallery")}
-          />
-        );
       case "customizer":
         return (
-          <Customizer
-            key="customizer-view"
-            config={config}
-            setConfig={setConfig}
-            onCheckout={() => setView("checkout")}
-            isDesignerMode={false}
-          />
+          <>
+            <div className="absolute inset-0 z-0 h-full w-full">
+              <Customizer
+                key="customizer-view"
+                config={config}
+                setConfig={setConfig}
+                onCheckout={() => setView("checkout")}
+                onEditImage={(index) => {
+                  setEditImageLayerIndex(index);
+                  setPreviousView("customizer");
+                  setView("image-editor");
+                }}
+                isDesignerMode={false}
+                isActive={view === "customizer"}
+              />
+            </div>
+            
+            <LandingPage
+              isVisible={view === "landing"}
+              onStart={() => setView("customizer")}
+            />
+          </>
         );
       case "designer":
         return (
@@ -157,8 +171,34 @@ const App: React.FC = () => {
             config={config}
             setConfig={setConfig}
             onSaveToGallery={handleSaveDesign}
+            onEditImage={(index) => {
+              setEditImageLayerIndex(index);
+              setPreviousView(view);
+              setView("image-editor");
+            }}
             isDesignerMode={true}
           />
+        );
+      case "image-editor":
+        if (editImageLayerIndex === null || !config.layers[editImageLayerIndex]) {
+            setTimeout(() => setView(previousView || "customizer"), 0);
+            return null;
+        }
+        return (
+            <ImageEditor
+                layer={config.layers[editImageLayerIndex]}
+                onSave={(updatedLayer) => {
+                    const newLayers = [...config.layers];
+                    newLayers[editImageLayerIndex] = updatedLayer;
+                    setConfig({ ...config, layers: newLayers });
+                    setView(previousView || "customizer");
+                    setEditImageLayerIndex(null);
+                }}
+                onClose={() => {
+                    setView(previousView || "customizer");
+                    setEditImageLayerIndex(null);
+                }}
+            />
         );
       case "gallery":
         return (
@@ -213,10 +253,27 @@ const App: React.FC = () => {
         );
       default:
         return (
-          <LandingPage
-            onStart={() => setView("customizer")}
-            onViewGallery={() => setView("gallery")}
-          />
+          <>
+            <div className="absolute inset-0 z-0 h-full w-full">
+              <Customizer
+                key="customizer-view-default"
+                config={config}
+                setConfig={setConfig}
+                onCheckout={() => setView("checkout")}
+                onEditImage={(index) => {
+                  setEditImageLayerIndex(index);
+                  setPreviousView("customizer");
+                  setView("image-editor");
+                }}
+                isDesignerMode={false}
+                isActive={view === "customizer"}
+              />
+            </div>
+            <LandingPage
+              isVisible={view === "landing"}
+              onStart={() => setView("customizer")}
+            />
+          </>
         );
     }
   };
@@ -230,54 +287,51 @@ const App: React.FC = () => {
         navigate={setView}
       />
 
-      <main className="container mx-auto flex-1 flex flex-col">
+      <main className={`${['customizer', 'designer', 'image-editor', 'landing'].includes(view) ? 'w-full' : 'container mx-auto'} flex-1 flex flex-col relative overflow-hidden`}>
         {renderContent()}
       </main>
 
       {/* Floating Mini Footer (Visible when real footer is hidden) */}
       <div
-        className={`fixed bottom-4 left-4 z-40 transition-all duration-500 ease-in-out ${
-          !isFooterVisible
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-10 pointer-events-none"
-        }`}
-      >
-        <a
-          href="https://mcnishstudio.pages.dev/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 bg-white/30 dark:bg-black/30 backdrop-blur-md border border-gray-200/50 dark:border-gray-800/50 rounded-full px-3 py-1.5 shadow-lg hover:bg-white/80 dark:hover:bg-black/80 hover:scale-105 transition-all group"
+          className={`fixed bottom-4 left-4 z-40 hidden xl:block transition-all duration-500 ease-in-out ${
+            !isFooterVisible
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-10 pointer-events-none"
+          }`}
         >
-          <Code2 className="w-3 h-3 text-gray-500 group-hover:text-pink-500 transition-colors" />
-          <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
-            McNishStudio
-          </span>
-        </a>
-      </div>
+          <a
+            href="https://mcnishstudio.pages.dev/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 bg-white/30 dark:bg-black/30 backdrop-blur-md border border-gray-200/50 dark:border-gray-800/50 rounded-full px-3 py-1.5 shadow-lg hover:bg-white/80 dark:hover:bg-black/80 hover:scale-105 transition-all group"
+          >
+            <Code2 className="w-3 h-3 text-gray-500 group-hover:text-pink-500 transition-colors" />
+            <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+              McNishStudio
+            </span>
+          </a>
+        </div>
 
       {/* Static Footer */}
       <footer
-        ref={footerRef}
-        className="py-6 border-t border-gray-100 dark:border-gray-900 mt-auto bg-gray-50 dark:bg-gray-950/50 print:hidden relative z-10"
-      >
-        <div className="container mx-auto px-6 flex flex-col items-center justify-center gap-2">
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-500 flex items-center gap-1.5">
-            <Code2 className="w-4 h-4" />
-            Desarrollado por
-            <a
-              href="https://mcnishstudio.pages.dev/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold text-gray-800 dark:text-gray-200 hover:text-pink-500 dark:hover:text-pink-400 transition-colors"
-            >
-              McNishStudio
-            </a>
-          </p>
-          <p className="text-[10px] text-gray-400 uppercase tracking-widest">
-            Tecnología & Diseño 3D
-          </p>
-        </div>
-      </footer>
+          ref={footerRef}
+          className="py-2 border-t border-gray-100 dark:border-gray-900 mt-auto bg-gray-50 dark:bg-gray-950/50 print:hidden relative z-10"
+        >
+          <div className="container mx-auto px-6 flex flex-col items-center justify-center gap-1">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-500 flex items-center gap-1.5">
+              <Code2 className="w-3 h-3" />
+              Desarrollado por
+              <a
+                href="https://mcnishstudio.pages.dev/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-gray-800 dark:text-gray-200 hover:text-pink-500 dark:hover:text-pink-400 transition-colors"
+              >
+                McNishStudio
+              </a>
+            </p>
+          </div>
+        </footer>
     </div>
   );
 };

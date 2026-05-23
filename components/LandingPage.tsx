@@ -1,89 +1,56 @@
-
-import React from 'react';
-import { Palette, Box, Sparkles, Grid } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { APP_LANDING_LOGO_URL} from '../lib/supabaseClient';
 
 interface LandingPageProps {
+  isVisible: boolean;
   onStart: () => void;
-  onViewGallery: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewGallery }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ isVisible, onStart }) => {
+  const [shouldRender, setShouldRender] = useState(isVisible);
+
+  useEffect(() => {
+    if (isVisible) setShouldRender(true);
+    else {
+      const timer = setTimeout(() => setShouldRender(false), 1000); // match transition duration
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible]);
+
+  if (!shouldRender) return null;
+
   return (
-    <div className="flex flex-col min-h-[calc(100vh-80px)] overflow-x-hidden">
+    <div 
+      className={`absolute inset-0 z-50 flex flex-col bg-white/60 dark:bg-black/60 backdrop-blur-md cursor-pointer overflow-hidden transition-all duration-1000 ease-in-out ${!isVisible ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}
+      onClick={onStart}
+    >
       {/* Hero Section */}
-      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-12 md:py-20 overflow-visible">
+      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-4 pointer-events-none">
         
         {/* Main Brand Logo */}
-        <div className="mb-12 relative group z-10 perspective-1000">
+        <div className="mb-8 relative group z-10 perspective-1000">
             {/* Expanded Blur Container for Safari clipping fix */}
             <div className="absolute -inset-16 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity duration-500 will-change-[opacity]"></div>
             
             <img 
                 src={`${APP_LANDING_LOGO_URL}?t=${new Date().getHours()}`}
                 alt="Inkfluencia Brand" 
-                className="relative w-80 h-80 md:w-[32rem] md:h-[32rem] object-contain animate-fade-in hover:scale-105 transition-transform duration-500 will-change-transform backface-visibility-hidden"
+                className="relative w-72 h-72 md:w-[28rem] md:h-[28rem] object-contain animate-fade-in hover:scale-105 transition-transform duration-500 will-change-transform backface-visibility-hidden"
                 style={{ transform: 'translate3d(0,0,0)' }} // Force GPU layer for Safari
             />
         </div>
 
-        <div className="mb-6 inline-block relative z-20">
+        <div className="mb-4 inline-block relative z-20">
           <span className="py-1 px-3 rounded-full bg-cyan-100 dark:bg-cyan-900 text-cyan-700 dark:text-cyan-300 text-sm font-bold tracking-wide">
             NUEVA COLECCIÓN 2026
           </span>
         </div>
-        <h1 className="text-5xl md:text-8xl font-black mb-6 tracking-tight text-gray-900 dark:text-white relative z-20">
+        <h1 className="text-4xl md:text-7xl font-black mb-4 tracking-tight text-gray-900 dark:text-white relative z-20">
           Viste tu <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-orange-400 to-yellow-400">Influencia</span>.
         </h1>
-        <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl mb-12 leading-relaxed relative z-20">
+        <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl leading-relaxed relative z-20">
           Camisetas personalizadas DTF en Bucaramanga. Diseños únicos elaborados con algodón peruano, colores vibrantes y tecnología 3D. Personaliza tu estilo con Inkfluencia desde 1 unidad y resalta en todo Santander.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 relative z-20">
-            <button
-            onClick={onStart}
-            className="bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-500 hover:to-orange-400 text-white text-xl font-bold px-12 py-5 rounded-full shadow-lg hover:shadow-orange-500/25 hover:scale-105 transition-all duration-300"
-            >
-            Empezar a Crear
-            </button>
-            <button
-            onClick={onViewGallery}
-            className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 text-xl font-bold px-12 py-5 rounded-full shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 flex items-center gap-2 justify-center"
-            >
-            <Grid className="w-5 h-5" />
-            Ver Colección
-            </button>
-        </div>
-      </div>
-
-      {/* Features Grid */}
-      <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto px-6 py-20 w-full relative z-20">
-        <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl shadow-xl shadow-pink-100/50 dark:shadow-none border border-gray-100 dark:border-gray-800">
-          <div className="w-14 h-14 bg-pink-100 dark:bg-pink-900/30 rounded-2xl flex items-center justify-center mb-6 text-pink-500">
-            <Box className="w-8 h-8" />
-          </div>
-          <h3 className="text-2xl font-bold mb-3">3D Studio</h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Nuestro probador virtual te permite ver cada pliegue y detalle de tu diseño antes de que se convierta en realidad.
-          </p>
-        </div>
-        <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl shadow-xl shadow-cyan-100/50 dark:shadow-none border border-gray-100 dark:border-gray-800">
-          <div className="w-14 h-14 bg-cyan-100 dark:bg-cyan-900/30 rounded-2xl flex items-center justify-center mb-6 text-cyan-500">
-            <Palette className="w-8 h-8" />
-          </div>
-          <h3 className="text-2xl font-bold mb-3">Colores Vivos</h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Utilizamos impresión de alta fidelidad para asegurar que los colores de tu pantalla sean los de tu camiseta.
-          </p>
-        </div>
-        <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl shadow-xl shadow-yellow-100/50 dark:shadow-none border border-gray-100 dark:border-gray-800">
-          <div className="w-14 h-14 bg-yellow-100 dark:bg-yellow-900/30 rounded-2xl flex items-center justify-center mb-6 text-yellow-500">
-            <Sparkles className="w-8 h-8" />
-          </div>
-          <h3 className="text-2xl font-bold mb-3">Estampado DTF y Algodón</h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Usamos algodón peruano y tecnología DTF de alta durabilidad para tus camisetas corporativas, grupos o eventos. Impresión impecable garantizada.
-          </p>
-        </div>
       </div>
     </div>
   );

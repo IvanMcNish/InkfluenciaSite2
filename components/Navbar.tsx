@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Moon, ShoppingBag, ArrowLeft, LayoutDashboard, Grid, Truck, Instagram, MessageCircle } from 'lucide-react';
+import { Sun, Moon, ShoppingBag, ArrowLeft, LayoutDashboard, Grid, Truck, Instagram, MessageCircle, Sparkles, Box } from 'lucide-react';
 import { ViewState } from '../types';
 import { APP_LOGO_URL, APP_DESKTOP_LOGO_URL } from '../lib/supabaseClient';
 

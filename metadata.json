@@ -1,5 +1,6 @@
 {
   "name": "Inkfluencia",
   "description": "Tienda de camisetas personalizables con estilo único. (PWA)",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

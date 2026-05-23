@@ -15,6 +15,9 @@ export default {
           cyan: '#06b6d4'
         }
       },
+      fontFamily: {
+        kanit: ['Kanit', 'sans-serif'],
+      },
       animation: {
         'gradient-x': 'gradient-x 3s ease infinite',
       },

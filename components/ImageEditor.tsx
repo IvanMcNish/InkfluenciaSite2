@@ -25,6 +25,7 @@ import {
   Flame,
   Focus,
   CloudRain,
+  LayoutTemplate
 } from "lucide-react";
 import { DesignLayer } from "../types";
 
@@ -63,6 +64,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
   >(layer.mask || "none");
   const [maskScale, setMaskScale] = useState<number>(layer.maskScale ?? 100);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isPanelHidden, setIsPanelHidden] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sourceImageRef = useRef<HTMLImageElement | null>(null);
@@ -416,68 +418,88 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in shadow-inner">
-      <div className="bg-white dark:bg-gray-900 w-full max-w-6xl h-[95vh] rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl">
-        {/* Header */}
-        <div className="p-3 lg:p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-white dark:bg-gray-900 sticky top-0 z-50">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-pink-100 dark:bg-pink-900/30 rounded-xl text-pink-600">
-              <Scissors className="w-4 h-4 lg:w-5 lg:h-5" />
+    <div className="fixed inset-0 z-[100] flex animate-fade-in overflow-hidden">
+      {/* Deep Background */}
+      <div className="absolute inset-0 bg-[url('/light.jpeg')] dark:bg-[url('/dark.jpeg')] bg-cover bg-center blur-md scale-110 opacity-50 z-0 pointer-events-none" />
+      <div className="absolute inset-0 bg-white/70 dark:bg-black/80 backdrop-blur-2xl z-0 pointer-events-none" />
+
+      {/* Main Content Area */}
+      <div className="relative w-full h-full flex flex-col lg:flex-row z-10">
+        
+        {/* Top Header / Mobile */}
+        <div className="absolute top-4 left-4 right-4 z-50 flex items-center justify-between pointer-events-none">
+          <div className="flex items-center gap-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 dark:border-gray-700/50 shadow-lg pointer-events-auto">
+            <div className="p-1.5 bg-pink-500 rounded-full text-white">
+              <Scissors className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm lg:text-base font-black tracking-tight">
+              <h2 className="text-sm font-black tracking-tight text-gray-800 dark:text-gray-100">
                 Estudio de Edición
               </h2>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider hidden sm:block">
-                Personaliza tu diseño
-              </p>
             </div>
           </div>
+          
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-all hover:rotate-90"
+            className="p-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md rounded-full shadow-lg border border-white/20 dark:border-gray-700/50 text-gray-600 dark:text-gray-300 hover:text-pink-600 transition-all hover:scale-105 pointer-events-auto"
+            title="Descartar y Cerrar"
           >
-            <X className="w-5 h-5 lg:w-6 lg:h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
-          {/* Main Area: Preview (Fixed or ratio based on mobile) */}
-          <div className="h-[40vh] lg:h-auto lg:flex-1 bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4 lg:p-12 relative overflow-hidden border-b lg:border-b-0 border-gray-100 dark:border-gray-800">
-            <div
-              className="absolute inset-0 opacity-[0.03]"
-              style={{
-                backgroundImage: "radial-gradient(#000 1px, transparent 1px)",
-                backgroundSize: "20px 20px",
-              }}
-            ></div>
-
-            <div className="relative w-full h-full flex items-center justify-center">
-              <div className="relative w-full h-full flex items-center justify-center shadow-2xl rounded-2xl overflow-hidden bg-white/50 dark:bg-white/5 p-2 lg:p-4 backdrop-blur-sm">
-                <canvas
-                  ref={canvasRef}
-                  onClick={pickColorFromCanvas}
-                  className={`max-w-full max-h-full object-contain ${chromaKey.enabled ? "cursor-crosshair animate-pulse" : ""} shadow-lg rounded-lg`}
-                  style={{
-                    width: "auto",
-                    height: "auto",
-                    maxWidth: "100%",
-                    maxHeight: "100%",
-                  }}
-                />
-              </div>
-            </div>
-
-            {chromaKey.enabled && (
-              <div className="absolute bottom-4 lg:bottom-8 left-1/2 -translate-x-1/2 px-4 lg:px-6 py-2 lg:py-3 bg-pink-600 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-2xl animate-bounce z-20">
-                SELECCIONA EL COLOR EN LA IMAGEN
-              </div>
-            )}
+        {/* Preview Area */}
+        <div className="flex-1 h-full w-full flex items-center justify-center p-4 lg:p-12 relative overflow-hidden pt-20 lg:pt-0">
+          <div className="relative w-full h-[60vh] lg:h-full flex items-center justify-center">
+             <canvas
+                ref={canvasRef}
+                onClick={pickColorFromCanvas}
+                className={`max-w-full max-h-full object-contain ${chromaKey.enabled ? "cursor-crosshair animate-pulse" : ""} shadow-2xl rounded-2xl group`}
+                style={{
+                  width: "auto",
+                  height: "auto",
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                }}
+              />
           </div>
 
-          {/* Sidebar: Controls (Scrollable below preview on mobile) */}
-          <div className="flex-1 lg:flex-none w-full lg:w-96 border-l lg:border-l border-gray-100 dark:border-gray-800 overflow-y-auto p-4 lg:p-6 space-y-6 lg:space-y-8 bg-white dark:bg-gray-900 custom-scrollbar">
+          {chromaKey.enabled && (
+            <div className="absolute bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 px-4 lg:px-6 py-2 lg:py-3 bg-pink-600 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-2xl animate-bounce z-20">
+              SELECCIONA EL COLOR EN LA IMAGEN
+            </div>
+          )}
+          
+          {/* Invoke Panel Button (Visible when panel is hidden) */}
+          {isPanelHidden && (
+          <button 
+            onClick={() => setIsPanelHidden(false)}
+            className="absolute bottom-6 right-6 lg:bottom-8 lg:right-8 z-50 flex items-center gap-2 px-4 py-3 rounded-full shadow-2xl transition-all font-bold backdrop-blur-md border border-white/20 dark:border-gray-700/50 bg-white/90 dark:bg-black/90 text-gray-700 dark:text-white animate-fade-in hover:scale-105"
+          >
+            <LayoutTemplate className="w-5 h-5" />
+            <span className="text-xs uppercase tracking-wider">Parámetros</span>
+          </button>
+          )}
+        </div>
+
+        {/* Floating Settings Panel */}
+        <div className={`absolute lg:relative bottom-0 lg:bottom-auto right-0 lg:right-auto w-full lg:w-[420px] h-[75vh] lg:h-full z-30 flex flex-col p-4 lg:p-4 pointer-events-none transition-transform duration-300 ease-in-out ${isPanelHidden ? 'translate-y-[120%] lg:translate-y-0 lg:translate-x-[120%]' : 'translate-y-0 lg:translate-x-0'}`}>
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl p-4 lg:p-6 rounded-3xl lg:rounded-2xl shadow-2xl border border-white/20 dark:border-gray-700/50 flex flex-col gap-4 lg:gap-6 overflow-y-auto flex-1 pointer-events-auto custom-scrollbar mt-auto lg:mt-0 max-h-full">
+            
+            <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-2">
+                    <div className="h-6 lg:h-8 w-1 bg-gradient-to-b rounded-full from-pink-500 to-orange-500"></div>
+                    <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">Parámetros</h2>
+                </div>
+                <button 
+                  onClick={() => setIsPanelHidden(true)}
+                  className="px-3 py-1.5 rounded-full bg-pink-500 text-white text-xs font-bold hover:bg-pink-600 transition-colors shadow flex items-center gap-1 active:scale-95"
+                  title="Minimizar Panel"
+                >
+                  <X className="w-4 h-4" /> Minimizar
+                </button>
+            </div>
+
             {/* Color Section */}
             <section className="space-y-4">
               <h3 className="text-[9px] lg:text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -897,34 +919,34 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
                   setMask("none");
                   setMaskScale(100);
                 }}
-                className="w-full py-3 flex items-center justify-center gap-2 text-[10px] font-black text-gray-400 hover:text-pink-600 bg-gray-50 dark:bg-gray-800 rounded-xl transition-all border border-transparent hover:border-pink-100 active:scale-95 uppercase tracking-wider"
+                className="w-full py-3 flex items-center justify-center gap-2 text-[10px] font-black text-gray-400 hover:text-pink-600 bg-gray-100 dark:bg-gray-800 rounded-xl transition-all border border-transparent hover:border-pink-200 active:scale-95 uppercase tracking-wider"
               >
                 <RotateCcw className="w-3.5 h-3.5" /> REINICIAR
               </button>
             </div>
+            
+            {/* Action Buttons */}
+            <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex gap-3 sticky bottom-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md z-10 py-2">
+              <button
+                onClick={onClose}
+                className="flex-1 py-3 lg:py-3 text-[10px] lg:text-xs font-black text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 rounded-full transition-all tracking-widest uppercase border border-gray-200 dark:border-gray-700"
+              >
+                DESCARTAR
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isProcessing}
+                className="flex-[1.5] py-3 lg:py-3 bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 text-white text-[10px] lg:text-xs font-black rounded-full shadow-lg shadow-pink-500/20 flex items-center justify-center gap-2 transition-all disabled:opacity-50 active:scale-[0.98] tracking-widest uppercase"
+              >
+                {isProcessing ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4" />
+                )}
+                GUARDAR
+              </button>
+            </div>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="p-3 lg:p-4 border-t border-gray-100 dark:border-gray-800 flex gap-3 bg-white dark:bg-gray-900 sticky bottom-0 z-50">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2.5 lg:py-3 text-[10px] lg:text-xs font-black text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-all tracking-widest uppercase"
-          >
-            DESCARTAR
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={isProcessing}
-            className="flex-[1.5] py-2.5 lg:py-3 bg-pink-600 hover:bg-pink-700 text-white text-[10px] lg:text-xs font-black rounded-xl shadow-lg shadow-pink-500/20 flex items-center justify-center gap-2 transition-all disabled:opacity-50 active:scale-[0.98] tracking-widest uppercase"
-          >
-            {isProcessing ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <Check className="w-4 h-4" />
-            )}
-            GUARDAR
-          </button>
         </div>
       </div>
     </div>

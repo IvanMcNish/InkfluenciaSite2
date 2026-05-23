@@ -63,7 +63,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
 
   // Dismiss mobile panels when tapping outside
   useEffect(() => {
-    if (!isMobile || !isMobilePanelOpen) return;
+    if (!isMobile || !isMobilePanelOpen || showContinueModal) return;
     
     const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
       if (mobileToggleRef.current?.contains(e.target as Node) || 
@@ -85,7 +85,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
 
     document.addEventListener('pointerdown', handleOutsideClick);
     return () => document.removeEventListener('pointerdown', handleOutsideClick);
-  }, [isMobile, isMobilePanelOpen, mobileActiveTab]);
+  }, [isMobile, isMobilePanelOpen, mobileActiveTab, showContinueModal]);
 
   const [constraints, setConstraints] = useState<CustomizerConstraints>(DEFAULT_CONSTRAINTS);
   const [toteConstraints, setToteConstraints] = useState<CustomizerConstraints>(DEFAULT_TOTE_CONSTRAINTS);

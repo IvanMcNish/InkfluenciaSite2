@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt, Ruler, Lock, Unlock, MousePointer2, HelpCircle, X, Hand, Video, Scissors, Columns } from 'lucide-react';
+import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt, Ruler, Lock, Unlock, MousePointer2, HelpCircle, X, Hand, Video, Scissors, Columns, Palette } from 'lucide-react';
 import { TShirtConfig, CustomizerConstraints } from '../types';
 import { Scene } from './Scene';
 import { PRICES, formatCurrency, TSHIRT_GLB_MODELS } from '../constants';
@@ -41,6 +41,16 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const [isMobile, setIsMobile] = useState(false);
   const [viewMode, setViewMode] = useState<'single' | 'double'>('single');
 
+  // Continues & Mobile Panels UX Optimization
+  const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
+  const [showContinueModal, setShowContinueModal] = useState(false);
+  const [continueStep, setContinueStep] = useState<'options' | 'save' | 'ordering'>('options');
+
+  const mobileBarRef = useRef<HTMLDivElement>(null);
+  const mobileOverlayRef = useRef<HTMLDivElement>(null);
+  const mobileToggleRef = useRef<HTMLButtonElement>(null);
+  const mobileBrushBtnRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 1024);
@@ -50,6 +60,28 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Dismiss mobile panels when tapping outside
+  useEffect(() => {
+    if (!isMobile || !isMobilePanelOpen) return;
+    
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      if (mobileToggleRef.current?.contains(e.target as Node) || 
+          mobileBrushBtnRef.current?.contains(e.target as Node)) {
+        return;
+      }
+      if (mobileBarRef.current?.contains(e.target as Node) || 
+          mobileOverlayRef.current?.contains(e.target as Node)) {
+        return;
+      }
+      
+      // Close the panel
+      setIsMobilePanelOpen(false);
+    };
+
+    document.addEventListener('pointerdown', handleOutsideClick);
+    return () => document.removeEventListener('pointerdown', handleOutsideClick);
+  }, [isMobile, isMobilePanelOpen]);
 
   const [constraints, setConstraints] = useState<CustomizerConstraints>(DEFAULT_CONSTRAINTS);
   const [toteConstraints, setToteConstraints] = useState<CustomizerConstraints>(DEFAULT_TOTE_CONSTRAINTS);
@@ -314,6 +346,104 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
     });
   };
 
+  const handleSaveToGalleryRef = async (nameToSave: string) => {
+    setIsProcessing(true);
+    setSaveError('');
+    
+    // Disable guides and reset view for perfect snapshot
+    const wasShowingGuides = showGuides;
+    if (wasShowingGuides) setShowGuides(false);
+    
+    await new Promise(resolve => setTimeout(resolve, 150));
+
+    try {
+        let snapshot = '';
+        if (captureRef.current) {
+            try {
+                snapshot = captureRef.current();
+            } catch (e) {
+                console.error("Failed to capture snapshot:", e);
+            }
+        }
+        
+        if (wasShowingGuides) setShowGuides(true);
+
+        const configWithSnapshot = { ...config, snapshotUrl: snapshot };
+        setConfig(configWithSnapshot);
+        
+        try {
+            if (config.id) {
+                // Update existing design
+                const success = await updateGalleryItem(config.id, nameToSave, true, configWithSnapshot);
+                if (success) {
+                    alert("Diseño actualizado con éxito.");
+                    if (onSaveToGallery) onSaveToGallery(nameToSave, configWithSnapshot);
+                    return true;
+                } else {
+                    throw new Error("Update failed");
+                }
+            } else {
+                // Create new design
+                if (onSaveToGallery) {
+                    await onSaveToGallery(nameToSave, configWithSnapshot);
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        } catch (e: any) {
+             console.error("Gallery save error:", e);
+             if (e.name === 'QuotaExceededError' || e.message?.includes('exceeded the quota')) {
+                 setSaveError('¡Espacio lleno! Por favor ve a la galería y elimina diseños antiguos para liberar espacio.');
+             } else {
+                 setSaveError('No se pudo guardar el diseño. Intenta nuevamente.');
+             }
+             return false;
+        }
+    } catch (error) {
+        console.error("Error processing action:", error);
+        setSaveError("Ocurrió un error inesperado.");
+        if (wasShowingGuides) setShowGuides(true);
+        return false;
+    } finally {
+        setIsProcessing(false);
+    }
+  };
+
+  const handleBuyDesign = async () => {
+    setIsProcessing(true);
+    
+    // Disable guides and reset view for perfect snapshot
+    const wasShowingGuides = showGuides;
+    if (wasShowingGuides) setShowGuides(false);
+    
+    await new Promise(resolve => setTimeout(resolve, 150));
+
+    try {
+        let snapshot = '';
+        if (captureRef.current) {
+            try {
+                snapshot = captureRef.current();
+            } catch (e) {
+                console.error("Failed to capture snapshot:", e);
+            }
+        }
+        
+        if (wasShowingGuides) setShowGuides(true);
+
+        const configWithSnapshot = { ...config, snapshotUrl: snapshot };
+        setConfig(configWithSnapshot);
+        
+        if (onCheckout) {
+             onCheckout();
+        }
+    } catch (error) {
+        console.error("Error starting checkout:", error);
+    } finally {
+        setIsProcessing(false);
+    }
+  };
+
   const handleAction = async () => {
     setIsProcessing(true);
     setSaveError('');
@@ -383,6 +513,180 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   };
 
   const activeLayer = config.layers[activeLayerIndex];
+
+  // Action / Continue Modal Component
+  const ContinueModal = () => {
+    if (!showContinueModal) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+        <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-gray-150 dark:border-gray-800 relative">
+          
+          <button 
+            onClick={() => {
+              if (continueStep !== 'ordering') {
+                setShowContinueModal(false);
+              }
+            }}
+            disabled={continueStep === 'ordering'}
+            className="absolute top-4 right-4 p-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          {continueStep === 'options' && (
+            <div className="p-6 md:p-8">
+              <h3 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white text-center mb-1 uppercase tracking-tight">
+                ¿Qué deseas hacer con tu diseño?
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm text-center mb-6">
+                Elige la opción que prefieras para tu creación de Inkfluencia.
+              </p>
+
+              <div className="space-y-4">
+                {/* Buy Option */}
+                <button
+                  onClick={async () => {
+                    setContinueStep('ordering');
+                    // Wait for the animated transition
+                    await new Promise(resolve => setTimeout(resolve, 2500));
+                    await handleBuyDesign();
+                    setShowContinueModal(false);
+                  }}
+                  className="w-full text-left p-4 rounded-xl border border-pink-100 dark:border-pink-900/30 bg-pink-50/30 dark:bg-pink-950/10 hover:border-pink-500 hover:bg-pink-50/50 dark:hover:bg-pink-950/20 transition-all group flex items-start gap-4"
+                >
+                  <div className="w-12 h-12 rounded-full bg-pink-100 dark:bg-pink-900/40 text-pink-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <ShoppingBag className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-gray-900 dark:text-white text-base">Comprar ahora</h4>
+                    <p className="text-xs text-gray-550 dark:text-gray-400 mt-0.5 leading-relaxed">
+                      Personaliza tu talla y gramaje de algodón peruano para recibir el pedido impreso con tecnología DTF en cualquier rincón del país.
+                    </p>
+                  </div>
+                </button>
+
+                {/* Save Option */}
+                <button
+                  onClick={() => {
+                    setContinueStep('save');
+                  }}
+                  className="w-full text-left p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/30 dark:bg-indigo-950/10 hover:border-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition-all group flex items-start gap-4"
+                >
+                  <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <Save className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-gray-900 dark:text-white text-base">Guardar en la Comunidad</h4>
+                    <p className="text-xs text-gray-550 dark:text-gray-400 mt-0.5 leading-relaxed">
+                      Comparte tu diseño en la galería pública de Inkfluencia para que otros puedan verlo, inspirarse o pedirlo usando tu plantilla.
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {continueStep === 'save' && (
+            <div className="p-6 md:p-8">
+              <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tight text-left">
+                Publicar en la Galería
+              </h3>
+              
+              <div className="bg-amber-50 dark:bg-amber-950/20 p-3.5 rounded-xl border border-amber-200 dark:border-amber-900/35 flex gap-2.5 mb-5 select-none text-left">
+                <Info className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                  Las imágenes que va a incluir en el diseño serán <strong>públicas</strong> para toda la comunidad. Evite compartir imágenes personales o sensibles. Su diseño será revisado por el admin y una vez aprobado estará disponible en la galería de la comunidad.
+                </p>
+              </div>
+
+              <div className="space-y-4 text-left">
+                <div>
+                  <label className="block text-xs font-extrabold uppercase tracking-wide text-gray-450 mb-1">Nombre del Diseño</label>
+                  <input 
+                    type="text" 
+                    value={designName}
+                    onChange={(e) => {
+                      setDesignName(e.target.value);
+                      setSaveError('');
+                    }}
+                    placeholder="Ej. Colección Vintage"
+                    className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all text-sm font-medium"
+                    disabled={isProcessing}
+                  />
+                  {saveError && (
+                    <div className="flex items-center gap-1.5 mt-2 text-red-500 text-xs bg-red-50 dark:bg-red-900/2 transition-all p-2.5 rounded-lg border border-red-100 dark:border-red-900/30">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      <p>{saveError}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => setContinueStep('options')}
+                    disabled={isProcessing}
+                    className="flex-1 py-3 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-xl text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
+                    Volver
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!designName.trim()) {
+                        setSaveError('Por favor, ingresa un nombre para tu diseño.');
+                        return;
+                      }
+                      const success = await handleSaveToGalleryRef(designName);
+                      if (success) {
+                        setShowContinueModal(false);
+                      }
+                    }}
+                    disabled={isProcessing}
+                    className="flex-1.5 py-3 bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-500 hover:to-orange-400 text-white font-bold rounded-xl text-sm transition-all shadow-md active:scale-95"
+                  >
+                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Confirmar y Publicar'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {continueStep === 'ordering' && (
+            <div className="p-8 text-center flex flex-col items-center justify-center min-h-[300px]">
+              <div className="relative w-23 h-20 mb-6 flex items-center justify-center">
+                {/* 3D spinning / glowing effect */}
+                <div className="absolute w-20 h-20 rounded-full border-4 border-pink-500/10 border-t-pink-500 animate-spin" />
+                <div className="absolute w-16 h-16 rounded-full border-4 border-orange-500/10 border-b-orange-500 animate-spin-slow" />
+                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-pink-500 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
+                  <Shirt className="w-6 h-6 animate-pulse" />
+                </div>
+              </div>
+
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">
+                PROCESANDO TU DISEÑO...
+              </h3>
+              
+              <div className="space-y-1.5 max-w-sm w-full">
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-mono tracking-wider animate-pulse mb-2">
+                  Generando render en alta definición...
+                </p>
+                <div className="w-full max-w-[200px] h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mx-auto">
+                  <div className="h-full bg-gradient-to-r from-pink-500 to-orange-500 animate-loading-bar rounded-full" />
+                </div>
+              </div>
+
+              <div className="mt-8 flex flex-col gap-1.5 items-center font-mono text-[10px] text-gray-400 select-none">
+                <span className="flex items-center gap-1.5 text-pink-500">✓ Optimizando archivos vectoriales DTF</span>
+                <span className="flex items-center gap-1.5 text-orange-500">✓ Ajustando capas 3D de alta definición</span>
+                <span className="flex items-center gap-1.5 text-yellow-500">✓ Preparando orden de algodón peruano</span>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+    );
+  };
 
   // Tutorial Modal Component
   const TutorialModal = () => (
@@ -623,60 +927,94 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         )}
       </div>
 
-      {/* Mobile Redesigned Compact Navigation Bar (Floating & Translucent) */}
+      {/* Mobile Redesigned Compact Navigation Bar & Floating Paintbrush (Morphing Container) */}
       {isMobile && !mobileActiveTab && (
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 w-[calc(100%-32px)] max-w-sm sm:max-w-md bg-white/70 dark:bg-gray-950/70 backdrop-blur-md border border-gray-200/30 dark:border-gray-900/30 px-3 py-2 flex items-center justify-between shadow-2xl rounded-2xl z-40">
-          <button 
-            onClick={() => setMobileActiveTab('product')} 
-            className="flex flex-col items-center gap-0.5 justify-center transition-colors px-2 py-0.5 text-gray-500 hover:text-pink-500 dark:hover:text-gray-200"
-          >
-              <Shirt className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-              <span className="text-[10px] font-bold uppercase tracking-tight">Prenda</span>
-          </button>
+        <div 
+          ref={isMobilePanelOpen ? mobileBarRef : mobileBrushBtnRef}
+          onClick={!isMobilePanelOpen ? () => setIsMobilePanelOpen(true) : undefined}
+          className={`fixed bottom-5 left-1/2 -translate-x-1/2 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] shadow-2xl z-50 flex items-center justify-center select-none ${
+            isMobilePanelOpen 
+            ? 'w-[calc(100%-32px)] max-w-sm sm:max-w-md h-14 rounded-2xl bg-white/70 dark:bg-gray-950/70 border border-gray-200/30 dark:border-gray-900/30 px-3 py-2 justify-between cursor-default liquid-glass' 
+            : 'w-12 h-12 rounded-full bg-gradient-to-tr from-pink-500 to-orange-500 text-white cursor-pointer hover:scale-110 active:scale-95 border border-white/20 hover:shadow-pink-400/25 shadow-lg flex'
+          }`}
+        >
+          {!isMobilePanelOpen ? (
+            <div className="w-full h-full flex items-center justify-center animate-fade-in text-white text-base">
+              <Palette className="w-5 h-5 animate-pulse" />
+            </div>
+          ) : (
+            <div className="w-full h-full flex items-center justify-between animate-scale-up gap-0.5">
+              <button 
+                onClick={(e) => { e.stopPropagation(); setMobileActiveTab('product'); }} 
+                className="flex flex-col items-center gap-0.5 justify-center transition-colors px-1 py-0.5 text-gray-500 hover:text-pink-500 dark:hover:text-gray-200 cursor-pointer"
+              >
+                  <Shirt className="w-4.5 h-4.5 text-gray-700 dark:text-gray-300" />
+                  <span className="text-[9px] font-bold uppercase tracking-tight leading-none mt-0.5">Prenda</span>
+              </button>
 
-          <button 
-            onClick={() => setMobileActiveTab('upload')} 
-            className="flex flex-col items-center gap-0.5 justify-center transition-colors px-2 py-0.5 text-gray-500 hover:text-pink-500 dark:hover:text-gray-200"
-          >
-              <Upload className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-              <span className="text-[10px] font-bold uppercase tracking-tight">Diseño</span>
-          </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setMobileActiveTab('upload'); }} 
+                className="flex flex-col items-center gap-0.5 justify-center transition-colors px-1 py-0.5 text-gray-500 hover:text-pink-500 dark:hover:text-gray-200 cursor-pointer"
+              >
+                  <Upload className="w-4.5 h-4.5 text-gray-700 dark:text-gray-300" />
+                  <span className="text-[9px] font-bold uppercase tracking-tight leading-none mt-0.5">Diseño</span>
+              </button>
 
-          <button 
-            onClick={() => setMobileActiveTab('adjust')} 
-            className="flex flex-col items-center gap-0.5 justify-center transition-colors px-2 py-0.5 text-gray-500 hover:text-pink-500 dark:hover:text-gray-200"
-          >
-              <ZoomIn className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-              <span className="text-[10px] font-bold uppercase tracking-tight">Ajustes</span>
-          </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setMobileActiveTab('adjust'); }} 
+                className="flex flex-col items-center gap-0.5 justify-center transition-colors px-1 py-0.5 text-gray-500 hover:text-pink-500 dark:hover:text-gray-200 cursor-pointer"
+              >
+                  <ZoomIn className="w-4.5 h-4.5 text-gray-700 dark:text-gray-300" />
+                  <span className="text-[9px] font-bold uppercase tracking-tight leading-none mt-0.5">Ajustes</span>
+              </button>
 
-          <button 
-            onClick={() => { if (config.layers.length > 0 && onEditImage) onEditImage(activeLayerIndex); }} 
-            disabled={config.layers.length === 0}
-            className={`flex flex-col items-center gap-0.5 justify-center transition-colors px-2 py-0.5 ${config.layers.length === 0 ? 'text-gray-300 dark:text-gray-700 cursor-not-allowed opacity-40' : 'text-gray-505 hover:text-pink-500'}`}
-          >
-              <Scissors className={`w-5 h-5 ${config.layers.length > 0 ? 'animate-pulse text-pink-500' : ''}`} />
-              <span className="text-[10px] font-bold uppercase tracking-tight">Editor</span>
-          </button>
+              <button 
+                onClick={(e) => { 
+                  e.stopPropagation();
+                  if (config.layers.length > 0 && onEditImage) {
+                    onEditImage(activeLayerIndex);
+                  }
+                }} 
+                disabled={config.layers.length === 0}
+                className={`flex flex-col items-center gap-0.5 justify-center transition-colors px-1 py-0.5 cursor-pointer ${config.layers.length === 0 ? 'text-gray-300 dark:text-gray-700 cursor-not-allowed opacity-40' : 'text-gray-505 hover:text-pink-500'}`}
+              >
+                  <Scissors className={`w-4.5 h-4.5 ${config.layers.length > 0 ? 'animate-pulse text-pink-500' : ''}`} />
+                  <span className="text-[9px] font-bold uppercase tracking-tight leading-none mt-0.5">Editor</span>
+              </button>
 
-          <button 
-            onClick={handleAction} 
-            disabled={config.layers.length === 0 || isProcessing} 
-            className={`flex items-center justify-center gap-1.5 shadow-md px-3.5 py-2 rounded-xl transition-all ${config.layers.length === 0 ? 'bg-gray-150/40 dark:bg-gray-800/40 text-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-pink-600 to-orange-500 text-white font-bold hover:scale-105 active:scale-95 text-xs'}`}
-          >
-              {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShoppingBag className="w-3.5 h-3.5" />}
-              <span className="font-bold">Comprar</span>
-          </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setIsMobilePanelOpen(false); }} 
+                className="flex flex-col items-center gap-0.5 justify-center transition-colors px-1.5 py-0.5 text-gray-400 hover:text-pink-500 dark:hover:text-white cursor-pointer"
+                title="Cerrar panel"
+              >
+                  <X className="w-4.5 h-4.5" />
+                  <span className="text-[9px] font-bold uppercase tracking-tight leading-none mt-0.5">Cerrar</span>
+              </button>
+
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setContinueStep('options');
+                  setShowContinueModal(true);
+                }} 
+                disabled={config.layers.length === 0 || isProcessing} 
+                className={`flex items-center justify-center gap-1 shadow-md px-2.5 py-1.5 rounded-xl transition-all cursor-pointer ${config.layers.length === 0 ? 'bg-gray-150/40 dark:bg-gray-800/40 text-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-pink-600 to-orange-500 text-white font-bold hover:scale-105 active:scale-95 text-[10px]'}`}
+              >
+                  <ShoppingBag className="w-3 h-3 animate-pulse" />
+                  <span className="font-bold">Continuar</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* Mobile Configuration Overlay */}
       <div className={`lg:hidden absolute transition-all duration-300 ease-in-out z-35 max-h-[70vh] ${
           isLandscape 
-          ? `right-4 top-[80px] bottom-5 w-64 ${mobileActiveTab ? 'translate-x-0 opacity-100 pointer-events-auto' : 'translate-x-12 opacity-0 pointer-events-none'}` 
-          : `bottom-5 left-4 right-4 ${mobileActiveTab ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-12 opacity-0 pointer-events-none'}`
+          ? `right-4 top-[80px] bottom-5 w-64 ${isMobilePanelOpen && mobileActiveTab ? 'translate-x-0 opacity-100 pointer-events-auto' : 'translate-x-12 opacity-0 pointer-events-none'}` 
+          : `bottom-5 left-4 right-4 ${isMobilePanelOpen && mobileActiveTab ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-12 opacity-0 pointer-events-none'}`
       }`}>
-          <div className="w-full h-full bg-white/75 dark:bg-gray-950/75 backdrop-blur-md border border-gray-200/40 dark:border-gray-800/40 rounded-xl shadow-xl p-2.5 flex flex-col gap-2.5 overflow-y-auto custom-scrollbar">
+          <div ref={mobileOverlayRef} className="w-full h-full bg-white/75 dark:bg-gray-950/75 backdrop-blur-md border border-gray-200/40 dark:border-gray-800/40 rounded-xl shadow-xl p-2.5 flex flex-col gap-2.5 overflow-y-auto custom-scrollbar">
               <div className="flex justify-between items-center border-b border-gray-100/30 dark:border-gray-800/30 pb-1.5 shrink-0">
                   <h3 className="font-extrabold text-gray-750 dark:text-gray-200 uppercase text-[10px] tracking-wider leading-none">
                       {mobileActiveTab === 'product' && 'Prenda y Color'}
@@ -1097,18 +1435,72 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
             </div>
           ) : (
              <button 
-                onClick={handleAction}
+                onClick={() => {
+                   setContinueStep('options');
+                   setShowContinueModal(true);
+                }}
                 disabled={config.layers.length === 0 || isProcessing}
                 className={`w-full bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-500 hover:to-orange-400 text-white py-3 lg:py-4 rounded-xl font-bold text-sm lg:text-lg shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 transition-all flex items-center justify-center gap-2 ${config.layers.length === 0 || isProcessing ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
               >
-                {isProcessing ? <Loader2 className="w-5 h-5 animate-spin"/> : <ShoppingBag className="w-5 h-5" />}
-                {isProcessing ? 'Procesando...' : 'COMPRAR AHORA'}
-                {!isProcessing && <span className="bg-white/20 px-2 py-0.5 rounded text-xs backdrop-blur-sm hidden sm:inline">Desde {formatCurrency(PRICES['150g'])}</span>}
+                <ShoppingBag className="w-5 h-5" />
+                <span>Continuar</span>
               </button>
           )}
         </div>
       </div>
      </div>
+     
+     {/* Liquid Glass Dynamic SVG Filter Container */}
+     <svg className="absolute w-0 h-0 pointer-events-none select-none" aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0 }}>
+       <defs>
+         <filter id="liquid-glass-refraction" x="-10%" y="-10%" width="120%" height="120%">
+           <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" result="noise" />
+           <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -9" result="liquid_ripples" />
+           <feDisplacementMap in="SourceGraphic" in2="liquid_ripples" scale="5" xChannelSelector="R" yChannelSelector="G" />
+           <feComposite in2="SourceGraphic" operator="in" />
+         </filter>
+       </defs>
+     </svg>
+
+     {/* Continue Modal */}
+     {showContinueModal && <ContinueModal />}
+
+     {/* Styles for beautiful processing state and liquid glass styling */}
+     <style>{`
+        @keyframes loadingBar {
+          0% { width: 0%; }
+          50% { width: 70%; }
+          100% { width: 100%; }
+        }
+        .animate-loading-bar {
+          animation: loadingBar 2.5s ease-in-out infinite;
+        }
+        .animate-spin-slow {
+          animation: spin 3s linear infinite;
+        }
+        
+        /* Premium Liquid Glass styling with SVG refraction compatibility and light reflection layers */
+        .liquid-glass {
+          background: rgba(255, 255, 255, 0.45) !important;
+          backdrop-filter: blur(20px) saturate(185%) url(#liquid-glass-refraction) !important;
+          -webkit-backdrop-filter: blur(20px) saturate(185%) url(#liquid-glass-refraction) !important;
+          border: 1.5px solid rgba(255, 255, 255, 0.55) !important;
+          box-shadow: 
+            0 12px 35px -4px rgba(31, 38, 135, 0.12),
+            inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.8),
+            inset 0 -1.5px 2px 0 rgba(0, 0, 0, 0.04) !important;
+        }
+        .dark .liquid-glass {
+          background: rgba(10, 10, 15, 0.55) !important;
+          backdrop-filter: blur(20px) saturate(185%) url(#liquid-glass-refraction) !important;
+          -webkit-backdrop-filter: blur(20px) saturate(185%) url(#liquid-glass-refraction) !important;
+          border: 1.5px solid rgba(255, 255, 255, 0.09) !important;
+          box-shadow: 
+            0 12px 35px -4px rgba(0, 0, 0, 0.5),
+            inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.15),
+            inset 0 -1.5px 2px 0 rgba(0, 0, 0, 0.25) !important;
+        }
+     `}</style>
     </div>
   );
 };

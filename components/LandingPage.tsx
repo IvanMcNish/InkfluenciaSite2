@@ -76,7 +76,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isVisible, onStart }) 
         .animate-marquee {
           display: flex;
           width: max-content;
-          animation: marquee-scroll 85s linear infinite;
+          animation: marquee-scroll 110s linear infinite;
           will-change: transform;
         }
         .marquee-mask {
@@ -95,10 +95,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isVisible, onStart }) 
       `}</style>
 
       {/* Hero Section */}
-      <div className="flex-1 flex flex-col items-center justify-center text-center pt-[82px] md:pt-4 pb-2 pointer-events-none overflow-hidden max-w-full">
+      <div className="flex-1 flex flex-col items-center justify-between text-center pt-[104px] md:pt-[120px] pb-24 md:pb-8 pointer-events-none overflow-hidden max-w-full">
         
         {/* Ribbon Marquee Section instead of Brand Logo */}
-        <div className="w-full max-w-6xl mx-auto mb-4 md:mb-10 relative z-10 select-none pointer-events-none marquee-mask">
+        <div className="w-full max-w-6xl mx-auto mb-4 md:mb-10 relative z-10 select-none pointer-events-none marquee-mask mt-4 md:mt-0 shrink-0">
           <div className="animate-marquee py-2 gap-3.5 md:gap-5">
             {marqueeItems.map((imgName, index) => (
               <div 
@@ -116,19 +116,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isVisible, onStart }) 
           </div>
         </div>
 
-        <div className="mt-2 md:mt-0 mb-2 md:mb-4 inline-block relative z-20 px-6">
-          <span className="py-1 px-3 rounded-full bg-cyan-100 dark:bg-cyan-900 text-cyan-700 dark:text-cyan-300 text-xs md:text-sm font-bold tracking-wide">
-            NUEVA COLECCIÓN 2026
-          </span>
+        {/* Text Container aligned perfectly above the footer and below the marquee */}
+        <div className="flex-1 flex flex-col items-center justify-center mt-auto">
+          <div className="mt-2 md:mt-0 mb-2 md:mb-4 inline-block relative z-20 px-6">
+            <span className="py-1 px-3 rounded-full bg-cyan-100 dark:bg-cyan-900 text-cyan-700 dark:text-cyan-300 text-xs md:text-sm font-bold tracking-wide">
+              NUEVA COLECCIÓN 2026
+            </span>
+          </div>
+          
+          <h1 className="text-2xl min-[360px]:text-3xl md:text-7xl font-black mb-2 md:mb-4 tracking-tight text-gray-900 dark:text-white relative z-20 px-6">
+            Viste tu <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-orange-400 to-yellow-400">Influencia</span>.
+          </h1>
+          
+          <p className="text-xs min-[360px]:text-sm md:text-lg text-gray-600 dark:text-gray-300 max-w-xl md:max-w-2xl leading-relaxed relative z-20 px-6 md:px-8">
+            Camisetas personalizadas DTF en Bucaramanga. Diseños únicos elaborados con algodón peruano, colores vibrantes y tecnología 3D. Personaliza tu estilo con Inkfluencia desde 1 unidad y resalta en todo Santander.
+          </p>
         </div>
-        
-        <h1 className="text-2xl min-[360px]:text-3xl md:text-7xl font-black mb-2 md:mb-4 tracking-tight text-gray-900 dark:text-white relative z-20 px-6">
-          Viste tu <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-orange-400 to-yellow-400">Influencia</span>.
-        </h1>
-        
-        <p className="text-xs min-[360px]:text-sm md:text-lg text-gray-600 dark:text-gray-300 max-w-xl md:max-w-2xl leading-relaxed relative z-20 px-6 md:px-8">
-          Camisetas personalizadas DTF en Bucaramanga. Diseños únicos elaborados con algodón peruano, colores vibrantes y tecnología 3D. Personaliza tu estilo con Inkfluencia desde 1 unidad y resalta en todo Santander.
-        </p>
       </div>
     </div>
   );

@@ -206,7 +206,7 @@ const App: React.FC = () => {
             onUseDesign={handleBuyGalleryDesign}
             onNavigateToCreator={() => {
               setConfig(DEFAULT_CONFIG);
-              setView("designer");
+              setView("customizer");
             }}
           />
         );

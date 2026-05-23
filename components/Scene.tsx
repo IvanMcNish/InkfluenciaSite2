@@ -752,7 +752,7 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
         </Canvas>
       </div>
       {!lockView && !hideHelpText && !interacted && (
-        <div className="absolute bottom-4 right-4 text-xs text-black/50 dark:text-white/50 pointer-events-none z-20 font-medium animate-fade-out">
+        <div className="hidden md:block absolute bottom-4 right-4 text-xs text-black/50 dark:text-white/50 pointer-events-none z-20 font-medium animate-fade-out">
             Arrastra para rotar • Rueda para zoom
         </div>
       )}

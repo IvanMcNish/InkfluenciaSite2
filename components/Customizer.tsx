@@ -75,13 +75,17 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         return;
       }
       
-      // Close the panel
-      setIsMobilePanelOpen(false);
+      // Close the specific config panel back to buttons first, or collapse entirely
+      if (mobileActiveTab) {
+        setMobileActiveTab(null);
+      } else {
+        setIsMobilePanelOpen(false);
+      }
     };
 
     document.addEventListener('pointerdown', handleOutsideClick);
     return () => document.removeEventListener('pointerdown', handleOutsideClick);
-  }, [isMobile, isMobilePanelOpen]);
+  }, [isMobile, isMobilePanelOpen, mobileActiveTab]);
 
   const [constraints, setConstraints] = useState<CustomizerConstraints>(DEFAULT_CONSTRAINTS);
   const [toteConstraints, setToteConstraints] = useState<CustomizerConstraints>(DEFAULT_TOTE_CONSTRAINTS);
@@ -519,8 +523,8 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
     if (!showContinueModal) return null;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-        <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-gray-150 dark:border-gray-800 relative">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/85 backdrop-blur-sm animate-fade-in">
+        <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden relative liquid-glass animate-elastic-pop max-h-[92vh] overflow-y-auto">
           
           <button 
             onClick={() => {
@@ -529,7 +533,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
               }
             }}
             disabled={continueStep === 'ordering'}
-            className="absolute top-4 right-4 p-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            className="absolute top-4 right-4 p-1.5 rounded-full bg-white/40 dark:bg-gray-900/40 text-gray-500 hover:text-pink-600 dark:text-gray-300 dark:hover:text-pink-500 transition-colors z-10"
           >
             <X className="w-4 h-4" />
           </button>
@@ -928,7 +932,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
       </div>
 
       {/* Mobile Redesigned Compact Navigation Bar & Floating Paintbrush (Morphing Container) */}
-      {isMobile && !mobileActiveTab && (
+      {isMobile && !mobileActiveTab && !showContinueModal && (
         <div 
           ref={isMobilePanelOpen ? mobileBarRef : mobileBrushBtnRef}
           onClick={!isMobilePanelOpen ? () => setIsMobilePanelOpen(true) : undefined}
@@ -998,10 +1002,10 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                   setShowContinueModal(true);
                 }} 
                 disabled={config.layers.length === 0 || isProcessing} 
-                className={`flex items-center justify-center gap-1 shadow-md px-2.5 py-1.5 rounded-xl transition-all cursor-pointer ${config.layers.length === 0 ? 'bg-gray-150/40 dark:bg-gray-800/40 text-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-pink-600 to-orange-500 text-white font-bold hover:scale-105 active:scale-95 text-[10px]'}`}
+                className={`flex items-center justify-center gap-1 shadow-sm px-2.5 py-1.5 rounded-xl transition-all cursor-pointer text-[9px] sm:text-[10px] font-extrabold shrink-0 whitespace-nowrap select-none ${config.layers.length === 0 ? 'bg-gray-150/20 dark:bg-gray-900/40 text-gray-400/50 cursor-not-allowed border border-gray-200/10' : 'bg-gradient-to-r from-pink-600 to-orange-500 text-white hover:scale-105 active:scale-95'}`}
               >
                   <ShoppingBag className="w-3 h-3 animate-pulse" />
-                  <span className="font-bold">Continuar</span>
+                  <span>Continuar</span>
               </button>
             </div>
           )}
@@ -1009,12 +1013,12 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
       )}
 
       {/* Mobile Configuration Overlay */}
-      <div className={`lg:hidden absolute transition-all duration-300 ease-in-out z-[90] max-h-[70vh] ${
+      <div className={`lg:hidden absolute transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-[90] max-h-[70vh] ${isLandscape ? 'origin-right' : 'origin-bottom'} ${
           isLandscape 
-          ? `right-4 top-[80px] bottom-10 w-64 ${isMobilePanelOpen && mobileActiveTab ? 'translate-x-0 opacity-100 pointer-events-auto' : 'translate-x-12 opacity-0 pointer-events-none'}` 
-          : `bottom-1 left-4 right-4 ${isMobilePanelOpen && mobileActiveTab ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-12 opacity-0 pointer-events-none'}`
+          ? `right-4 top-[80px] bottom-10 w-64 ${isMobilePanelOpen && mobileActiveTab ? 'translate-x-0 opacity-100 scale-100 pointer-events-auto' : 'translate-x-12 opacity-0 scale-95 pointer-events-none'}` 
+          : `bottom-1 left-4 right-4 ${isMobilePanelOpen && mobileActiveTab ? 'translate-y-0 opacity-100 scale-100 pointer-events-auto' : 'translate-y-12 opacity-0 scale-95 pointer-events-none'}`
       }`}>
-          <div ref={mobileOverlayRef} className="w-full h-full bg-white/75 dark:bg-gray-950/75 backdrop-blur-md border border-gray-200/40 dark:border-gray-800/40 rounded-xl shadow-xl p-2.5 flex flex-col gap-2.5 overflow-y-auto custom-scrollbar">
+          <div ref={mobileOverlayRef} className="w-full h-full rounded-2xl p-2.5 flex flex-col gap-2.5 overflow-y-auto custom-scrollbar liquid-glass transition-all duration-500">
               <div className="flex justify-between items-center border-b border-gray-100/30 dark:border-gray-800/30 pb-1.5 shrink-0">
                   <h3 className="font-extrabold text-gray-750 dark:text-gray-200 uppercase text-[10px] tracking-wider leading-none">
                       {mobileActiveTab === 'product' && 'Prenda y Color'}
@@ -1477,6 +1481,13 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         }
         .animate-spin-slow {
           animation: spin 3s linear infinite;
+        }
+        @keyframes elasticPop {
+          0% { transform: scale(0.9); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-elastic-pop {
+          animation: elasticPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
         
         /* Premium Liquid Glass styling with SVG refraction compatibility and light reflection layers */

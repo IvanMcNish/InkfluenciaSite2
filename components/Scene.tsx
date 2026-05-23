@@ -250,7 +250,7 @@ const DecalImage: React.FC<{
       }
   }
 
-  const decalDepth = customDepth !== undefined ? customDepth : (isToteBag ? 0.3 : 2);
+  const decalDepth = customDepth !== undefined ? customDepth : (isToteBag ? 0.3 : 6);
 
   // The true surface level where measurement guides should be drawn
   let guideZ = finalZ;
@@ -311,34 +311,99 @@ const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cust
   const objUrl = TSHIRT_GLB_MODELS[modelIndex] || TSHIRT_GLB_MODELS[0];
   const { scene } = useGLTF(objUrl);
   
-  const { geometry, zFront, zBack, material } = useMemo(() => {
-    let foundGeom: THREE.BufferGeometry | null = null;
-    let foundMat: THREE.Material | null = null;
+  const { meshes, zFront, zBack } = useMemo(() => {
+    scene.updateMatrixWorld(true);
+
+    const tempMeshes: { name: string; geo: THREE.BufferGeometry; material: THREE.Material | THREE.Material[] }[] = [];
+    
     scene.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh && !foundGeom) {
-        foundGeom = (child as THREE.Mesh).geometry;
-        foundMat = (child as THREE.Mesh).material as THREE.Material;
+      if ((child as THREE.Mesh).isMesh && child.visible) {
+         const m = child as THREE.Mesh;
+         
+         // Ignore helpers/cameras
+         if (m.name.toLowerCase().includes('helper') || m.name.toLowerCase().includes('camera')) {
+           return;
+         }
+
+         const geo = m.geometry.clone();
+         geo.applyMatrix4(m.matrixWorld);
+
+         // Corrective rotation for tshirt-2.glb (it is rotated 90 deg sideways on Y axis)
+         if (objUrl.toLowerCase().includes('tshirt-2') || objUrl.toLowerCase().includes('tshirt_2')) {
+           geo.rotateY(-Math.PI / 2);
+         }
+
+         tempMeshes.push({
+            name: m.name || '',
+            geo,
+            material: m.material as THREE.Material | THREE.Material[]
+         });
       }
     });
 
-    if (!foundGeom) return { geometry: null, zFront: 0, zBack: 0, material: null };
+    // Fallback if no meshes detected
+    if (tempMeshes.length === 0) {
+      scene.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const m = child as THREE.Mesh;
+          const geo = m.geometry.clone();
+          geo.applyMatrix4(m.matrixWorld);
+          tempMeshes.push({
+            name: m.name || '',
+            geo,
+            material: m.material as THREE.Material | THREE.Material[]
+          });
+        }
+      });
+    }
 
-    const geo = foundGeom.clone();
-    geo.center(); 
-    geo.computeBoundingBox();
-    const box = geo.boundingBox!;
+    // Calculate precision bounding box strictly based on valid clothes meshes
+    const tightBox = new THREE.Box3();
+    tempMeshes.forEach(({ geo }, idx) => {
+      geo.computeBoundingBox();
+      if (geo.boundingBox) {
+        if (idx === 0) {
+          tightBox.copy(geo.boundingBox);
+        } else {
+          tightBox.union(geo.boundingBox);
+        }
+      }
+    });
+
     const size = new THREE.Vector3();
-    box.getSize(size);
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const scaleFactor = 4 / maxDim;
-    geo.scale(scaleFactor, scaleFactor, scaleFactor);
+    tightBox.getSize(size);
+    const center = new THREE.Vector3();
+    tightBox.getCenter(center);
     
-    geo.computeBoundingBox();
-    const zFront = geo.boundingBox!.max.z;
-    const zBack = Math.abs(geo.boundingBox!.min.z);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const scaleFactor = maxDim > 0 ? (4 / maxDim) : 1;
 
-    return { geometry: geo, zFront, zBack, material: foundMat };
-  }, [scene]);
+    let overallZFront = -Infinity;
+    let overallZBack = Infinity;
+
+    const meshesList = tempMeshes.map(({ name, geo, material }) => {
+       geo.translate(-center.x, -center.y, -center.z);
+       geo.scale(scaleFactor, scaleFactor, scaleFactor);
+
+       geo.computeBoundingBox();
+       if (geo.boundingBox) {
+          overallZFront = Math.max(overallZFront, geo.boundingBox.max.z);
+          overallZBack = Math.min(overallZBack, geo.boundingBox.min.z);
+       }
+
+       return {
+          name,
+          geometry: geo,
+          material
+       };
+    });
+
+    return { 
+        meshes: meshesList, 
+        zFront: overallZFront === -Infinity ? 0 : overallZFront, 
+        zBack: overallZBack === Infinity ? 0 : Math.abs(overallZBack) 
+    };
+  }, [scene, objUrl]);
 
   const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
       if (!lockView || !onPositionChange || !isDraggingRef.current) return;
@@ -356,44 +421,110 @@ const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cust
       onPositionChange(x, y);
   };
 
-  if (!geometry) return null;
+  if (meshes.length === 0) return null;
 
   let materialColor = config.color === 'white' ? '#ffffff' : (customBlackColor || '#050505');
   
   return (
-    <Mesh 
-        castShadow 
-        receiveShadow 
-        geometry={geometry} 
-        dispose={null}
-        onPointerMove={handlePointerMove}
-    >
-      {material ? (
-        <primitive object={material.clone()} attach="material" color={materialColor} />
-      ) : (
-        <MeshStandardMaterial 
-          color={materialColor} 
-          roughness={0.8}
-          metalness={0.1}
-        />
-      )}
-      {config.layers.map((layer, index) => (
-        <DecalImage 
-            key={layer.id} 
-            index={index} 
-            textureUrl={layer.textureUrl} 
-            position={layer.position} 
-            side={layer.side || 'front'} 
-            zPos={(layer.side === 'back' ? zBack : zFront) + (index * 0.001)} 
-            showMeasurements={showMeasurements}
-            lockView={!!lockView}
-            isDraggingRef={isDraggingRef}
-            onLayerSelect={onLayerSelect}
-            isToteBag={false}
-            opacity={designOpacity}
-        />
+    <group>
+      {meshes.map((meshData, i) => (
+        <Mesh 
+            key={i}
+            castShadow 
+            receiveShadow 
+            geometry={meshData.geometry} 
+            dispose={null}
+            onPointerMove={handlePointerMove}
+        >
+          {(() => {
+            if (Array.isArray(meshData.material)) {
+              return meshData.material.map((mat, idx) => {
+                const cloned = mat.clone();
+                if ('color' in cloned && (cloned as any).color) {
+                  (cloned as any).color.set(materialColor);
+                }
+                return <primitive key={idx} object={cloned} attach={`material-${idx}`} />;
+              });
+            } else if (meshData.material) {
+              const cloned = meshData.material.clone();
+              if ('color' in cloned && (cloned as any).color) {
+                (cloned as any).color.set(materialColor);
+              }
+              return <primitive object={cloned} attach="material" />;
+            } else {
+              return (
+                <MeshStandardMaterial 
+                  color={materialColor} 
+                  roughness={0.8}
+                  metalness={0.1}
+                />
+              );
+            }
+          })()}
+          {config.layers.map((layer, index) => {
+            const isLayerBack = layer.side === 'back';
+            const meshNameLower = (meshData.name || '').toLowerCase();
+            
+            // Skip inner / lining / inside meshes entirely for decals, preventing inside projection
+            if (
+              meshNameLower.includes('inner') || 
+              meshNameLower.includes('inside') || 
+              meshNameLower.includes('interior') || 
+              meshNameLower.includes('lining') || 
+              meshNameLower.includes('under') ||
+              meshNameLower.includes('internal') ||
+              meshNameLower.includes('reverse') ||
+              meshNameLower.includes('double')
+            ) {
+              return null;
+            }
+            
+            // If the mesh is explicitly front but the layer is back, skip it!
+            if (isLayerBack && (meshNameLower.includes('front') || meshNameLower.includes('frente') || meshNameLower.includes('delante') || meshNameLower.includes('pecho'))) {
+              return null;
+            }
+            
+            // If the mesh is explicitly back but the layer is front, skip it!
+            if (!isLayerBack && (meshNameLower.includes('back') || meshNameLower.includes('rear') || meshNameLower.includes('espalda') || meshNameLower.includes('trasero'))) {
+              return null;
+            }
+
+            // Calculate precise safe projection bounds to avoid bleed-through
+            const T = zFront + zBack;
+            const zDepthOffset = index * 0.001;
+            
+            // Midpoint of shirt is (zFront - zBack) / 2
+            // Front half center: (3*zFront - zBack)/4 + zDepthOffset
+            // Back half center: (zFront - 3*zBack)/4 - zDepthOffset
+            const projZCenter = isLayerBack 
+              ? ((zFront - 3 * zBack) / 4) - zDepthOffset 
+              : ((3 * zFront - zBack) / 4) + zDepthOffset;
+            
+            // We set depth to half of the shirt depth plus a small safety margin of 0.15 
+            // to make sure it wraps around the chest beautifully without hitting the back mesh
+            const projDepth = (T / 2) + 0.15;
+
+            return (
+              <DecalImage 
+                  key={layer.id} 
+                  index={index} 
+                  textureUrl={layer.textureUrl} 
+                  position={layer.position} 
+                  side={layer.side || 'front'} 
+                  zPos={projZCenter} 
+                  showMeasurements={showMeasurements}
+                  lockView={!!lockView}
+                  isDraggingRef={isDraggingRef}
+                  onLayerSelect={onLayerSelect}
+                  isToteBag={false}
+                  customDepth={projDepth}
+                  opacity={designOpacity}
+              />
+            );
+          })}
+        </Mesh>
       ))}
-    </Mesh>
+    </group>
   );
 };
 

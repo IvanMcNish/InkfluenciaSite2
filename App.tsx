@@ -287,7 +287,7 @@ const App: React.FC = () => {
         navigate={setView}
       />
 
-      <main className={`${['customizer', 'designer', 'image-editor', 'landing'].includes(view) ? 'w-full' : 'container mx-auto'} flex-1 flex flex-col relative overflow-hidden`}>
+      <main className={`${['customizer', 'designer', 'image-editor', 'landing'].includes(view) ? 'w-full' : 'container mx-auto pt-[76px] lg:pt-[104px]'} flex-1 flex flex-col relative overflow-hidden`}>
         {renderContent()}
       </main>
 

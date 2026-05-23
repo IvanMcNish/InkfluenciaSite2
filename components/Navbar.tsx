@@ -12,7 +12,20 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, currentView, navigate }) => {
   return (
-    <nav className="w-full py-3 md:py-4 px-4 md:px-6 flex justify-between items-center sticky top-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 print:hidden transition-all">
+    <nav className="absolute top-0 left-0 w-full py-2.5 md:py-3 px-4 md:px-6 flex justify-between items-center z-50 print:hidden transition-all bg-transparent">
+      {/* Progressive Backdrop Blur and Translucent Background Layer */}
+      <div 
+        className="absolute inset-0 z-[-1] pointer-events-none border-b border-gray-150/10 dark:border-gray-800/10"
+        style={{
+          background: darkMode
+            ? 'linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 35%, rgba(0,0,0,0.15) 75%, transparent 100%)'
+            : 'linear-gradient(to bottom, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.55) 35%, rgba(255,255,255,0.15) 75%, transparent 100%)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 40%, rgba(0,0,0,0.3) 75%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 40%, rgba(0,0,0,0.3) 75%, transparent 100%)',
+        }}
+      />
       <div className="flex items-center gap-2 md:gap-4">
         {currentView !== 'landing' && (
           <button 

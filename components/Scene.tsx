@@ -27,6 +27,7 @@ interface SceneProps {
   onPositionChange?: (x: number, y: number) => void;
   onLayerSelect?: (index: number) => void;
   cameraOffset?: { x: number; y: number; zoom: number };
+  hideHelpText?: boolean;
 }
 
 function Loader() {
@@ -491,7 +492,7 @@ const ProductMesh: React.FC<ProductMeshProps> = (props) => {
     return props.config.productType === 'totebag' ? <ToteBagMesh {...props} /> : <TShirtMesh {...props} />;
 };
 
-export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front', lockView = false, showMeasurements = false, onPositionChange, onLayerSelect, cameraOffset }) => {
+export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSide = 'front', lockView = false, showMeasurements = false, onPositionChange, onLayerSelect, cameraOffset, hideHelpText = false }) => {
   const controlsRef = useRef<any>(null);
   const isDraggingRef = useRef(false); // Global dragging state for this scene
   const [appearance, setAppearance] = useState(DEFAULT_APPEARANCE);
@@ -528,24 +529,17 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
   const isToteBag = config.productType === 'totebag';
 
   const initialCameraPosition: [number, number, number] = useMemo(() => {
-      const isMobileOrTablet = typeof window !== 'undefined' && window.innerWidth < 1024;
-      let zBase = isToteBag ? 8.0 : 5.8;
-      if (isMobileOrTablet) {
-          zBase += isToteBag ? 5.5 : 4.5; // Zoom out even more so the model fits beautifully in the vertical space
-      }
+      // Minimum zoom corresponds to the maximum distance permitted by orbit controls (e.g. 11.0)
+      const zBase = 11.0;
       return activeLayerSide === 'back' ? [0, 0, -zBase] : [0, 0, zBase];
-  }, [activeLayerSide, isToteBag]);
+  }, [activeLayerSide]);
 
   // Handle View Locking and Camera Reset
   useEffect(() => {
     if (controlsRef.current) {
         if (lockView) {
             controlsRef.current.reset();
-            const isMobileOrTablet = typeof window !== 'undefined' && window.innerWidth < 1024;
-            let zBase = isToteBag ? 8.0 : 5.8;
-            if (isMobileOrTablet) {
-                zBase += isToteBag ? 5.5 : 4.5;
-            }
+            const zBase = 11.0; // Always start/restore to minimum zoom (distance 11.0)
             
             // Apply offset if any
             const offX = cameraOffset?.x || 0;
@@ -607,11 +601,11 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
             minPolarAngle={Math.PI / 4} 
             maxPolarAngle={Math.PI / 1.8}
             minDistance={3}
-            maxDistance={9}
+            maxDistance={11}
           />
         </Canvas>
       </div>
-      {!lockView && (
+      {!lockView && !hideHelpText && (
         <div className="absolute bottom-4 right-4 text-xs text-black/50 dark:text-white/50 pointer-events-none z-20 font-medium">
             Arrastra para rotar • Rueda para zoom
         </div>

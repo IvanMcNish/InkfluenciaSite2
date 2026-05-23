@@ -463,7 +463,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
       {/* Left Column: 3D Scene Wrapper */}
       <div className={`relative flex-1 min-h-0 transition-all duration-300 ${
           isMobile 
-          ? (isLandscape ? 'w-[55%] h-full' : 'w-full h-auto flex-grow flex-1') 
+          ? 'absolute inset-0 w-full h-full' 
           : (isPanelHidden ? 'w-full h-full' : 'w-[calc(100%-420px)] h-full lg:border-r lg:border-gray-200/50 lg:dark:border-gray-800/50')
       }`}>
         <Scene 
@@ -475,10 +475,11 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
             onPositionChange={handleDragPosition}
             onLayerSelect={setActiveLayerIndex}
             cameraOffset={cameraOffset}
+            hideHelpText={!!mobileActiveTab || (!isMobile && !isPanelHidden)}
         />
         
         {/* Scene Controls Overlay */}
-        <div className={`absolute top-4 bottom-4 left-4 flex flex-col justify-between items-start z-20 pointer-events-none`}>
+        <div className="absolute top-[92px] lg:top-[120px] left-4 lg:left-6 flex flex-col gap-2.5 z-20 pointer-events-none">
             {/* Lock/Unlock Toggle */}
             <div className="flex flex-col gap-1.5 pointer-events-auto">
                 <button
@@ -502,8 +503,8 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 )}
             </div>
 
-            {/* Bottom Left Tools */}
-            <div className="flex flex-col gap-2 pointer-events-auto items-start">
+            {/* Top Left Tools Row (Ruler & Tutorial next to image locks) */}
+            <div className="flex items-center gap-2 pointer-events-auto">
                 <button
                     onClick={() => setShowGuides(!showGuides)}
                     className={`w-9 h-9 flex items-center justify-center rounded-full shadow-lg transition-all border border-white/20 dark:border-gray-700/50 ${showGuides ? 'bg-indigo-500 text-white' : 'bg-white/80 dark:bg-black/80 text-gray-704 dark:text-white backdrop-blur-md'}`}
@@ -525,7 +526,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         {isPanelHidden && (
         <button 
           onClick={() => setIsPanelHidden(false)}
-          className="hidden lg:flex absolute top-4 right-4 items-center gap-2 px-4 py-2.5 rounded-full shadow-xl transition-all font-bold backdrop-blur-md border border-white/20 dark:border-gray-700/50 bg-white/90 dark:bg-black/90 text-gray-707 dark:text-white animate-fade-in hover:scale-105 z-30"
+          className="hidden lg:flex absolute top-[120px] right-6 items-center gap-2 px-4 py-2.5 rounded-full shadow-xl transition-all font-bold backdrop-blur-md border border-white/20 dark:border-gray-700/50 bg-white/90 dark:bg-black/90 text-gray-707 dark:text-white animate-fade-in hover:scale-105 z-30"
         >
           <LayoutTemplate className="w-4 h-4" />
           <span className="text-xs uppercase tracking-wider">Personalizar</span>
@@ -533,37 +534,37 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         )}
       </div>
 
-      {/* Mobile Redesigned Compact Navigation Bar (Portrait) */}
-      {isMobile && !isLandscape && (
-        <div className="w-full bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-900/80 px-4 py-3 flex items-center justify-between shrink-0 shadow-lg z-40 relative">
+      {/* Mobile Redesigned Compact Navigation Bar (Floating & Translucent) */}
+      {isMobile && !mobileActiveTab && (
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 w-[calc(100%-32px)] max-w-sm sm:max-w-md bg-white/70 dark:bg-gray-950/70 backdrop-blur-md border border-gray-200/30 dark:border-gray-900/30 px-3 py-2 flex items-center justify-between shadow-2xl rounded-2xl z-40">
           <button 
-            onClick={() => setMobileActiveTab(mobileActiveTab === 'product' ? null : 'product')} 
-            className={`flex flex-col items-center gap-1 justify-center transition-colors px-2 py-0.5 ${mobileActiveTab === 'product' ? 'text-pink-500 font-extrabold' : 'text-gray-500 hover:text-gray-950 dark:hover:text-gray-200'}`}
+            onClick={() => setMobileActiveTab('product')} 
+            className="flex flex-col items-center gap-0.5 justify-center transition-colors px-2 py-0.5 text-gray-500 hover:text-pink-500 dark:hover:text-gray-200"
           >
-              <Shirt className="w-5 h-5" />
+              <Shirt className="w-5 h-5 text-gray-700 dark:text-gray-300" />
               <span className="text-[10px] font-bold uppercase tracking-tight">Prenda</span>
           </button>
 
           <button 
-            onClick={() => setMobileActiveTab(mobileActiveTab === 'upload' ? null : 'upload')} 
-            className={`flex flex-col items-center gap-1 justify-center transition-colors px-2 py-0.5 ${mobileActiveTab === 'upload' ? 'text-pink-500 font-extrabold' : 'text-gray-500 hover:text-gray-950 dark:hover:text-gray-200'}`}
+            onClick={() => setMobileActiveTab('upload')} 
+            className="flex flex-col items-center gap-0.5 justify-center transition-colors px-2 py-0.5 text-gray-500 hover:text-pink-500 dark:hover:text-gray-200"
           >
-              <Upload className="w-5 h-5" />
+              <Upload className="w-5 h-5 text-gray-700 dark:text-gray-300" />
               <span className="text-[10px] font-bold uppercase tracking-tight">Diseño</span>
           </button>
 
           <button 
-            onClick={() => setMobileActiveTab(mobileActiveTab === 'adjust' ? null : 'adjust')} 
-            className={`flex flex-col items-center gap-1 justify-center transition-colors px-2 py-0.5 ${mobileActiveTab === 'adjust' ? 'text-pink-500 font-extrabold' : 'text-gray-500 hover:text-gray-950 dark:hover:text-gray-200'}`}
+            onClick={() => setMobileActiveTab('adjust')} 
+            className="flex flex-col items-center gap-0.5 justify-center transition-colors px-2 py-0.5 text-gray-500 hover:text-pink-500 dark:hover:text-gray-200"
           >
-              <ZoomIn className="w-5 h-5" />
+              <ZoomIn className="w-5 h-5 text-gray-700 dark:text-gray-300" />
               <span className="text-[10px] font-bold uppercase tracking-tight">Ajustes</span>
           </button>
 
           <button 
             onClick={() => { if (config.layers.length > 0 && onEditImage) onEditImage(activeLayerIndex); }} 
             disabled={config.layers.length === 0}
-            className={`flex flex-col items-center gap-1 justify-center transition-colors px-2 py-0.5 ${config.layers.length === 0 ? 'text-gray-300 dark:text-gray-700 cursor-not-allowed opacity-40' : 'text-gray-505 hover:text-pink-500'}`}
+            className={`flex flex-col items-center gap-0.5 justify-center transition-colors px-2 py-0.5 ${config.layers.length === 0 ? 'text-gray-300 dark:text-gray-700 cursor-not-allowed opacity-40' : 'text-gray-505 hover:text-pink-500'}`}
           >
               <Scissors className={`w-5 h-5 ${config.layers.length > 0 ? 'animate-pulse text-pink-500' : ''}`} />
               <span className="text-[10px] font-bold uppercase tracking-tight">Editor</span>
@@ -572,7 +573,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
           <button 
             onClick={handleAction} 
             disabled={config.layers.length === 0 || isProcessing} 
-            className={`flex items-center justify-center gap-1.5 shadow-md px-3.5 py-2 rounded-xl transition-all ${config.layers.length === 0 ? 'bg-gray-150 dark:bg-gray-800 text-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-pink-600 to-orange-500 text-white font-bold hover:scale-105 active:scale-95 text-xs'}`}
+            className={`flex items-center justify-center gap-1.5 shadow-md px-3.5 py-2 rounded-xl transition-all ${config.layers.length === 0 ? 'bg-gray-150/40 dark:bg-gray-800/40 text-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-pink-600 to-orange-500 text-white font-bold hover:scale-105 active:scale-95 text-xs'}`}
           >
               {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShoppingBag className="w-3.5 h-3.5" />}
               <span className="font-bold">Comprar</span>
@@ -580,140 +581,74 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         </div>
       )}
 
-      {/* Mobile Landscape Customizer Section (Right Column) */}
-      {isMobile && isLandscape && (
-        <div className="w-[45%] h-full border-l border-gray-200/50 dark:border-gray-850 bg-white/95 dark:bg-gray-950/95 p-3 flex flex-col justify-between shrink-0 overflow-y-auto">
-          <div className="border-b border-gray-100 dark:border-gray-850 pb-1.5 mb-1 shrink-0">
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-gray-800 dark:text-gray-200">Personalizar prenda</h2>
-          </div>
-
-          <div className="flex flex-col gap-1.5 flex-grow justify-center py-1">
-            <button 
-              onClick={() => setMobileActiveTab(mobileActiveTab === 'product' ? null : 'product')}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all text-left ${mobileActiveTab === 'product' ? 'bg-pink-500/10 border-pink-500 text-pink-500' : 'border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900'}`}
-            >
-              <Shirt className="w-4.5 h-4.5 flex-shrink-0" />
-              <div className="flex flex-col items-start leading-none">
-                <span className="text-[11px] font-bold uppercase tracking-wide">Prenda</span>
-                <span className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">Tipo y colores</span>
-              </div>
-            </button>
-
-            <button 
-              onClick={() => setMobileActiveTab(mobileActiveTab === 'upload' ? null : 'upload')}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all text-left ${mobileActiveTab === 'upload' ? 'bg-pink-500/10 border-pink-500 text-pink-500' : 'border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900'}`}
-            >
-              <Upload className="w-4.5 h-4.5 flex-shrink-0" />
-              <div className="flex flex-col items-start leading-none">
-                <span className="text-[11px] font-bold uppercase tracking-wide">Diseño</span>
-                <span className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">Tus imágenes</span>
-              </div>
-            </button>
-
-            <button 
-              onClick={() => setMobileActiveTab(mobileActiveTab === 'adjust' ? null : 'adjust')}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all text-left ${mobileActiveTab === 'adjust' ? 'bg-pink-500/10 border-pink-500 text-pink-500' : 'border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900'}`}
-            >
-              <ZoomIn className="w-4.5 h-4.5 flex-shrink-0" />
-              <div className="flex flex-col items-start leading-none">
-                <span className="text-[11px] font-bold uppercase tracking-wide">Ajustes</span>
-                <span className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">Tamaño y capa</span>
-              </div>
-            </button>
-
-            <button 
-              onClick={() => { if (config.layers.length > 0 && onEditImage) onEditImage(activeLayerIndex); }}
-              disabled={config.layers.length === 0}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all text-left ${config.layers.length === 0 ? 'opacity-40 cursor-not-allowed border-gray-100 dark:border-gray-900/50 text-gray-300 dark:text-gray-700' : 'border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900'}`}
-            >
-              <Scissors className={`w-4.5 h-4.5 flex-shrink-0 ${config.layers.length > 0 ? 'animate-pulse text-pink-500' : ''}`} />
-              <div className="flex flex-col items-start leading-none">
-                <span className="text-[11px] font-bold uppercase tracking-wide">Editor de imagen</span>
-                <span className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">Filtros y recorte</span>
-              </div>
-            </button>
-          </div>
-
-          {/* Buy Button */}
-          <button 
-            onClick={handleAction} 
-            disabled={config.layers.length === 0 || isProcessing}
-            className={`w-full py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 font-bold shadow-lg transition-transform mt-1.5 shrink-0 ${config.layers.length === 0 ? 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-pink-600 to-orange-500 text-white hover:scale-[1.02] active:scale-[0.98]'}`}
-          >
-            {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShoppingBag className="w-3.5 h-3.5" />}
-            <span className="text-xs uppercase tracking-wider font-extrabold text-white">Comprar Prenda</span>
-          </button>
-        </div>
-      )}
-
       {/* Mobile Configuration Overlay */}
-      <div className={`lg:hidden fixed transition-all duration-300 ease-in-out z-35 ${
+      <div className={`lg:hidden absolute transition-all duration-300 ease-in-out z-35 max-h-[70vh] ${
           isLandscape 
-          ? `right-[46%] top-1/2 -translate-y-1/2 w-72 h-auto max-h-[85vh] ${mobileActiveTab ? 'translate-x-0 opacity-100 pointer-events-auto' : 'translate-x-12 opacity-0 pointer-events-none'}` 
-          : `bottom-[76px] left-2 right-2 ${mobileActiveTab ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-12 opacity-0 pointer-events-none'}`
+          ? `right-4 top-[80px] bottom-5 w-64 ${mobileActiveTab ? 'translate-x-0 opacity-100 pointer-events-auto' : 'translate-x-12 opacity-0 pointer-events-none'}` 
+          : `bottom-5 left-4 right-4 ${mobileActiveTab ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-12 opacity-0 pointer-events-none'}`
       }`}>
-          <div className="w-full h-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-800/50 rounded-2xl shadow-2xl p-3 flex flex-col gap-3 overflow-y-auto custom-scrollbar">
-              <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-1.5 shrink-0">
-                  <h3 className="font-extrabold text-gray-750 dark:text-gray-200 uppercase text-[10px] tracking-wider">
+          <div className="w-full h-full bg-white/75 dark:bg-gray-950/75 backdrop-blur-md border border-gray-200/40 dark:border-gray-800/40 rounded-xl shadow-xl p-2.5 flex flex-col gap-2.5 overflow-y-auto custom-scrollbar">
+              <div className="flex justify-between items-center border-b border-gray-100/30 dark:border-gray-800/30 pb-1.5 shrink-0">
+                  <h3 className="font-extrabold text-gray-750 dark:text-gray-200 uppercase text-[10px] tracking-wider leading-none">
                       {mobileActiveTab === 'product' && 'Prenda y Color'}
-                      {mobileActiveTab === 'upload' && 'Tus Diseños (Imágenes)'}
-                      {mobileActiveTab === 'adjust' && 'Tamaño y Transparencia'}
+                      {mobileActiveTab === 'upload' && 'Tus Diseños'}
+                      {mobileActiveTab === 'adjust' && 'Ajustes'}
                   </h3>
-                  <button onClick={() => setMobileActiveTab(null)} className="p-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 active:scale-95 transition-transform"><X className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => setMobileActiveTab(null)} className="p-0.5 rounded-full text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200 active:scale-95 transition-transform"><X className="w-4 h-4" /></button>
               </div>
 
               {mobileActiveTab === 'product' && (
-                  <div className="flex flex-col gap-3 shrink-0">
-                      <div className="flex p-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg shrink-0">
-                          <button onClick={() => setConfig(prev => ({ ...prev, productType: 'tshirt', color: prev.color === 'bone' ? 'white' : prev.color }))} className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${(!config.productType || config.productType === 'tshirt') ? 'bg-white dark:bg-gray-700 shadow text-pink-500' : 'text-gray-400'}`}>👕 Camiseta</button>
-                          <button onClick={() => setConfig(prev => ({ ...prev, productType: 'totebag', color: 'bone' }))} className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${config.productType === 'totebag' ? 'bg-white dark:bg-gray-700 shadow text-pink-500' : 'text-gray-400'}`}>👜 Tote Bag</button>
+                  <div className="flex flex-col gap-2.5 shrink-0">
+                      <div className="flex p-0.5 bg-gray-100/60 dark:bg-gray-800/60 rounded-lg shrink-0">
+                          <button onClick={() => setConfig(prev => ({ ...prev, productType: 'tshirt', color: prev.color === 'bone' ? 'white' : prev.color }))} className={`flex-1 py-1 text-[11px] font-bold rounded-md transition-all ${(!config.productType || config.productType === 'tshirt') ? 'bg-white/90 dark:bg-gray-700/90 shadow text-pink-500' : 'text-gray-400'}`}>👕 Camiseta</button>
+                          <button onClick={() => setConfig(prev => ({ ...prev, productType: 'totebag', color: 'bone' }))} className={`flex-1 py-1 text-[11px] font-bold rounded-md transition-all ${config.productType === 'totebag' ? 'bg-white/90 dark:bg-gray-700/90 shadow text-pink-500' : 'text-gray-400'}`}>👜 Tote Bag</button>
                       </div>
                       <div className="flex justify-center gap-3 py-1 shrink-0">
                           {config.productType === 'totebag' ? (
-                               <div className="text-[10px] text-gray-500 font-bold px-3 py-1.5 bg-gray-100 dark:bg-gray-805 rounded-full">Color: Natural</div>
+                               <div className="text-[10px] text-gray-500 font-bold px-3 py-1.5 bg-gray-100/40 dark:bg-gray-800/40 rounded-full">Color: Natural</div>
                           ) : (
-                              <>
-                              <button onClick={() => handleColorChange('white')} className={`w-8 h-8 rounded-full border-2 transition-all ${config.color === 'white' ? 'border-pink-500 ring-2 ring-pink-200' : 'border-gray-200'} bg-white shadow-sm`} />
-                              <button onClick={() => handleColorChange('black')} className={`w-8 h-8 rounded-full border-2 transition-all ${config.color === 'black' ? 'border-pink-500 ring-2 ring-pink-200' : 'border-gray-600'} bg-black shadow-sm`} />
-                              </>
+                               <>
+                               <button onClick={() => handleColorChange('white')} className={`w-7 h-7 rounded-full border-2 transition-all ${config.color === 'white' ? 'border-pink-500 ring-2 ring-pink-200' : 'border-gray-200'} bg-white shadow-sm`} />
+                               <button onClick={() => handleColorChange('black')} className={`w-7 h-7 rounded-full border-2 transition-all ${config.color === 'black' ? 'border-pink-500 ring-2 ring-pink-200' : 'border-gray-600'} bg-black shadow-sm`} />
+                               </>
                           )}
                       </div>
                   </div>
               )}
 
               {mobileActiveTab === 'upload' && (
-                  <div className="flex flex-col gap-2.5 shrink-0">
+                  <div className="flex flex-col gap-2 shrink-0">
                       <div className="grid grid-cols-2 gap-2 shrink-0">
-                          <div className={`border rounded-xl p-1.5 relative transition-all cursor-pointer ${activeLayerIndex === 0 && config.layers[0] ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/10' : 'border-gray-200 dark:border-gray-700'}`} onClick={() => config.layers[0] && setActiveLayerIndex(0)}>
+                          <div className={`border rounded-xl p-1 relative transition-all cursor-pointer ${activeLayerIndex === 0 && config.layers[0] ? 'border-pink-500 bg-pink-50/40 dark:bg-pink-900/10' : 'border-gray-200/50 dark:border-gray-700/50'}`} onClick={() => config.layers[0] && setActiveLayerIndex(0)}>
                               <input type="file" ref={fileInputRef1} onChange={(e) => { handleFileUpload(e, 0); setMobileActiveTab('adjust'); }} accept="image/*" className="hidden" />
                               {config.layers[0] ? (
-                                  <div className="flex flex-col items-center gap-1">
-                                      <img src={config.layers[0].textureUrl} className="w-8 h-8 object-contain bg-white rounded border border-gray-105" alt="Capa 1" />
-                                      <button onClick={(e) => { e.stopPropagation(); removeLayer(0); }} className="text-red-500 text-[9px] bg-red-50 dark:bg-red-950/20 px-1.5 py-0.5 rounded-full font-bold">Borrar</button>
+                                  <div className="flex flex-col items-center gap-1 py-0.5">
+                                      <img src={config.layers[0].textureUrl} className="w-7 h-7 object-contain bg-white rounded border border-gray-100" alt="Capa 1" />
+                                      <button onClick={(e) => { e.stopPropagation(); removeLayer(0); }} className="text-red-500 text-[8px] bg-red-50/60 dark:bg-red-950/20 px-1 py-0.5 rounded-full font-bold">Borrar</button>
                                   </div>
                               ) : (
-                                  <button onClick={() => fileInputRef1.current?.click()} className="w-full py-1.5 flex flex-col items-center text-gray-400 hover:text-pink-500"><Upload className="w-4 h-4" /><span className="text-[9px] font-bold mt-0.5">Subir #1</span></button>
+                                  <button onClick={() => fileInputRef1.current?.click()} className="w-full py-1 flex flex-col items-center text-gray-400 hover:text-pink-500"><Upload className="w-3.5 h-3.5" /><span className="text-[8px] font-bold mt-0.5">Subir #1</span></button>
                               )}
                           </div>
-                          <div className={`border rounded-xl p-1.5 relative transition-all cursor-pointer ${activeLayerIndex === 1 && config.layers[1] ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/10' : 'border-gray-200 dark:border-gray-700'}`} onClick={() => config.layers[1] && setActiveLayerIndex(1)}>
+                          <div className={`border rounded-xl p-1 relative transition-all cursor-pointer ${activeLayerIndex === 1 && config.layers[1] ? 'border-pink-500 bg-pink-50/40 dark:bg-pink-900/10' : 'border-gray-200/50 dark:border-gray-700/50'}`} onClick={() => config.layers[1] && setActiveLayerIndex(1)}>
                               <input type="file" ref={fileInputRef2} onChange={(e) => { handleFileUpload(e, 1); setMobileActiveTab('adjust'); }} accept="image/*" className="hidden" />
                               {config.layers[1] ? (
-                                  <div className="flex flex-col items-center gap-1">
-                                      <img src={config.layers[1].textureUrl} className="w-8 h-8 object-contain bg-white rounded border border-gray-105" alt="Capa 2" />
-                                      <button onClick={(e) => { e.stopPropagation(); removeLayer(1); }} className="text-red-500 text-[9px] bg-red-50 dark:bg-red-950/20 px-1.5 py-0.5 rounded-full font-bold">Borrar</button>
+                                  <div className="flex flex-col items-center gap-1 py-0.5">
+                                      <img src={config.layers[1].textureUrl} className="w-7 h-7 object-contain bg-white rounded border border-gray-100" alt="Capa 2" />
+                                      <button onClick={(e) => { e.stopPropagation(); removeLayer(1); }} className="text-red-500 text-[8px] bg-red-50/60 dark:bg-red-950/20 px-1 py-0.5 rounded-full font-bold">Borrar</button>
                                   </div>
                               ) : (
-                                  <button onClick={() => fileInputRef2.current?.click()} disabled={!config.layers[0]} className={`w-full py-1.5 flex flex-col items-center ${!config.layers[0] ? 'text-gray-300 opacity-50' : 'text-gray-400 hover:text-pink-500'}`}><Upload className="w-4 h-4" /><span className="text-[9px] font-bold mt-0.5">Subir #2</span></button>
+                                  <button onClick={() => fileInputRef2.current?.click()} disabled={!config.layers[0]} className={`w-full py-1 flex flex-col items-center ${!config.layers[0] ? 'text-gray-300 opacity-50' : 'text-gray-400 hover:text-pink-500'}`}><Upload className="w-3.5 h-3.5" /><span className="text-[8px] font-bold mt-0.5">Subir #2</span></button>
                               )}
                           </div>
                       </div>
                       {activeLayer && (
-                           <button onClick={toggleLayerSide} className="w-full flex items-center justify-between px-3 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-250 dark:border-gray-700 rounded-lg hover:border-pink-500 transition-colors shrink-0">
-                              <span className="text-[10px] font-extrabold uppercase text-gray-650 dark:text-gray-300">Ubicación:</span>
-                              <div className="flex items-center gap-1.5">
-                                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${activeLayer.side === 'front' || !activeLayer.side ? 'bg-pink-500 text-white' : 'text-gray-400'}`}>Frente</span>
+                           <button onClick={toggleLayerSide} className="w-full flex items-center justify-between px-2.5 py-1.5 bg-gray-50/30 dark:bg-gray-800/30 border border-gray-250/20 dark:border-gray-700/20 rounded-lg hover:border-pink-500 transition-colors shrink-0">
+                              <span className="text-[9px] font-extrabold uppercase text-gray-500 dark:text-gray-400">Ubicación:</span>
+                              <div className="flex items-center gap-1">
+                                  <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${activeLayer.side === 'front' || !activeLayer.side ? 'bg-pink-500 text-white' : 'text-gray-400'}`}>Frente</span>
                                   <RefreshCw className="w-2.5 h-2.5 text-gray-400" />
-                                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${activeLayer.side === 'back' ? 'bg-pink-500 text-white' : 'text-gray-400'}`}>Espalda</span>
+                                  <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${activeLayer.side === 'back' ? 'bg-pink-500 text-white' : 'text-gray-400'}`}>Espalda</span>
                               </div>
                            </button>
                       )}
@@ -721,24 +656,25 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
               )}
 
               {mobileActiveTab === 'adjust' && activeLayer && (
-                  <div className="flex flex-col gap-3 shrink-0">
-                      <div className="space-y-1">
-                          <span className="text-[9px] font-bold text-gray-500 uppercase">TAMAÑO</span>
-                          <div className="flex items-center gap-2.5 bg-gray-50 dark:bg-gray-800 p-1.5 rounded-lg">
+                  <div className="flex flex-col gap-2 shrink-0">
+                      <div className="space-y-0.5">
+                          <span className="text-[8px] font-extrabold text-gray-400 uppercase">TAMAÑO</span>
+                          <div className="flex items-center gap-2 bg-gray-50/40 dark:bg-gray-800/40 p-1 rounded-lg">
                               <ZoomOut className="w-3.5 h-3.5 text-gray-500" />
-                              <input type="range" min={activeConstraints.scale.min} max={activeConstraints.scale.max} step="0.01" value={activeLayer.position.scale} onChange={(e) => setScaleValue(parseFloat(e.target.value))} className="w-full accent-pink-500 h-1 bg-gray-200 dark:bg-gray-750 rounded appearance-none" />
+                              <input type="range" min={activeConstraints.scale.min} max={activeConstraints.scale.max} step="0.01" value={activeLayer.position.scale} onChange={(e) => setScaleValue(parseFloat(e.target.value))} className="w-full accent-pink-500 h-1 bg-gray-200 dark:bg-gray-750 rounded appearance-none cursor-pointer" />
                               <ZoomIn className="w-3.5 h-3.5 text-gray-500" />
                           </div>
                       </div>
-                      <div className="space-y-1">
-                          <span className="text-[9px] font-bold text-gray-500 uppercase">TRANSPARENCIA ({Math.round((config.designOpacity ?? appearance.designOpacity) * 100)}%)</span>
-                          <div className="flex items-center gap-2.5 bg-gray-50 dark:bg-gray-800 p-1.5 rounded-lg">
-                              <span className="text-[9px] font-bold text-gray-500 uppercase flex items-center gap-1"><Hand className="w-3.5 h-3.5" /></span>
-                              <input type="range" min="0.1" max="1" step="0.01" value={config.designOpacity ?? appearance.designOpacity} onChange={(e) => setConfig(prev => ({ ...prev, designOpacity: parseFloat(e.target.value) }))} className="w-full accent-pink-500 h-1 bg-gray-200 dark:bg-gray-750 rounded appearance-none" />
+                      <div className="space-y-0.5">
+                          <span className="text-[8px] font-extrabold text-gray-400 uppercase">TRANSPARENCIA ({Math.round((config.designOpacity ?? appearance.designOpacity) * 100)}%)</span>
+                          <div className="flex items-center gap-2 bg-gray-50/40 dark:bg-gray-800/40 p-1 rounded-lg">
+                              <span className="text-[8px] font-extrabold text-gray-400 uppercase flex items-center gap-1"><Hand className="w-3.5 h-3.5" /></span>
+                              <input type="range" min="0.1" max="1" step="0.01" value={config.designOpacity ?? appearance.designOpacity} onChange={(e) => setConfig(prev => ({ ...prev, designOpacity: parseFloat(e.target.value) }))} className="w-full accent-pink-500 h-1 bg-gray-200 dark:bg-gray-750 rounded appearance-none cursor-pointer" />
                           </div>
                       </div>
                   </div>
               )}
+
               {mobileActiveTab === 'adjust' && !activeLayer && (
                   <p className="text-[10px] font-bold text-yellow-650 dark:text-yellow-400 text-center py-2 shrink-0">⚠️ Selecciona una imagen primero en "Diseño".</p>
               )}
@@ -746,7 +682,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
       </div>
 
       {/* Desktop Side Settings Panel */}
-      <div className={`hidden lg:flex w-[420px] h-full flex-col p-4 bg-white/95 dark:bg-gray-950/95 border-l border-gray-200/50 dark:border-gray-800/50 transition-all duration-300 shrink-0 ${isPanelHidden ? 'mr-[-420px] opacity-0 overflow-hidden pointer-events-none' : 'mr-0 opacity-100'}`}>
+      <div className={`hidden lg:flex w-[420px] pt-[104px] pb-[40px] h-full flex-col p-4 bg-white/95 dark:bg-gray-950/95 border-l border-gray-200/50 dark:border-gray-800/50 transition-all duration-300 shrink-0 ${isPanelHidden ? 'mr-[-420px] opacity-0 overflow-hidden pointer-events-none' : 'mr-0 opacity-100'}`}>
           <div className="flex flex-col gap-4 overflow-y-auto flex-1 custom-scrollbar pr-1">
              <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-2.5 shrink-0">
                  <div className="flex items-center gap-2">

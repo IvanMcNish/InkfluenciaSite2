@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt, Ruler, Lock, Unlock, MousePointer2, HelpCircle, X, Hand, Video, Scissors } from 'lucide-react';
+import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt, Ruler, Lock, Unlock, MousePointer2, HelpCircle, X, Hand, Video, Scissors, Columns } from 'lucide-react';
 import { TShirtConfig, CustomizerConstraints } from '../types';
 import { Scene } from './Scene';
 import { PRICES, formatCurrency, TSHIRT_GLB_MODELS } from '../constants';
@@ -39,6 +39,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const [mobileActiveTab, setMobileActiveTab] = useState<'product' | 'upload' | 'adjust' | null>(null);
   const [isLandscape, setIsLandscape] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [viewMode, setViewMode] = useState<'single' | 'double'>('single');
 
   useEffect(() => {
     const handleResize = () => {
@@ -466,51 +467,139 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
           ? 'absolute inset-0 w-full h-full' 
           : (isPanelHidden ? 'w-full h-full' : 'w-[calc(100%-420px)] h-full lg:border-r lg:border-gray-200/50 lg:dark:border-gray-800/50')
       }`}>
-        <Scene 
-            config={config} 
-            captureRef={captureRef} 
-            activeLayerSide={activeLayer?.side || 'front'} 
-            showMeasurements={showGuides}
-            lockView={isViewLocked}
-            onPositionChange={handleDragPosition}
-            onLayerSelect={setActiveLayerIndex}
-            cameraOffset={cameraOffset}
-            hideHelpText={!!mobileActiveTab || (!isMobile && !isPanelHidden)}
-        />
+        {viewMode === 'single' ? (
+          <Scene 
+              config={config} 
+              captureRef={captureRef} 
+              activeLayerSide={activeLayer?.side || 'front'} 
+              showMeasurements={showGuides}
+              lockView={isViewLocked}
+              onPositionChange={handleDragPosition}
+              onLayerSelect={setActiveLayerIndex}
+              cameraOffset={cameraOffset}
+              hideHelpText={!!mobileActiveTab || (!isMobile && !isPanelHidden)}
+          />
+        ) : (
+          <div className={`w-full h-full flex gap-4 p-4 overflow-auto bg-gray-100/50 dark:bg-zinc-950/20 ${isLandscape ? 'flex-row' : 'flex-col md:flex-row'}`}>
+            <div className="flex-1 min-h-[300px] h-full relative overflow-hidden bg-white/25 dark:bg-black/25 rounded-2xl border border-gray-200/50 dark:border-gray-800/50 shadow-lg flex flex-col">
+              <div className="absolute bottom-3 left-3 bg-pink-500 text-white text-[10px] uppercase tracking-wider font-extrabold px-3 py-1 rounded-full backdrop-blur-md z-30 shadow-md">
+                Frente
+              </div>
+              <div className="flex-1 h-0">
+                <Scene 
+                    config={config} 
+                    captureRef={captureRef} 
+                    activeLayerSide="front" 
+                    showMeasurements={showGuides}
+                    lockView={isViewLocked}
+                    onPositionChange={handleDragPosition}
+                    onLayerSelect={setActiveLayerIndex}
+                    cameraOffset={cameraOffset}
+                    hideHelpText={true}
+                />
+              </div>
+            </div>
+            <div className="flex-1 min-h-[300px] h-full relative overflow-hidden bg-white/25 dark:bg-black/25 rounded-2xl border border-gray-200/50 dark:border-gray-800/50 shadow-lg flex flex-col">
+              <div className="absolute top-3 md:bottom-3 left-3 md:top-auto bg-indigo-500 text-white text-[10px] uppercase tracking-wider font-extrabold px-3 py-1 rounded-full backdrop-blur-md z-30 shadow-md">
+                Espalda
+              </div>
+              <div className="flex-1 h-0">
+                <Scene 
+                    config={config} 
+                    activeLayerSide="back" 
+                    showMeasurements={showGuides}
+                    lockView={isViewLocked}
+                    onPositionChange={handleDragPosition}
+                    onLayerSelect={setActiveLayerIndex}
+                    cameraOffset={cameraOffset}
+                    hideHelpText={true}
+                />
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Scene Controls Overlay */}
         <div className="absolute top-[92px] lg:top-[120px] left-4 lg:left-6 flex flex-col gap-2.5 z-20 pointer-events-none">
             {/* Lock/Unlock Toggle */}
-            <div className="flex flex-col gap-1.5 pointer-events-auto">
-                <button
-                    onClick={() => setIsViewLocked(!isViewLocked)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-lg transition-all font-bold backdrop-blur-md border border-white/20 dark:border-gray-700/50 text-xs ${
-                        isViewLocked 
-                        ? 'bg-pink-500 text-white hover:bg-pink-600' 
-                        : 'bg-white/80 dark:bg-black/80 text-gray-705 dark:text-white hover:bg-white dark:hover:bg-black'
-                    }`}
-                >
-                    {isViewLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-                    <span className="text-[10px] uppercase tracking-wide">
-                        {isViewLocked ? 'Mover Imagen' : 'Rotar Cámara'}
-                    </span>
-                </button>
-                
-                {isViewLocked && (
-                    <div className="bg-black/60 border border-white/10 text-white text-[9px] px-2 py-0.5 rounded-md backdrop-blur-md animate-fade-in flex items-center gap-1 w-max shadow-lg">
-                        <Hand className="w-2.5 h-2.5" /> Arrastra sobre la camiseta
-                    </div>
-                )}
-            </div>
+            {viewMode === 'single' ? (
+                <div className="flex flex-col gap-1.5 pointer-events-auto">
+                    <button
+                        onClick={() => setIsViewLocked(!isViewLocked)}
+                        className={`flex items-center justify-center transition-all font-bold backdrop-blur-md border border-white/20 dark:border-gray-700/50 shadow-lg ${
+                            isMobile 
+                            ? 'w-9 h-9 rounded-full bg-white/80 dark:bg-black/80 text-gray-706 dark:text-white hover:bg-white dark:hover:bg-black' 
+                            : `flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs ${
+                                isViewLocked 
+                                ? 'bg-pink-500 text-white hover:bg-pink-600' 
+                                : 'bg-white/80 dark:bg-black/80 text-gray-705 dark:text-white hover:bg-white dark:hover:bg-black'
+                              }`
+                        }`}
+                        title={isViewLocked ? 'Mover Imagen' : 'Rotar Cámara'}
+                    >
+                        {isViewLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                        {!isMobile && (
+                            <span className="text-[10px] uppercase tracking-wide">
+                                {isViewLocked ? 'Mover Imagen' : 'Rotar Cámara'}
+                            </span>
+                        )}
+                    </button>
+                    
+                    {isViewLocked && !isMobile && (
+                        <div className="bg-black/60 border border-white/10 text-white text-[9px] px-2 py-0.5 rounded-md backdrop-blur-md animate-fade-in flex items-center gap-1 w-max shadow-lg">
+                            <Hand className="w-2.5 h-2.5" /> Arrastra sobre la camiseta
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <div className="flex flex-col gap-1.5 pointer-events-auto opacity-80">
+                    <button
+                        disabled
+                        className={`flex items-center justify-center transition-all font-bold backdrop-blur-md border border-pink-500/30 dark:border-pink-500/35 shadow-lg cursor-not-allowed ${
+                            isMobile 
+                            ? 'w-9 h-9 rounded-full bg-pink-500 hover:bg-pink-500 text-white' 
+                            : 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs bg-pink-500 text-white'
+                        }`}
+                        title="Modo Mover Imagen obligatorio en Vista Dual"
+                    >
+                        <Lock className="w-3.5 h-3.5" />
+                        {!isMobile && (
+                            <span className="text-[10px] uppercase tracking-wide">
+                                Mover Imagen (Vista Dual)
+                            </span>
+                        )}
+                    </button>
+                    {!isMobile && (
+                        <div className="bg-black/60 border border-white/10 text-white text-[9px] px-2 py-0.5 rounded-md backdrop-blur-md animate-fade-in flex items-center gap-1 w-max shadow-lg">
+                            <Hand className="w-2.5 h-2.5" /> Arrastra sobre la camiseta
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Top Left Tools Row (Ruler & Tutorial next to image locks) */}
-            <div className="flex items-center gap-2 pointer-events-auto">
+            <div className={`flex pointer-events-auto ${isMobile ? 'flex-col gap-2.5' : 'flex-row items-center gap-2'}`}>
                 <button
                     onClick={() => setShowGuides(!showGuides)}
                     className={`w-9 h-9 flex items-center justify-center rounded-full shadow-lg transition-all border border-white/20 dark:border-gray-700/50 ${showGuides ? 'bg-indigo-500 text-white' : 'bg-white/80 dark:bg-black/80 text-gray-704 dark:text-white backdrop-blur-md'}`}
                     title="Regla / Medidas"
                 >
                     <Ruler className="w-4 h-4 flex-shrink-0" />
+                </button>
+                <button
+                    onClick={() => {
+                        if (viewMode === 'single') {
+                            setViewMode('double');
+                            setIsViewLocked(true); // Desactiva rotación, se activa mover imagen
+                        } else {
+                            setViewMode('single');
+                            setIsViewLocked(false); // Vuelve a estar disponible rotación de cámara
+                        }
+                    }}
+                    className={`w-9 h-9 flex items-center justify-center rounded-full shadow-lg transition-all border border-white/20 dark:border-gray-700/50 ${viewMode === 'double' ? 'bg-gradient-to-r from-pink-500 to-indigo-500 text-white animate-pulse' : 'bg-white/80 dark:bg-black/80 text-gray-704 dark:text-white backdrop-blur-md'}`}
+                    title={viewMode === 'single' ? "Vista Dos Caras" : "Vista Individual"}
+                >
+                    <Columns className="w-4 h-4 flex-shrink-0" />
                 </button>
                 <button
                     onClick={() => setShowTutorial(true)}

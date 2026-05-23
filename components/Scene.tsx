@@ -743,8 +743,8 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
             enableZoom={!lockView} // Disable zoom when locked to avoid messing up precision
             minPolarAngle={Math.PI / 4} 
             maxPolarAngle={Math.PI / 1.8}
-            minDistance={3}
-            maxDistance={11}
+            minDistance={1.2}
+            maxDistance={22}
             onChange={() => {
               if (!interacted) setInteracted(true);
             }}

@@ -3,7 +3,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt, Ruler, Lock, Unlock, MousePointer2, HelpCircle, X, Hand, Video, Scissors } from 'lucide-react';
 import { TShirtConfig, CustomizerConstraints } from '../types';
 import { Scene } from './Scene';
-import { PRICES, formatCurrency } from '../constants';
+import { PRICES, formatCurrency, TSHIRT_GLB_MODELS } from '../constants';
 import { getAppearanceSettings, getCustomizerConstraints, getToteCustomizerConstraints, DEFAULT_CONSTRAINTS, DEFAULT_TOTE_CONSTRAINTS, getUploadLimits, DEFAULT_UPLOAD_LIMITS, DEFAULT_APPEARANCE } from '../services/settingsService';
 import { updateGalleryItem } from '../services/galleryService';
 import { ImageEditor } from './ImageEditor';
@@ -600,7 +600,12 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
               {mobileActiveTab === 'product' && (
                   <div className="flex flex-col gap-2.5 shrink-0">
                       <div className="flex p-0.5 bg-gray-100/60 dark:bg-gray-800/60 rounded-lg shrink-0">
-                          <button onClick={() => setConfig(prev => ({ ...prev, productType: 'tshirt', color: prev.color === 'bone' ? 'white' : prev.color }))} className={`flex-1 py-1 text-[11px] font-bold rounded-md transition-all ${(!config.productType || config.productType === 'tshirt') ? 'bg-white/90 dark:bg-gray-700/90 shadow text-pink-500' : 'text-gray-400'}`}>👕 Camiseta</button>
+                          <button onClick={() => setConfig(prev => {
+                              if (!prev.productType || prev.productType === 'tshirt') {
+                                return { ...prev, productType: 'tshirt', tshirtModelIndex: ((prev.tshirtModelIndex || 0) + 1) % TSHIRT_GLB_MODELS.length };
+                              }
+                              return { ...prev, productType: 'tshirt', tshirtModelIndex: 0, color: prev.color === 'bone' ? 'white' : prev.color };
+                          })} className={`flex-1 py-1 text-[11px] font-bold rounded-md transition-all ${(!config.productType || config.productType === 'tshirt') ? 'bg-white/90 dark:bg-gray-700/90 shadow text-pink-500' : 'text-gray-400'}`}>👕 Camiseta {(config.tshirtModelIndex || 0) > 0 ? (config.tshirtModelIndex || 0) + 1 : ''}</button>
                           <button onClick={() => setConfig(prev => ({ ...prev, productType: 'totebag', color: 'bone' }))} className={`flex-1 py-1 text-[11px] font-bold rounded-md transition-all ${config.productType === 'totebag' ? 'bg-white/90 dark:bg-gray-700/90 shadow text-pink-500' : 'text-gray-400'}`}>👜 Tote Bag</button>
                       </div>
                       <div className="flex justify-center gap-3 py-1 shrink-0">
@@ -721,10 +726,15 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
 
             <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-lg shrink-0 mt-2 mb-1">
             <button
-                onClick={() => setConfig(prev => ({ ...prev, productType: 'tshirt', color: prev.color === 'bone' ? 'white' : prev.color }))}
+                onClick={() => setConfig(prev => {
+                    if (!prev.productType || prev.productType === 'tshirt') {
+                        return { ...prev, productType: 'tshirt', tshirtModelIndex: ((prev.tshirtModelIndex || 0) + 1) % TSHIRT_GLB_MODELS.length };
+                    }
+                    return { ...prev, productType: 'tshirt', tshirtModelIndex: 0, color: prev.color === 'bone' ? 'white' : prev.color };
+                })}
                 className={`flex-1 py-1.5 text-xs lg:text-sm font-bold rounded-md transition-all ${(!config.productType || config.productType === 'tshirt') ? 'bg-white dark:bg-gray-700 shadow text-pink-500' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
             >
-                👕 Camiseta
+                👕 Camiseta {(config.tshirtModelIndex || 0) > 0 ? (config.tshirtModelIndex || 0) + 1 : ''}
             </button>
             <button
                 onClick={() => setConfig(prev => ({ ...prev, productType: 'totebag', color: 'bone' }))}

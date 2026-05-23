@@ -1,9 +1,14 @@
 
-export const TSHIRT_OBJ_URL = "/T-shirt-male-obj.obj";
+export const TSHIRT_GLB_MODELS = [
+  "/tshirt.glb",
+  // "/tshirt2.glb", // Puedes agregar más modelos .glb a la carpeta public y añadirlos aquí
+];
+
 export const TOTEBAG_OBJ_URL = "/tote2.obj";
 
 export const DEFAULT_CONFIG = {
   productType: 'tshirt' as const,
+  tshirtModelIndex: 0,
   color: 'white' as const,
   layers: [], // Empty array for layers
   snapshotUrl: null

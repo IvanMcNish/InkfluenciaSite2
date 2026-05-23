@@ -1,10 +1,10 @@
 
 import React, { useMemo, Suspense, useEffect, useRef, useState } from 'react';
 import { Canvas, useLoader, useThree, ThreeEvent } from '@react-three/fiber';
-import { OrbitControls, Decal, Environment, Center, useTexture, Html, useProgress, Text, Line } from '@react-three/drei';
+import { OrbitControls, Decal, Environment, Center, useTexture, Html, useProgress, Text, Line, useGLTF } from '@react-three/drei';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import * as THREE from 'three';
-import { TSHIRT_OBJ_URL, TOTEBAG_OBJ_URL } from '../constants';
+import { TSHIRT_GLB_MODELS, TOTEBAG_OBJ_URL } from '../constants';
 import { TShirtConfig as ConfigType, Position } from '../types';
 import { getAppearanceSettings, DEFAULT_APPEARANCE } from '../services/settingsService';
 
@@ -307,18 +307,21 @@ interface ProductMeshProps {
 }
 
 const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, customBlackColor, lockView, onPositionChange, onLayerSelect, activeLayerSide, isDraggingRef, designOpacity = 1 }) => {
-  const objUrl = TSHIRT_OBJ_URL;
-  const obj = useLoader(OBJLoader, objUrl);
+  const modelIndex = config.tshirtModelIndex || 0;
+  const objUrl = TSHIRT_GLB_MODELS[modelIndex] || TSHIRT_GLB_MODELS[0];
+  const { scene } = useGLTF(objUrl);
   
-  const { geometry, zFront, zBack } = useMemo(() => {
+  const { geometry, zFront, zBack, material } = useMemo(() => {
     let foundGeom: THREE.BufferGeometry | null = null;
-    obj.traverse((child) => {
+    let foundMat: THREE.Material | null = null;
+    scene.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && !foundGeom) {
         foundGeom = (child as THREE.Mesh).geometry;
+        foundMat = (child as THREE.Mesh).material as THREE.Material;
       }
     });
 
-    if (!foundGeom) return { geometry: null, zFront: 0, zBack: 0 };
+    if (!foundGeom) return { geometry: null, zFront: 0, zBack: 0, material: null };
 
     const geo = foundGeom.clone();
     geo.center(); 
@@ -334,8 +337,8 @@ const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cust
     const zFront = geo.boundingBox!.max.z;
     const zBack = Math.abs(geo.boundingBox!.min.z);
 
-    return { geometry: geo, zFront, zBack };
-  }, [obj]);
+    return { geometry: geo, zFront, zBack, material: foundMat };
+  }, [scene]);
 
   const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
       if (!lockView || !onPositionChange || !isDraggingRef.current) return;
@@ -365,11 +368,15 @@ const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cust
         dispose={null}
         onPointerMove={handlePointerMove}
     >
-      <MeshStandardMaterial 
-        color={materialColor} 
-        roughness={0.8}
-        metalness={0.1}
-      />
+      {material ? (
+        <primitive object={material.clone()} attach="material" color={materialColor} />
+      ) : (
+        <MeshStandardMaterial 
+          color={materialColor} 
+          roughness={0.8}
+          metalness={0.1}
+        />
+      )}
       {config.layers.map((layer, index) => (
         <DecalImage 
             key={layer.id} 
@@ -487,6 +494,10 @@ const ToteBagMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cus
     </Mesh>
   );
 };
+
+TSHIRT_GLB_MODELS.forEach(url => {
+  useGLTF.preload(url);
+});
 
 const ProductMesh: React.FC<ProductMeshProps> = (props) => {
     return props.config.productType === 'totebag' ? <ToteBagMesh {...props} /> : <TShirtMesh {...props} />;

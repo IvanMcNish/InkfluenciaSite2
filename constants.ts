@@ -1,5 +1,5 @@
 
-export const TSHIRT_OBJ_URL = "https://raw.githubusercontent.com/IvanMcNish/camiseta/refs/heads/main/T-shirt-male-obj.obj";
+export const TSHIRT_OBJ_URL = "/T-shirt-male-obj.obj";
 export const TOTEBAG_OBJ_URL = "/tote2.obj";
 
 export const DEFAULT_CONFIG = {

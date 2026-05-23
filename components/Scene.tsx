@@ -497,6 +497,7 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
   const isDraggingRef = useRef(false); // Global dragging state for this scene
   const [appearance, setAppearance] = useState(DEFAULT_APPEARANCE);
   const [blackColor, setBlackColor] = useState(DEFAULT_APPEARANCE.blackShirtHex);
+  const [interacted, setInteracted] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -602,11 +603,14 @@ export const Scene: React.FC<SceneProps> = ({ config, captureRef, activeLayerSid
             maxPolarAngle={Math.PI / 1.8}
             minDistance={3}
             maxDistance={11}
+            onChange={() => {
+              if (!interacted) setInteracted(true);
+            }}
           />
         </Canvas>
       </div>
-      {!lockView && !hideHelpText && (
-        <div className="absolute bottom-4 right-4 text-xs text-black/50 dark:text-white/50 pointer-events-none z-20 font-medium">
+      {!lockView && !hideHelpText && !interacted && (
+        <div className="absolute bottom-4 right-4 text-xs text-black/50 dark:text-white/50 pointer-events-none z-20 font-medium animate-fade-out">
             Arrastra para rotar • Rueda para zoom
         </div>
       )}

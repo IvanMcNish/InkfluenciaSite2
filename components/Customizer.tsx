@@ -682,7 +682,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
       </div>
 
       {/* Desktop Side Settings Panel */}
-      <div className={`hidden lg:flex w-[420px] pt-[104px] pb-[40px] h-full flex-col p-4 bg-white/95 dark:bg-gray-950/95 border-l border-gray-200/50 dark:border-gray-800/50 transition-all duration-300 shrink-0 ${isPanelHidden ? 'mr-[-420px] opacity-0 overflow-hidden pointer-events-none' : 'mr-0 opacity-100'}`}>
+      <div className={`hidden lg:flex w-[420px] h-[calc(100vh-104px-40px)] mt-[104px] mb-[40px] flex-col p-4 bg-white/95 dark:bg-gray-950/95 border-l border-gray-200/50 dark:border-gray-800/50 transition-all duration-300 shrink-0 ${isPanelHidden ? 'mr-[-420px] opacity-0 overflow-hidden pointer-events-none' : 'mr-0 opacity-100'}`}>
           <div className="flex flex-col gap-4 overflow-y-auto flex-1 custom-scrollbar pr-1">
              <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-2.5 shrink-0">
                  <div className="flex items-center gap-2">

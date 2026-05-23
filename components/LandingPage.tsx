@@ -21,7 +21,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isVisible, onStart }) 
 
   return (
     <div 
-      className={`absolute inset-0 z-50 flex flex-col bg-white/60 dark:bg-black/60 backdrop-blur-md cursor-pointer overflow-hidden transition-all duration-1000 ease-in-out ${!isVisible ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}
+      className={`absolute inset-0 z-40 flex flex-col bg-white/60 dark:bg-black/60 backdrop-blur-md cursor-pointer overflow-hidden transition-all duration-1000 ease-in-out ${!isVisible ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}
       onClick={onStart}
     >
       {/* Hero Section */}

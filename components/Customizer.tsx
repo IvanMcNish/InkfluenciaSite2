@@ -932,7 +932,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         <div 
           ref={isMobilePanelOpen ? mobileBarRef : mobileBrushBtnRef}
           onClick={!isMobilePanelOpen ? () => setIsMobilePanelOpen(true) : undefined}
-          className={`fixed bottom-5 left-1/2 -translate-x-1/2 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] shadow-2xl z-50 flex items-center justify-center select-none ${
+          className={`fixed bottom-10 left-1/2 -translate-x-1/2 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] shadow-2xl z-[100] flex items-center justify-center select-none ${
             isMobilePanelOpen 
             ? 'w-[calc(100%-32px)] max-w-sm sm:max-w-md h-14 rounded-2xl bg-white/70 dark:bg-gray-950/70 border border-gray-200/30 dark:border-gray-900/30 px-3 py-2 justify-between cursor-default liquid-glass' 
             : 'w-12 h-12 rounded-full bg-gradient-to-tr from-pink-500 to-orange-500 text-white cursor-pointer hover:scale-110 active:scale-95 border border-white/20 hover:shadow-pink-400/25 shadow-lg flex'
@@ -1009,10 +1009,10 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
       )}
 
       {/* Mobile Configuration Overlay */}
-      <div className={`lg:hidden absolute transition-all duration-300 ease-in-out z-35 max-h-[70vh] ${
+      <div className={`lg:hidden absolute transition-all duration-300 ease-in-out z-[90] max-h-[70vh] ${
           isLandscape 
-          ? `right-4 top-[80px] bottom-5 w-64 ${isMobilePanelOpen && mobileActiveTab ? 'translate-x-0 opacity-100 pointer-events-auto' : 'translate-x-12 opacity-0 pointer-events-none'}` 
-          : `bottom-5 left-4 right-4 ${isMobilePanelOpen && mobileActiveTab ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-12 opacity-0 pointer-events-none'}`
+          ? `right-4 top-[80px] bottom-10 w-64 ${isMobilePanelOpen && mobileActiveTab ? 'translate-x-0 opacity-100 pointer-events-auto' : 'translate-x-12 opacity-0 pointer-events-none'}` 
+          : `bottom-1 left-4 right-4 ${isMobilePanelOpen && mobileActiveTab ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-12 opacity-0 pointer-events-none'}`
       }`}>
           <div ref={mobileOverlayRef} className="w-full h-full bg-white/75 dark:bg-gray-950/75 backdrop-blur-md border border-gray-200/40 dark:border-gray-800/40 rounded-xl shadow-xl p-2.5 flex flex-col gap-2.5 overflow-y-auto custom-scrollbar">
               <div className="flex justify-between items-center border-b border-gray-100/30 dark:border-gray-800/30 pb-1.5 shrink-0">

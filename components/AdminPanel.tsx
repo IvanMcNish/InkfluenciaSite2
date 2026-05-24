@@ -71,7 +71,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </h1>
             <div className="mt-2 text-left">
               <p className="text-gray-800 dark:text-gray-200 text-xs md:text-sm leading-relaxed px-5 py-2.5 rounded-2xl bg-white/40 dark:bg-black/30 border border-white/20 dark:border-white/5 backdrop-blur-md shadow-lg inline-block">
-                {activeTab === "settings" ? "Control de Pedidos y Base de Datos de Clientes" : tabs.find(t => t.id === activeTab)?.label}
+                Control de Pedidos y Base de Datos de Clientes
               </p>
             </div>
           </div>

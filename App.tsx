@@ -44,6 +44,7 @@ const App: React.FC = () => {
   // Settings and other states
   const [editImageLayerIndex, setEditImageLayerIndex] = useState<number | null>(null);
   const [previousView, setPreviousView] = useState<ViewState | null>(null);
+  const [checkoutSource, setCheckoutSource] = useState<"customizer" | "gallery">("customizer");
 
   // Auth State
   const [session, setSession] = useState<Session | null>(null);
@@ -132,6 +133,7 @@ const App: React.FC = () => {
 
   const handleBuyGalleryDesign = (designConfig: TShirtConfig) => {
     setConfig(designConfig);
+    setCheckoutSource("gallery");
     setView("checkout");
   };
 
@@ -146,7 +148,10 @@ const App: React.FC = () => {
                 key="customizer-view"
                 config={config}
                 setConfig={setConfig}
-                onCheckout={() => setView("checkout")}
+                onCheckout={() => {
+                  setCheckoutSource("customizer");
+                  setView("checkout");
+                }}
                 onSaveToGallery={handleSaveDesign}
                 onNavigateToGallery={() => {
                   setConfig(DEFAULT_CONFIG);
@@ -235,7 +240,7 @@ const App: React.FC = () => {
           <OrderForm
             config={config}
             onSuccess={handleOrderSuccess}
-            onBack={() => setView("customizer")}
+            onBack={() => setView(checkoutSource)}
           />
         );
       case "success":
@@ -275,7 +280,10 @@ const App: React.FC = () => {
                 key="customizer-view-default"
                 config={config}
                 setConfig={setConfig}
-                onCheckout={() => setView("checkout")}
+                onCheckout={() => {
+                  setCheckoutSource("customizer");
+                  setView("checkout");
+                }}
                 onSaveToGallery={handleSaveDesign}
                 onNavigateToGallery={() => {
                   setConfig(DEFAULT_CONFIG);

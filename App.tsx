@@ -32,7 +32,18 @@ const App: React.FC = () => {
   });
 
   // App Flow State
-  const [view, setView] = useState<ViewState>("landing");
+  const [view, setView] = useState<ViewState>(() => {
+    if (typeof window !== "undefined") {
+      const path = window.location.pathname;
+      if (path === "/admin") return "admin";
+      if (path === "/gallery") return "gallery";
+      if (path === "/community") return "community";
+      if (path === "/track-order") return "track-order";
+      if (path === "/contact") return "contact";
+      if (path === "/customizer") return "customizer";
+    }
+    return "landing";
+  });
   const [galleryInitialTab, setGalleryInitialTab] = useState<'community' | 'catalog'>('community');
 
   // Customization State
@@ -45,6 +56,41 @@ const App: React.FC = () => {
   const [editImageLayerIndex, setEditImageLayerIndex] = useState<number | null>(null);
   const [previousView, setPreviousView] = useState<ViewState | null>(null);
   const [checkoutSource, setCheckoutSource] = useState<"customizer" | "gallery">("customizer");
+
+  // Router sync helper
+  const navigateTo = (newView: ViewState) => {
+    setView(newView);
+    if (typeof window !== "undefined") {
+      let path = "/";
+      if (newView === "admin") path = "/admin";
+      else if (newView === "gallery") path = "/gallery";
+      else if (newView === "community") path = "/community";
+      else if (newView === "track-order") path = "/track-order";
+      else if (newView === "contact") path = "/contact";
+      else if (newView === "customizer") path = "/customizer";
+      window.history.pushState({ view: newView }, "", path);
+    }
+  };
+
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && event.state.view) {
+        setView(event.state.view);
+      } else if (typeof window !== "undefined") {
+        const path = window.location.pathname;
+        if (path === "/admin") setView("admin");
+        else if (path === "/gallery") setView("gallery");
+        else if (path === "/community") setView("community");
+        else if (path === "/track-order") setView("track-order");
+        else if (path === "/contact") setView("contact");
+        else if (path === "/customizer") setView("customizer");
+        else setView("landing");
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState as any);
+    return () => window.removeEventListener("popstate", handlePopState as any);
+  }, []);
 
   // Auth State
   const [session, setSession] = useState<Session | null>(null);
@@ -321,7 +367,7 @@ const App: React.FC = () => {
         darkMode={darkMode}
         toggleDarkMode={() => setDarkMode(!darkMode)}
         currentView={view}
-        navigate={setView}
+        navigate={navigateTo}
       />
 
       <main className={`${['customizer', 'designer', 'image-editor', 'landing'].includes(view) ? 'w-full' : 'container mx-auto pt-[76px] lg:pt-[104px]'} flex-1 flex flex-col relative overflow-hidden`}>

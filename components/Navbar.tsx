@@ -131,18 +131,6 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode, curren
         <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 mx-1"></div>
 
         <button
-          onClick={() => navigate('admin')}
-          className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
-            currentView === 'admin' 
-              ? 'bg-gray-100 dark:bg-gray-800 text-pink-600' 
-              : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500'
-          }`}
-          title="Panel Admin"
-        >
-          <LayoutDashboard className="w-5 h-5" />
-        </button>
-
-        <button
           onClick={toggleDarkMode}
           className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           aria-label="Toggle Theme"

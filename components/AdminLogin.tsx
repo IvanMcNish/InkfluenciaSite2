@@ -32,11 +32,11 @@ export const AdminLogin: React.FC = () => {
 
   return (
     <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden animate-fade-in">
+      <div className="w-full max-w-md rounded-2xl overflow-hidden animate-fade-in liquid-glass-accent">
         
         {/* Header */}
-        <div className="bg-gray-50 dark:bg-gray-800/50 p-8 text-center border-b border-gray-100 dark:border-gray-800">
-          <div className="w-20 h-20 mx-auto bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-sm mb-4 p-2">
+        <div className="p-8 text-center border-b border-gray-200/40 dark:border-white/10">
+          <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center shadow-sm mb-4 p-2 liquid-glass border border-white/20">
              <img 
                 src={`${APP_LOGO_URL}?t=${new Date().getHours()}`} 
                 alt="Logo" 
@@ -53,13 +53,13 @@ export const AdminLogin: React.FC = () => {
             <div>
               <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Correo Electrónico</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all"
+                  className="w-full pl-12 pr-4 py-3 rounded-xl outline-none transition-all glass-input text-gray-900 dark:text-white"
                   placeholder="admin@inkfluencia.com"
                 />
               </div>
@@ -68,13 +68,13 @@ export const AdminLogin: React.FC = () => {
             <div>
               <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Contraseña</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all"
+                  className="w-full pl-12 pr-4 py-3 rounded-xl outline-none transition-all glass-input text-gray-900 dark:text-white"
                   placeholder="••••••••"
                 />
               </div>

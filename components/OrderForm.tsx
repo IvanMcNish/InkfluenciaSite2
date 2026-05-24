@@ -167,7 +167,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
   const displayImage = config.snapshotUrl || (config.layers.length > 0 ? config.layers[0].textureUrl : null);
 
   return (
-    <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 md:p-8 bg-white dark:bg-gray-900 rounded-2xl shadow-xl lg:shadow-2xl mt-4 border border-gray-100 dark:border-gray-800 flex flex-col lg:flex-row gap-8 overflow-hidden">
+    <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 md:p-8 rounded-2xl shadow-xl lg:shadow-2xl mt-4 flex flex-col lg:flex-row gap-8 overflow-hidden liquid-glass-accent">
       
       {/* Left Column: Summary */}
       <div className="lg:w-1/3 space-y-6">
@@ -176,12 +176,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
           Resumen
         </h2>
 
-        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 lg:sticky lg:top-24">
+        <div className="p-4 rounded-xl lg:sticky lg:top-24 liquid-glass border border-white/25 dark:border-white/5">
             {displayImage ? (
             <img 
                 src={displayImage} 
                 alt="Preview" 
-                className="w-full aspect-square object-contain rounded-lg bg-white shadow-sm border border-gray-200 mb-4"
+                className="w-full aspect-square object-contain rounded-lg bg-white/40 dark:bg-black/30 shadow-sm border border-white/20 mb-4"
             />
             ) : (
             <div className={`w-full aspect-square rounded-lg border border-gray-200 mb-4 ${config.productType === 'totebag' ? 'bg-[#f3eddf]' : (config.color === 'white' ? 'bg-white' : 'bg-black')}`} />
@@ -224,8 +224,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                 )}
             </div>
 
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4 space-y-2">
-                <div className="flex justify-between text-xl font-black text-pink-600 pt-2 border-t border-dashed border-gray-200 dark:border-gray-700 mt-2">
+            <div className="border-t border-gray-200/40 dark:border-white/10 pt-4 mt-4 space-y-2">
+                <div className="flex justify-between text-xl font-black text-pink-600 pt-2 border-t border-dashed border-gray-200/40 dark:border-white/10 mt-2">
                     <span>Total</span>
                     <span>{formatCurrency(total)}</span>
                 </div>
@@ -374,7 +374,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                         value={formData.size}
                         onChange={handleChange}
                         disabled={availableSizes.length === 0}
-                        className={`w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all ${availableSizes.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`w-full p-3 rounded-xl outline-none transition-all glass-input text-gray-950 dark:text-gray-100 ${availableSizes.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         {availableSizes.length > 0 ? (
                             availableSizes.map(s => <option key={s} value={s}>{s}</option>)
@@ -396,11 +396,11 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-1">Nombre Completo</label>
-                        <input required name="name" type="text" value={formData.name} onChange={handleChange} className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none" placeholder="Juan Pérez" />
+                        <input required name="name" type="text" value={formData.name} onChange={handleChange} className="w-full p-3 rounded-xl outline-none glass-input text-gray-950 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="Juan Pérez" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">Email</label>
-                        <input required name="email" type="email" value={formData.email} onChange={handleChange} className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none" placeholder="juan@ejemplo.com" />
+                        <input required name="email" type="email" value={formData.email} onChange={handleChange} className="w-full p-3 rounded-xl outline-none glass-input text-gray-955 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="juan@ejemplo.com" />
                     </div>
                 </div>
 
@@ -408,18 +408,18 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                     <div>
                         <label className="block text-sm font-medium mb-1">Teléfono</label>
                         <div className="relative">
-                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input required name="phone" type="tel" value={formData.phone} onChange={handleChange} className="w-full pl-10 pr-3 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none" placeholder="300 123 4567" />
+                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+                            <input required name="phone" type="tel" value={formData.phone} onChange={handleChange} className="w-full pl-12 pr-3 py-3 rounded-xl outline-none glass-input text-gray-955 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="300 123 4567" />
                         </div>
                     </div>
                 </div>
 
                 {/* Structured Address Fields */}
-                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
+                <div className="p-4 rounded-xl border border-white/10 dark:border-white/5 bg-white/20 dark:bg-black/10 space-y-3 shadow-inner">
                     <label className="block text-sm font-bold flex items-center gap-2 text-gray-700 dark:text-gray-200"><MapPin className="w-4 h-4 text-pink-500" /> Dirección de Entrega</label>
                     <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full">
                         <div className="flex items-center gap-2 w-full md:w-1/2">
-                            <select name="type" value={addressParts.type} onChange={handleAddressChange} className="w-[40%] md:w-1/3 p-2.5 md:p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm">
+                            <select name="type" value={addressParts.type} onChange={handleAddressChange} className="w-[40%] md:w-1/3 p-2 rounded-lg outline-none text-sm glass-input text-gray-955 dark:text-gray-100">
                                 <option value="Calle">Calle</option>
                                 <option value="Carrera">Carrera</option>
                                 <option value="Diagonal">Diag.</option>
@@ -427,18 +427,18 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
                                 <option value="Avenida">Av.</option>
                                 <option value="Circular">Circ.</option>
                             </select>
-                            <input type="text" name="n1" value={addressParts.n1} onChange={handleAddressChange} placeholder="12A" className="flex-1 min-w-0 p-2.5 md:p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm text-center font-bold" />
+                            <input type="text" name="n1" value={addressParts.n1} onChange={handleAddressChange} placeholder="12A" className="flex-1 min-w-0 p-2 rounded-lg outline-none text-sm text-center font-bold glass-input text-gray-955 dark:text-gray-100" />
                         </div>
                         <div className="flex items-center gap-2 w-full md:w-1/2 mt-1 md:mt-0">
                             <span className="font-bold text-gray-400 text-sm shrink-0 pl-1 md:pl-0 w-4 text-center">#</span>
-                            <input type="text" name="n2" value={addressParts.n2} onChange={handleAddressChange} placeholder="45" className="flex-1 min-w-0 p-2.5 md:p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm text-center font-bold" />
+                            <input type="text" name="n2" value={addressParts.n2} onChange={handleAddressChange} placeholder="45" className="flex-1 min-w-0 p-2 rounded-lg outline-none text-sm text-center font-bold glass-input text-gray-955 dark:text-gray-100" />
                             <span className="font-bold text-gray-400 text-sm shrink-0 w-4 text-center">-</span>
-                            <input type="text" name="n3" value={addressParts.n3} onChange={handleAddressChange} placeholder="67" className="flex-1 min-w-0 p-2.5 md:p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm text-center font-bold" />
+                            <input type="text" name="n3" value={addressParts.n3} onChange={handleAddressChange} placeholder="67" className="flex-1 min-w-0 p-2 rounded-lg outline-none text-sm text-center font-bold glass-input text-gray-955 dark:text-gray-100" />
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                         <input type="text" name="city" value={addressParts.city} onChange={handleAddressChange} placeholder="Ciudad (ej. Bucaramanga, Santander)" className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" />
-                         <input type="text" name="details" value={addressParts.details} onChange={handleAddressChange} placeholder="Torre 1 Apto 502, Barrio Centro..." className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-1 focus:ring-pink-500 outline-none text-sm" />
+                         <input type="text" name="city" value={addressParts.city} onChange={handleAddressChange} placeholder="Ciudad (ej. Bucaramanga, Santander)" className="w-full p-2.5 rounded-lg outline-none text-sm glass-input text-gray-955 dark:text-gray-100" />
+                         <input type="text" name="details" value={addressParts.details} onChange={handleAddressChange} placeholder="Torre 1 Apto 502, Barrio Centro..." className="w-full p-2.5 rounded-lg outline-none text-sm glass-input text-gray-955 dark:text-gray-100" />
                     </div>
                     <div className="text-xs text-gray-500 pt-1 px-1">Dirección Generada: <span className="font-medium text-pink-600 dark:text-pink-400">{formData.address || '...'}</span></div>
                 </div>

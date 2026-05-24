@@ -43,7 +43,7 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
             {/* Added max-h-[90vh] and overflow-y-auto for mobile scrolling. md:overflow-hidden keeps desktop clean. */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-4xl w-full flex flex-col md:flex-row relative border border-gray-200 dark:border-gray-800 max-h-[90vh] overflow-y-auto md:overflow-hidden">
+            <div className="liquid-glass-accent text-zinc-950 dark:text-white rounded-3xl shadow-2xl max-w-4xl w-full flex flex-col md:flex-row relative max-h-[90vh] overflow-y-auto md:overflow-hidden">
                 <button 
                     onClick={() => setSelectedItem(null)}
                     className="absolute top-4 right-4 z-50 p-2 bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 rounded-full transition-colors backdrop-blur-md"
@@ -52,61 +52,61 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
                 </button>
 
                 {/* Left: 3D Scene - Height increased for Mobile (45vh instead of fixed px) */}
-                <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-800 relative shrink-0 h-[45vh] md:h-auto md:min-h-[400px] overflow-hidden border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800">
+                <div className="w-full md:w-1/2 bg-gray-100/50 dark:bg-zinc-950/40 relative shrink-0 h-[45vh] md:h-auto md:min-h-[400px] overflow-hidden border-b md:border-b-0 md:border-r border-gray-200/50 dark:border-gray-800/50">
                      <Scene 
                         config={selectedItem.config} 
                         activeLayerSide={initialSide || 'front'}
                         showMeasurements={true}
                      />
                     <div className="absolute top-4 left-4 z-10 bg-white/80 dark:bg-black/80 backdrop-blur px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm flex items-center gap-1">
-                        <Rotate3d className="w-3 h-3" />
+                        <Rotate3d className="w-3 h-3 text-purple-600 dark:text-purple-400" />
                         Vista 3D Interactiva
                     </div>
                 </div>
 
                 {/* Right: Details - Added md:overflow-y-auto for desktop scrolling within the pane */}
                 <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col md:overflow-y-auto">
-                    <div className="mb-6">
+                    <div className="mb-6 text-left">
                         <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-2 leading-tight">
                             {selectedItem.name}
                         </h2>
-                        <div className="flex items-center gap-2 text-gray-500 text-sm">
-                            <Calendar className="w-4 h-4" />
+                        <div className="flex items-center gap-2 text-zinc-700 dark:text-gray-300 text-sm">
+                            <Calendar className="w-4 h-4 text-purple-500" />
                             Creado el {new Date(selectedItem.createdAt).toLocaleDateString()}
                         </div>
                     </div>
 
-                    <div className="space-y-4 mb-8 flex-1">
-                        <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800">
-                            <h3 className="text-sm font-bold uppercase text-gray-400 mb-3">Especificaciones del Diseño</h3>
+                    <div className="space-y-4 mb-8 flex-1 text-left">
+                        <div className="p-4 bg-white/20 dark:bg-black/20 rounded-xl border border-white/20 dark:border-white/5 shadow-inner">
+                            <h3 className="text-xs font-black uppercase text-pink-600 dark:text-pink-400 mb-3 tracking-wider">Especificaciones del Diseño</h3>
                             <div className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-gray-600 dark:text-gray-300">Color Base</span>
-                                    <span className="font-medium capitalize px-2 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-sm">
+                                <div className="flex justify-between items-center bg-white/10 dark:bg-black/10 p-1.5 rounded-lg">
+                                    <span className="text-gray-900 dark:text-gray-200 text-sm font-medium">Color Base</span>
+                                    <span className="font-bold capitalize px-2.5 py-0.5 bg-pink-500 text-white rounded text-xs">
                                         {selectedItem.config.color === 'white' ? 'Blanca' : 'Negra'}
                                     </span>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-gray-600 dark:text-gray-300">Capas de imagen</span>
-                                    <span className="font-medium">{selectedItem.config.layers.length}</span>
+                                <div className="flex justify-between items-center bg-white/10 dark:bg-black/10 p-1.5 rounded-lg">
+                                    <span className="text-gray-900 dark:text-gray-200 text-sm font-medium">Capas de imagen</span>
+                                    <span className="font-bold text-gray-900 dark:text-white text-sm">{selectedItem.config.layers.length}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl text-sm text-blue-800 dark:text-blue-300">
-                            <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
-                            <p>Este diseño está listo para producción. Al comprarlo, podrás seleccionar tu talla y el tipo de tela en el siguiente paso.</p>
+                        <div className="flex items-start gap-3 p-4 bg-blue-50/60 dark:bg-blue-950/30 rounded-xl text-sm text-blue-900 dark:text-blue-200 border border-blue-200/55 dark:border-blue-900/30 backdrop-blur-sm">
+                            <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5 text-blue-600 dark:text-blue-400" />
+                            <p className="leading-relaxed">Este diseño está listo para producción. Al comprarlo, podrás seleccionar tu talla y el tipo de tela en el siguiente paso.</p>
                         </div>
                     </div>
 
-                    <div className="pt-6 border-t border-gray-100 dark:border-gray-800 mt-auto bg-white dark:bg-gray-900 sticky bottom-0 md:static">
+                    <div className="pt-6 border-t border-white/25 dark:border-white/15 mt-auto bg-transparent sticky bottom-0 md:static">
                         <div className="flex justify-between items-end mb-4">
-                            <span className="text-gray-500 font-medium">Precio desde</span>
-                            <span className="text-3xl font-black text-pink-600">{formatCurrency(PRICES['150g'])}</span>
+                            <span className="text-zinc-650 dark:text-zinc-350 font-bold uppercase text-xs tracking-wider">Precio desde</span>
+                            <span className="text-3xl font-black text-pink-600 dark:text-pink-400">{formatCurrency(PRICES['150g'])}</span>
                         </div>
                         <button 
                             onClick={handleBuy}
-                            className="w-full py-4 bg-gradient-to-r from-pink-600 to-orange-500 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-orange-500/25 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                            className="w-full py-4 bg-gradient-to-r from-pink-600 to-orange-500 text-white rounded-xl font-black text-md shadow-lg hover:shadow-orange-500/25 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
                         >
                             <ShoppingBag className="w-5 h-5" />
                             COMPRAR AHORA

@@ -33,12 +33,12 @@ export const AdminCustomers: React.FC = () => {
                 placeholder="Buscar cliente por nombre, email o teléfono..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full md:w-64 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all"
+                className="pl-10 pr-4 py-2 w-full md:w-64 rounded-xl outline-none transition-all glass-input text-sm"
             />
         </div>
 
         {customers.length === 0 && !isLoading ? (
-            <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
+            <div className="text-center py-20 rounded-2xl border border-dashed border-gray-300/30 dark:border-gray-700/50 liquid-glass animate-scale-up">
                 <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-xl font-medium text-gray-600 dark:text-gray-400">No hay clientes en la base de datos</h3>
             </div>
@@ -46,7 +46,7 @@ export const AdminCustomers: React.FC = () => {
             <>
                 <div className="grid grid-cols-1 gap-4 md:hidden">
                     {filteredCustomers.map((customer) => (
-                        <div key={customer.id} className="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
+                        <div key={customer.id} className="p-4 rounded-xl shadow-sm liquid-glass animate-fade-in">
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-xl">
                                     {customer.name.charAt(0).toUpperCase()}
@@ -78,7 +78,7 @@ export const AdminCustomers: React.FC = () => {
                     ))}
                 </div>
 
-                <div className="hidden md:block bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in">
+                <div className="hidden md:block rounded-xl overflow-hidden animate-fade-in liquid-glass border border-white/10 shadow-sm">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>

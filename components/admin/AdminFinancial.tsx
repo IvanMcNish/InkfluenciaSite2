@@ -126,7 +126,7 @@ export const AdminFinancial: React.FC = () => {
         {/* Summary Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             {/* Card 1: Total Orders */}
-                            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
+                            <div className="p-6 rounded-2xl relative overflow-hidden group liquid-glass">
                                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                     <Package className="w-16 h-16 text-blue-500" />
                                 </div>
@@ -143,7 +143,7 @@ export const AdminFinancial: React.FC = () => {
                             </div>
 
                             {/* Card 2: Profit Margin (NEW) */}
-                            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
+                            <div className="p-6 rounded-2xl relative overflow-hidden group liquid-glass">
                                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                     <PieChart className="w-16 h-16 text-purple-500" />
                                 </div>
@@ -160,7 +160,7 @@ export const AdminFinancial: React.FC = () => {
                             </div>
 
                             {/* Card 3: Orders Shipped */}
-                            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
+                            <div className="p-6 rounded-2xl relative overflow-hidden group liquid-glass">
                                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                     <Check className="w-16 h-16 text-green-500" />
                                 </div>
@@ -203,7 +203,7 @@ export const AdminFinancial: React.FC = () => {
 
                         {/* Detailed Breakdown */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 md:col-span-2">
+                            <div className="p-6 rounded-2xl md:col-span-2 liquid-glass">
                                 <h3 className="font-bold text-lg mb-6 flex items-center gap-2">
                                     <BarChart3 className="w-5 h-5 text-gray-500" />
                                     Distribución de Pedidos
@@ -246,7 +246,7 @@ export const AdminFinancial: React.FC = () => {
                             </div>
 
                             {/* Efficiency Metric */}
-                            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center text-center">
+                            <div className="p-6 rounded-2xl flex flex-col items-center justify-center text-center liquid-glass">
                                 <div className="w-24 h-24 relative flex items-center justify-center mb-4">
                                     <Percent className="w-8 h-8 text-gray-400 absolute" />
                                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
@@ -290,7 +290,7 @@ export const AdminFinancial: React.FC = () => {
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 {/* Card 1: Total Stock */}
-                                <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
+                                <div className="p-6 rounded-2xl relative overflow-hidden group liquid-glass">
                                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                         <Shirt className="w-16 h-16 text-indigo-500" />
                                     </div>
@@ -307,7 +307,7 @@ export const AdminFinancial: React.FC = () => {
                                 </div>
 
                                 {/* Card 2: White Stock */}
-                                <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
+                                <div className="p-6 rounded-2xl relative overflow-hidden group liquid-glass">
                                     <div className="flex items-center gap-3 mb-2">
                                         <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 border border-gray-200 dark:border-gray-700">
                                             <div className="w-5 h-5 bg-white rounded-full border border-gray-300"></div>
@@ -325,7 +325,7 @@ export const AdminFinancial: React.FC = () => {
                                 </div>
 
                                 {/* Card 3: Black Stock */}
-                                <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
+                                <div className="p-6 rounded-2xl relative overflow-hidden group liquid-glass">
                                     <div className="flex items-center gap-3 mb-2">
                                         <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 border border-gray-200 dark:border-gray-700">
                                             <div className="w-5 h-5 bg-black rounded-full border border-gray-600"></div>
@@ -343,7 +343,7 @@ export const AdminFinancial: React.FC = () => {
                                 </div>
 
                                 {/* Card 4: Tote Bags */}
-                                <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
+                                <div className="p-6 rounded-2xl relative overflow-hidden group liquid-glass">
                                     <div className="flex items-center gap-3 mb-2">
                                         <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 border border-gray-200 dark:border-gray-700">
                                             <ShoppingBag className="w-5 h-5 text-emerald-500" />
@@ -359,7 +359,7 @@ export const AdminFinancial: React.FC = () => {
                                 </div>
 
                                 {/* Card 5: Estimated Cost Value */}
-                                <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden group">
+                                <div className="p-6 rounded-2xl relative overflow-hidden group liquid-glass">
                                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                         <DollarSign className="w-16 h-16 text-green-500" />
                                     </div>
@@ -418,7 +418,7 @@ export const AdminFinancial: React.FC = () => {
                                 {viewGender !== 'unisex' && (
                                     <>
                                 {/* Panel 1: 150g (Standard) */}
-                                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+                                <div className="rounded-2xl overflow-hidden liquid-glass">
                                     <div className="bg-purple-50 dark:bg-purple-900/20 p-4 border-b border-purple-100 dark:border-purple-800/30 flex justify-between items-center">
                                         <div className="flex items-center gap-2">
                                             <Weight className="w-5 h-5 text-purple-600" />
@@ -467,7 +467,7 @@ export const AdminFinancial: React.FC = () => {
                                 </div>
 
                                 {/* Panel 2: 200g (Premium) */}
-                                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+                                <div className="rounded-2xl overflow-hidden liquid-glass">
                                     <div className="bg-pink-50 dark:bg-pink-900/20 p-4 border-b border-pink-100 dark:border-pink-800/30 flex justify-between items-center">
                                         <div className="flex items-center gap-2">
                                             <Weight className="w-5 h-5 text-pink-600" />
@@ -518,7 +518,7 @@ export const AdminFinancial: React.FC = () => {
                                 )}
 
                                 {viewGender !== 'male' && viewGender !== 'female' && (
-                                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm md:col-span-2">
+                                <div className="rounded-2xl overflow-hidden liquid-glass md:col-span-2">
                                     {/* Panel 3: Tote Bags */}
                                     <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 border-b border-emerald-100 dark:border-emerald-800/30 flex justify-between items-center">
                                         <div className="flex items-center gap-2">

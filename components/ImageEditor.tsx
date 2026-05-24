@@ -428,7 +428,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
         
         {/* Top Header / Mobile */}
         <div className="absolute top-4 left-4 right-4 z-50 flex items-center justify-between pointer-events-none">
-          <div className="flex items-center gap-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 dark:border-gray-700/50 shadow-lg pointer-events-auto">
+          <div className="flex items-center gap-3 px-4 py-2 rounded-full pointer-events-auto shadow-lg liquid-glass">
             <div className="p-1.5 bg-pink-500 rounded-full text-white">
               <Scissors className="w-4 h-4" />
             </div>
@@ -441,7 +441,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
           
           <button
             onClick={onClose}
-            className="p-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md rounded-full shadow-lg border border-white/20 dark:border-gray-700/50 text-gray-600 dark:text-gray-300 hover:text-pink-600 transition-all hover:scale-105 pointer-events-auto"
+            className="p-3 rounded-full shadow-lg text-gray-600 dark:text-gray-300 hover:text-pink-600 transition-all hover:scale-105 pointer-events-auto liquid-glass"
             title="Descartar y Cerrar"
           >
             <X className="w-5 h-5" />
@@ -474,7 +474,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
           {isPanelHidden && (
           <button 
             onClick={() => setIsPanelHidden(false)}
-            className="absolute bottom-6 right-6 lg:bottom-8 lg:right-8 z-50 flex items-center gap-2 px-4 py-3 rounded-full shadow-2xl transition-all font-bold backdrop-blur-md border border-white/20 dark:border-gray-700/50 bg-white/90 dark:bg-black/90 text-gray-700 dark:text-white animate-fade-in hover:scale-105"
+            className="absolute bottom-6 right-6 lg:bottom-8 lg:right-8 z-50 flex items-center gap-2 px-4 py-3 rounded-full shadow-2xl transition-all font-bold animate-fade-in hover:scale-105 liquid-glass"
           >
             <LayoutTemplate className="w-5 h-5" />
             <span className="text-xs uppercase tracking-wider">Parámetros</span>
@@ -484,7 +484,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
 
         {/* Floating Settings Panel */}
         <div className={`absolute lg:relative bottom-0 lg:bottom-auto right-0 lg:right-auto w-full lg:w-[420px] h-[75vh] lg:h-full z-30 flex flex-col p-4 lg:p-4 pointer-events-none transition-transform duration-300 ease-in-out ${isPanelHidden ? 'translate-y-[120%] lg:translate-y-0 lg:translate-x-[120%]' : 'translate-y-0 lg:translate-x-0'}`}>
-          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl p-4 lg:p-6 rounded-3xl lg:rounded-2xl shadow-2xl border border-white/20 dark:border-gray-700/50 flex flex-col gap-4 lg:gap-6 overflow-y-auto flex-1 pointer-events-auto custom-scrollbar mt-auto lg:mt-0 max-h-full">
+          <div className="p-4 lg:p-6 rounded-3xl lg:rounded-2xl shadow-2xl flex flex-col gap-4 lg:gap-6 overflow-y-auto flex-1 pointer-events-auto custom-scrollbar mt-auto lg:mt-0 max-h-full liquid-glass border border-white/20">
             
             <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-2">
@@ -926,7 +926,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
             </div>
             
             {/* Action Buttons */}
-            <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex gap-3 sticky bottom-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md z-10 py-2">
+            <div className="pt-4 border-t border-gray-200/40 dark:border-white/10 flex gap-3 sticky bottom-0 bg-white/20 dark:bg-black/20 backdrop-blur-md z-10 py-2">
               <button
                 onClick={onClose}
                 className="flex-1 py-3 lg:py-3 text-[10px] lg:text-xs font-black text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 rounded-full transition-all tracking-widest uppercase border border-gray-200 dark:border-gray-700"

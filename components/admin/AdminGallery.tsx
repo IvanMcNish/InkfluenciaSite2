@@ -88,8 +88,8 @@ export const AdminGallery: React.FC<AdminGalleryProps> = ({ onEditDesign }) => {
   const DeleteConfirmationModal = () => {
       if (!itemToDelete) return null;
       return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-            <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl p-6 border border-gray-200 dark:border-gray-800">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="w-full max-w-md rounded-2xl shadow-2xl p-6 liquid-glass border border-red-500/20 shadow-red-550/5 animate-scale-up">
                 <div className="flex items-center gap-3 text-red-600 mb-4">
                     <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-full">
                         <Trash2 className="w-6 h-6" />
@@ -117,8 +117,8 @@ export const AdminGallery: React.FC<AdminGalleryProps> = ({ onEditDesign }) => {
       const [editApproved, setEditApproved] = useState(editingItem.approved);
 
       return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-            <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl p-6 border border-gray-200 dark:border-gray-800">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="w-full max-w-md rounded-2xl shadow-2xl p-6 liquid-glass-accent animate-scale-up">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3 text-cyan-600 font-bold text-xl">
                         <Pencil className="w-6 h-6" />
@@ -134,7 +134,7 @@ export const AdminGallery: React.FC<AdminGalleryProps> = ({ onEditDesign }) => {
                             type="text" 
                             value={editName} 
                             onChange={(e) => setEditName(e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-cyan-500 outline-none font-medium"
+                            className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-white/10 bg-white/40 dark:bg-black/30 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-pink-500 outline-none font-medium glass-input"
                             placeholder="Nombre del diseño..."
                         />
                     </div>
@@ -244,8 +244,8 @@ export const AdminGallery: React.FC<AdminGalleryProps> = ({ onEditDesign }) => {
   return (
     <div className="animate-fade-in">
         <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input type="text" placeholder="Buscar diseño..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 w-full md:w-64 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+            <input type="text" placeholder="Buscar diseño..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 w-full md:w-64 rounded-xl text-sm outline-none transition-all glass-input" />
         </div>
 
         {itemToDelete && <DeleteConfirmationModal />}
@@ -253,7 +253,7 @@ export const AdminGallery: React.FC<AdminGalleryProps> = ({ onEditDesign }) => {
         {editingItem && <EditDesignModal />}
 
         {galleryItems.length === 0 && !isLoading ? (
-            <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
+            <div className="text-center py-20 rounded-2xl border border-dashed border-gray-300/30 dark:border-gray-700/50 liquid-glass">
                 <Grid className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-xl font-medium text-gray-600 dark:text-gray-400">No hay diseños en la galería</h3>
             </div>
@@ -262,7 +262,7 @@ export const AdminGallery: React.FC<AdminGalleryProps> = ({ onEditDesign }) => {
                 {/* Mobile Card View */}
                 <div className="grid grid-cols-1 gap-4 md:hidden">
                     {galleryItems.filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
-                        <div key={item.id} className="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex gap-4">
+                        <div key={item.id} className="p-4 rounded-xl flex gap-4 liquid-glass">
                             <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden shrink-0 border border-gray-200 dark:border-gray-700 relative">
                                 {item.config.snapshotUrl ? <img src={item.config.snapshotUrl} alt={item.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">Sin img</div>}
                                 {!item.approved && <div className="absolute top-0 left-0 bg-yellow-400 text-[8px] font-bold px-1.5 py-0.5 text-yellow-900 uppercase">Pendiente</div>}
@@ -285,7 +285,7 @@ export const AdminGallery: React.FC<AdminGalleryProps> = ({ onEditDesign }) => {
                 </div>
 
                 {/* Desktop Table View */}
-                <div className="hidden md:block bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in">
+                <div className="hidden md:block rounded-xl overflow-hidden animate-fade-in liquid-glass">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>

@@ -109,7 +109,7 @@ export const AdminOrders: React.FC = () => {
     if (!orderToDelete) return null;
     return (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-            <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div className="w-full max-w-md rounded-2xl shadow-2xl overflow-hidden liquid-glass-accent border border-red-500/20 shadow-red-500/5 animate-scale-up">
                 <div className="p-6 text-center">
                     <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600">
                         <AlertTriangle className="w-8 h-8" />
@@ -157,7 +157,7 @@ export const AdminOrders: React.FC = () => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in overflow-y-auto md:overflow-hidden">
-            <div className="bg-white dark:bg-gray-900 w-full max-w-6xl max-h-[90vh] rounded-2xl shadow-2xl overflow-y-auto md:overflow-hidden flex flex-col md:flex-row relative border border-gray-200 dark:border-gray-800">
+            <div className="w-full max-w-6xl max-h-[90vh] rounded-2xl shadow-2xl overflow-y-auto md:overflow-hidden flex flex-col md:flex-row relative liquid-glass-accent">
                 <button 
                     onClick={() => setSelectedOrder(null)}
                     className="absolute top-4 right-4 z-50 p-2 bg-white/50 dark:bg-black/50 hover:bg-white dark:hover:bg-black rounded-full backdrop-blur-sm transition-all shadow-md"
@@ -174,7 +174,7 @@ export const AdminOrders: React.FC = () => {
                 </div>
 
                 {/* Right: Details & Data */}
-                <div className="w-full md:w-1/2 p-6 md:p-8 md:overflow-y-auto bg-white dark:bg-gray-900">
+                <div className="w-full md:w-1/2 p-6 md:p-8 md:overflow-y-auto bg-transparent">
                     <div className="flex flex-col sm:flex-row justify-between items-start mb-6 gap-4">
                         <div>
                             <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center gap-2">
@@ -382,7 +382,7 @@ export const AdminOrders: React.FC = () => {
                 placeholder="Buscar pedido por ID, cliente o email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full md:w-64 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all"
+                className="pl-10 pr-4 py-2 w-full md:w-64 rounded-xl outline-none transition-all glass-input text-sm"
             />
         </div>
 
@@ -390,7 +390,7 @@ export const AdminOrders: React.FC = () => {
         {orderToDelete && <DeleteModal />}
 
         {orders.length === 0 && !isLoading ? (
-            <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
+            <div className="text-center py-20 rounded-2xl border border-dashed border-gray-300/30 dark:border-gray-700/50 liquid-glass animate-scale-up">
                 <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-xl font-medium text-gray-600 dark:text-gray-400">No hay pedidos registrados</h3>
             </div>
@@ -403,7 +403,7 @@ export const AdminOrders: React.FC = () => {
                         order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         order.email.toLowerCase().includes(searchTerm.toLowerCase())
                     ).map((order) => (
-                        <div key={order.id} className="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
+                        <div key={order.id} className="p-4 rounded-xl shadow-sm liquid-glass">
                             <div className="flex justify-between items-start mb-3">
                                 <div>
                                     <span className="text-xs font-bold text-gray-400 block mb-1">ID: #{order.id}</span>
@@ -453,7 +453,7 @@ export const AdminOrders: React.FC = () => {
                 </div>
 
                 {/* Desktop View */}
-                <div className="hidden md:block bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in w-full">
+                <div className="hidden md:block rounded-xl overflow-hidden animate-fade-in w-full liquid-glass shadow-sm">
                     <div className="overflow-x-auto w-full">
                         <table className="w-full text-left border-collapse text-[10px] md:text-xs xl:text-sm">
                             <thead>

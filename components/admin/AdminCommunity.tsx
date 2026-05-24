@@ -76,7 +76,7 @@ export const AdminCommunity: React.FC = () => {
         <div className="animate-fade-in space-y-6">
              {/* Header */}
              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex-1 w-full">
+                <div className="p-6 rounded-xl flex-1 w-full liquid-glass">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-bold flex items-center gap-2 text-gray-900 dark:text-white">
                             <Instagram className="w-6 h-6 text-pink-500" />
@@ -84,7 +84,7 @@ export const AdminCommunity: React.FC = () => {
                         </h2>
                     </div>
                     
-                    <form onSubmit={handleCreatePost} className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+                    <form onSubmit={handleCreatePost} className="p-4 rounded-xl border border-dashed border-gray-300/30 dark:border-gray-700/50 bg-white/10 dark:bg-black/20">
                         <h3 className="text-sm font-bold uppercase text-gray-500 mb-3">Publicar como Admin</h3>
                         <div className="flex flex-col md:flex-row gap-4">
                             <div 
@@ -108,7 +108,7 @@ export const AdminCommunity: React.FC = () => {
                                             placeholder="Nombre del cliente..." 
                                             value={newPost.username}
                                             onChange={e => setNewPost({...newPost, username: e.target.value})}
-                                            className="w-full pl-10 p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm outline-none focus:ring-2 focus:ring-pink-500 text-gray-900 dark:text-white"
+                                            className="w-full pl-10 p-2 text-sm outline-none transition-all glass-input rounded-xl"
                                         />
                                     </div>
                                     <div className="flex-1 relative">
@@ -118,7 +118,7 @@ export const AdminCommunity: React.FC = () => {
                                             placeholder="Descripción / Caption..." 
                                             value={newPost.caption}
                                             onChange={e => setNewPost({...newPost, caption: e.target.value})}
-                                            className="w-full pl-10 p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm outline-none focus:ring-2 focus:ring-pink-500 text-gray-900 dark:text-white"
+                                            className="w-full pl-10 p-2 text-sm outline-none transition-all glass-input rounded-xl"
                                         />
                                     </div>
                                 </div>
@@ -156,13 +156,13 @@ export const AdminCommunity: React.FC = () => {
                 {isLoading ? (
                     <div className="py-10 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-pink-500"/></div>
                 ) : filteredPosts.length === 0 ? (
-                    <div className="py-10 text-center text-gray-500 italic bg-white dark:bg-gray-900 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
+                    <div className="py-10 text-center text-gray-500 italic rounded-xl border border-dashed border-gray-300/30 dark:border-gray-700/50 liquid-glass animate-scale-up">
                         No hay publicaciones en esta sección.
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredPosts.map(post => (
-                            <div key={post.id} className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col">
+                            <div key={post.id} className="rounded-xl overflow-hidden flex flex-col liquid-glass">
                                 {/* Simulated Instagram Card Header */}
                                 <div className="p-3 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
                                     <div className="flex items-center gap-3">

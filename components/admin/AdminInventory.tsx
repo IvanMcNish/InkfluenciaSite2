@@ -89,7 +89,7 @@ export const AdminInventory: React.FC = () => {
     <div className="animate-fade-in space-y-6 pb-20">
         {/* 1. Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden">
+            <div className="p-6 rounded-2xl relative overflow-hidden liquid-glass">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="p-2 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg text-indigo-600">
                         <Layers className="w-5 h-5" />
@@ -99,7 +99,7 @@ export const AdminInventory: React.FC = () => {
                 <div className="text-3xl font-black text-gray-900 dark:text-white">{metrics.totalStock}</div>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 relative overflow-hidden">
+            <div className="p-6 rounded-2xl relative overflow-hidden liquid-glass">
                  <div className="flex items-center gap-3 mb-2">
                     <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg text-green-600">
                         <TrendingUp className="w-5 h-5" />
@@ -110,12 +110,12 @@ export const AdminInventory: React.FC = () => {
                 <p className="text-[10px] text-gray-400 mt-1">Valor actual en bodega</p>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800">
+            <div className="p-6 rounded-2xl liquid-glass">
                 <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Blancas</h3>
                 <div className="text-2xl font-black text-gray-900 dark:text-white mb-1">{metrics.whiteTotal}</div>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800">
+            <div className="p-6 rounded-2xl liquid-glass">
                 <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Negras</h3>
                 <div className="text-2xl font-black text-gray-900 dark:text-white mb-1">{metrics.blackTotal}</div>
             </div>
@@ -123,7 +123,7 @@ export const AdminInventory: React.FC = () => {
 
         {/* GLOBAL GENDER SELECTOR */}
         <div className="flex justify-center">
-            <div className="bg-white dark:bg-gray-900 p-1.5 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-wrap gap-2">
+            <div className="p-1.5 rounded-2xl shadow-sm flex flex-wrap gap-2 liquid-glass border border-white/5">
                 <button 
                     onClick={() => setSelectedGender('male')}
                     className={`px-8 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
@@ -161,7 +161,7 @@ export const AdminInventory: React.FC = () => {
         </div>
 
         {/* 2. ADD STOCK FORM */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <div className="rounded-2xl overflow-hidden liquid-glass">
             <div className={`p-6 border-b border-gray-100 dark:border-gray-800 transition-colors ${selectedGender === 'male' ? 'bg-blue-50/50 dark:bg-blue-900/10' : selectedGender === 'female' ? 'bg-pink-50/50 dark:bg-pink-900/10' : 'bg-emerald-50/50 dark:bg-emerald-900/10'}`}>
                 <h3 className="font-bold text-lg flex items-center gap-2 text-gray-900 dark:text-white">
                     <PlusCircle className={`w-5 h-5 ${selectedGender === 'male' ? 'text-blue-500' : selectedGender === 'female' ? 'text-pink-500' : 'text-emerald-500'}`} />
@@ -220,7 +220,7 @@ export const AdminInventory: React.FC = () => {
                                     value={stockInputs[size] !== undefined ? stockInputs[size] : ''}
                                     onChange={(e) => handleStockInputChange(size, e.target.value)}
                                     placeholder="0"
-                                    className="w-full pt-8 pb-3 px-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none text-2xl font-black text-center"
+                                    className="w-full pt-8 pb-3 px-4 rounded-xl outline-none text-2xl font-black text-center glass-input"
                                 />
                             </div>
                         ))}
@@ -245,7 +245,7 @@ export const AdminInventory: React.FC = () => {
         </div>
 
         {/* 3. CURRENT STOCK DISPLAY */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden opacity-90">
+        <div className="rounded-2xl overflow-hidden liquid-glass">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between md:items-center gap-4">
                 <div>
                     <h3 className="font-bold text-lg flex items-center gap-2 text-gray-900 dark:text-white">

@@ -436,7 +436,7 @@ export const AdminSettings: React.FC = () => {
     <div className="max-w-6xl mx-auto animate-fade-in space-y-8 pb-10 w-full min-w-0">
         
         {/* Logo Management Section */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+        <div className="rounded-xl shadow-sm p-6 liquid-glass">
             <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg text-indigo-600"><ImageIcon className="w-6 h-6" /></div>
                 <div><h2 className="text-xl font-bold text-gray-900 dark:text-white">Identidad de Marca (Logos)</h2><p className="text-gray-500 dark:text-gray-400 text-sm">Gestiona las imágenes oficiales de la marca.</p></div>
@@ -473,7 +473,7 @@ export const AdminSettings: React.FC = () => {
         </div>
 
         {/* Export Collage Section */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 font-sans">
+        <div className="rounded-xl shadow-sm p-6 font-sans liquid-glass">
             <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-pink-100 dark:bg-pink-900/20 rounded-lg text-pink-600">
                     <Grid className="w-6 h-6" />
@@ -617,7 +617,7 @@ export const AdminSettings: React.FC = () => {
         </div>
 
         {/* 3D Appearance Settings Section */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+        <div className="rounded-xl shadow-sm p-6 liquid-glass">
             <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-cyan-100 dark:bg-cyan-900/20 rounded-lg text-cyan-600"><Palette className="w-6 h-6" /></div>
                 <div><h2 className="text-xl font-bold text-gray-900 dark:text-white">Apariencia 3D</h2><p className="text-gray-500 dark:text-gray-400 text-sm">Personaliza los colores base de los modelos 3D.</p></div>
@@ -692,7 +692,7 @@ export const AdminSettings: React.FC = () => {
         </div>
 
         {/* Upload Limits Section */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+        <div className="rounded-xl shadow-sm p-6 liquid-glass">
             <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg text-purple-600"><HardDrive className="w-6 h-6" /></div>
                 <div><h2 className="text-xl font-bold text-gray-900 dark:text-white">Límites de Carga</h2><p className="text-gray-500 dark:text-gray-400 text-sm">Controla el tamaño máximo de los archivos que los usuarios pueden subir.</p></div>
@@ -734,7 +734,7 @@ export const AdminSettings: React.FC = () => {
         </div>
 
         {/* Customizer Constraints Section */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+        <div className="rounded-xl shadow-sm p-6 liquid-glass">
             <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-pink-100 dark:bg-pink-900/20 rounded-lg text-pink-600"><Ruler className="w-6 h-6" /></div>
                 <div><h2 className="text-xl font-bold text-gray-900 dark:text-white">Área de Impresión - Camisetas</h2><p className="text-gray-500 dark:text-gray-400 text-sm">Define los bordes del área imprimible para las camisetas.</p></div>
@@ -872,7 +872,7 @@ export const AdminSettings: React.FC = () => {
         </div>
 
         {/* SQL Settings Section */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+        <div className="rounded-xl shadow-sm p-6 liquid-glass">
             <h2 className="text-xl font-bold mb-4">Scripts de Configuración</h2>
             <p className="text-gray-500 mb-6">Usa estos scripts en el editor SQL de Supabase para configurar la base de datos.</p>
             

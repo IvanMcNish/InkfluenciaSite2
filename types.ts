@@ -114,6 +114,7 @@ export interface UploadLimits {
 export interface AppearanceSettings {
     blackShirtHex: string;
     designOpacity: number;
+    galleryCardScale?: number;
 }
 
 export interface FinancialSettings {

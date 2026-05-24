@@ -23,7 +23,8 @@ export const DEFAULT_UPLOAD_LIMITS: UploadLimits = {
 
 export const DEFAULT_APPEARANCE: AppearanceSettings = {
     blackShirtHex: '#050505', // Default deep black
-    designOpacity: 1.0 // Default fully opaque
+    designOpacity: 1.0, // Default fully opaque
+    galleryCardScale: 85 // Default scale percentage for gallery card renders
 };
 
 export const DEFAULT_FINANCIALS: FinancialSettings = {

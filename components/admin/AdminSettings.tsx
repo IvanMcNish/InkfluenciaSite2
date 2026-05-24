@@ -681,6 +681,34 @@ export const AdminSettings: React.FC = () => {
                         </p>
                     </div>
 
+                    <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                        <h3 className="font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2 text-sm uppercase"><Grid className="w-4 h-4"/> Tamaño de Renders en Tarjetas de Galería</h3>
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs text-gray-500 uppercase font-bold tracking-wider">Escala del Render (Card)</label>
+                                <span className="text-sm font-mono font-bold text-cyan-600">{appearance.galleryCardScale || 85}%</span>
+                            </div>
+                            <input 
+                                type="range" 
+                                min="50" 
+                                max="115" 
+                                step="1" 
+                                value={appearance.galleryCardScale || 85} 
+                                onChange={(e) => setAppearance({...appearance, galleryCardScale: parseInt(e.target.value)})}
+                                className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-600"
+                            />
+                            <div className="flex justify-between text-[10px] text-gray-400">
+                                <span>50% (Pequeño)</span>
+                                <span>85% (Por Defecto)</span>
+                                <span>115% (Grande)</span>
+                            </div>
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-4">
+                            Afecta a todas las previsualizaciones de prendas de la galería pública. <br/>
+                            <span className="font-bold text-cyan-600">Recomendado:</span> Alrededor de 85% para un aspecto equilibrado, o menor si deseas reducir la cercanía visual.
+                        </p>
+                    </div>
+
                     <div className="flex justify-end">
                         <button onClick={saveAppearance} disabled={isSavingAppearance} className="px-6 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg font-bold shadow-lg shadow-cyan-500/20 flex items-center gap-2 transition-colors">
                             {isSavingAppearance ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

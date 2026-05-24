@@ -115,7 +115,7 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
                         </div>
                     </div>
 
-                    <div className="pt-6 border-t border-white/25 dark:border-white/15 mt-auto bg-transparent sticky bottom-0 md:static">
+                    <div className="pt-4 pb-4 md:pb-0 px-6 md:px-0 -mx-6 md:mx-0 border-t border-white/25 dark:border-white/15 mt-auto bg-white/80 dark:bg-black/80 md:bg-transparent backdrop-blur-xl md:backdrop-blur-none sticky bottom-0 md:static">
                         <div className="flex justify-between items-end mb-4">
                             <span className="text-zinc-650 dark:text-zinc-350 font-bold uppercase text-xs tracking-wider">Precio desde</span>
                             <span className="text-3xl font-black text-pink-600 dark:text-pink-400">{formatCurrency(PRICES['150g'])}</span>

@@ -10,13 +10,14 @@ import { getAppearanceSettings } from '../services/settingsService';
 interface GalleryPageProps {
   onUseDesign: (config: TShirtConfig) => void;
   onNavigateToCreator: () => void;
+  initialTab?: 'community' | 'catalog';
 }
 
-export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigateToCreator }) => {
+export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigateToCreator, initialTab = 'community' }) => {
   const [collection, setCollection] = useState<CollectionItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<CollectionItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'community' | 'catalog'>('community');
+  const [activeTab, setActiveTab] = useState<'community' | 'catalog'>(initialTab);
   const [cardScale, setCardScale] = useState(85);
 
   const fetchGallery = async () => {
@@ -121,10 +122,16 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
                         </div>
                         <button 
                             onClick={handleBuy}
-                            className="w-full py-4 bg-gradient-to-r from-pink-600 to-orange-500 text-white rounded-xl font-black text-md shadow-lg hover:shadow-orange-500/25 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                            className="w-full mb-3 py-4 bg-gradient-to-r from-pink-600 to-orange-500 text-white rounded-xl font-black text-md shadow-lg hover:shadow-orange-500/25 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
                         >
                             <ShoppingBag className="w-5 h-5" />
                             COMPRAR AHORA
+                        </button>
+                        <button
+                            onClick={() => setSelectedItem(null)}
+                            className="w-full py-3 bg-gray-100/50 dark:bg-zinc-800/50 hover:bg-gray-200/50 dark:hover:bg-zinc-700/50 border border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-gray-200 rounded-xl font-bold transition-colors md:mb-0"
+                        >
+                            Volver
                         </button>
                     </div>
                 </div>
@@ -211,13 +218,12 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
                   className="group relative flex flex-col justify-between aspect-[3/4] rounded-3xl border border-white/60 dark:border-white/10 bg-white/40 dark:bg-gray-950/40 backdrop-blur-xl shadow-lg hover:shadow-2xl hover:shadow-purple-500/20 dark:hover:shadow-indigo-500/10 transition-all duration-500 hover:-translate-y-2 cursor-pointer overflow-hidden"
                   onClick={() => setSelectedItem(item)}
                >
-                  <div className="flex-grow w-full h-[76%] flex items-center justify-center p-6 relative bg-transparent overflow-hidden">
+                  <div className="flex-grow w-full h-full pt-8 flex items-center justify-center relative bg-transparent overflow-hidden">
                       {item.config.snapshotUrl ? (
                           <img 
                               src={item.config.snapshotUrl} 
                               alt={item.name} 
-                              style={{ maxHeight: `${cardScale}%`, maxWidth: `${cardScale}%` }}
-                              className="object-contain filter drop-shadow-[0_10px_15px_rgba(0,0,0,0.15)] group-hover:scale-102 transition-all duration-700" 
+                              className="w-full h-full object-contain object-top origin-center scale-[1.80] group-hover:scale-[1.90] filter drop-shadow-[0_10px_15px_rgba(0,0,0,0.15)] transition-all duration-700" 
                           />
                       ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-300">

@@ -4,6 +4,7 @@ import { Download } from 'lucide-react';
 interface LandingPageProps {
   isVisible: boolean;
   onStart: () => void;
+  onViewCatalog: () => void;
 }
 
 const GALLERY_IMAGES = [
@@ -31,7 +32,7 @@ const GALLERY_IMAGES = [
   'e9c8d704-3ed6-4d97-a5e7-24f88d068de8.jpeg'
 ];
 
-export const LandingPage: React.FC<LandingPageProps> = ({ isVisible, onStart }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ isVisible, onStart, onViewCatalog }) => {
   const [shouldRender, setShouldRender] = useState(isVisible);
   const [shuffledImages, setShuffledImages] = useState<string[]>([]);
 
@@ -133,18 +134,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isVisible, onStart }) 
             Camisetas personalizadas DTF en Bucaramanga. Diseños únicos elaborados con algodón peruano, colores vibrantes y tecnología 3D. Personaliza tu estilo con Inkfluencia desde 1 unidad y resalta en todo Santander.
           </p>
 
-          <a
-            href="https://kdddhfajdhwldgutzqbq.supabase.co/storage/v1/object/public/inkfluencia-images/LOGO/CATALOGO%20INKFLUENCIA.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
             onClick={(e) => {
               e.stopPropagation();
+              onViewCatalog();
             }}
             className="pointer-events-auto mt-6 px-6 py-3 rounded-xl bg-gradient-to-r from-pink-600 via-orange-500 to-yellow-500 text-white font-extrabold uppercase text-xs tracking-wider hover:scale-105 active:scale-95 transition-all shadow-lg hover:shadow-pink-500/25 flex items-center gap-2 border border-white/10 relative z-20"
           >
             <Download className="w-4 h-4 animate-bounce" />
-            Descargar Catálogo
-          </a>
+            Ver Catálogo
+          </button>
         </div>
       </div>
     </div>

@@ -33,6 +33,7 @@ const App: React.FC = () => {
 
   // App Flow State
   const [view, setView] = useState<ViewState>("landing");
+  const [galleryInitialTab, setGalleryInitialTab] = useState<'community' | 'catalog'>('community');
 
   // Customization State
   const [config, setConfig] = useState<TShirtConfig>(DEFAULT_CONFIG);
@@ -164,6 +165,10 @@ const App: React.FC = () => {
             <LandingPage
               isVisible={view === "landing"}
               onStart={() => setView("customizer")}
+              onViewCatalog={() => {
+                setGalleryInitialTab('catalog');
+                setView('gallery');
+              }}
             />
           </>
         );
@@ -214,6 +219,7 @@ const App: React.FC = () => {
         return (
           <GalleryPage
             onUseDesign={handleBuyGalleryDesign}
+            initialTab={galleryInitialTab}
             onNavigateToCreator={() => {
               setConfig(DEFAULT_CONFIG);
               setView("customizer");
@@ -287,6 +293,10 @@ const App: React.FC = () => {
             <LandingPage
               isVisible={view === "landing"}
               onStart={() => setView("customizer")}
+              onViewCatalog={() => {
+                setGalleryInitialTab('catalog');
+                setView('gallery');
+              }}
             />
           </>
         );

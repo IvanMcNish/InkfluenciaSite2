@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt, Ruler, Lock, Unlock, MousePointer2, HelpCircle, X, Hand, Video, Scissors, Columns, Palette } from 'lucide-react';
+import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt, Ruler, Lock, Unlock, MousePointer2, HelpCircle, X, Hand, Video, Scissors, Columns, Palette, CheckCircle2, Sparkles } from 'lucide-react';
 import { TShirtConfig, CustomizerConstraints } from '../types';
 import { Scene } from './Scene';
 import { PRICES, formatCurrency, TSHIRT_GLB_MODELS } from '../constants';
@@ -16,9 +16,10 @@ interface CustomizerProps {
   onEditImage?: (index: number) => void;
   isDesignerMode?: boolean;
   isActive?: boolean;
+  onNavigateToGallery?: () => void;
 }
 
-export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onCheckout, onSaveToGallery, onEditImage, isDesignerMode = false, isActive = true }) => {
+export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onCheckout, onSaveToGallery, onEditImage, isDesignerMode = false, isActive = true, onNavigateToGallery }) => {
   const fileInputRef1 = useRef<HTMLInputElement>(null);
   const fileInputRef2 = useRef<HTMLInputElement>(null);
   const captureRef = useRef<(() => string) | null>(null);
@@ -44,7 +45,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   // Continues & Mobile Panels UX Optimization
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
   const [showContinueModal, setShowContinueModal] = useState(false);
-  const [continueStep, setContinueStep] = useState<'options' | 'save' | 'ordering'>('options');
+  const [continueStep, setContinueStep] = useState<'options' | 'save' | 'ordering' | 'success-saved'>('options');
 
   const mobileBarRef = useRef<HTMLDivElement>(null);
   const mobileOverlayRef = useRef<HTMLDivElement>(null);
@@ -484,8 +485,8 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                     // Update existing design
                     const success = await updateGalleryItem(config.id, designName, true, configWithSnapshot);
                     if (success) {
-                        alert("Diseño actualizado con éxito.");
-                        // We could redirect or just reset
+                        setContinueStep('success-saved');
+                        setShowContinueModal(true);
                         if (onSaveToGallery) onSaveToGallery(designName, configWithSnapshot);
                     } else {
                         throw new Error("Update failed");
@@ -493,6 +494,8 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 } else {
                     // Create new design
                     if (onSaveToGallery) onSaveToGallery(designName, configWithSnapshot);
+                    setContinueStep('success-saved');
+                    setShowContinueModal(true);
                 }
              } catch (e: any) {
                  console.error("Gallery save error:", e);
@@ -518,179 +521,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
 
   const activeLayer = config.layers[activeLayerIndex];
 
-  // Action / Continue Modal Component
-  const ContinueModal = () => {
-    if (!showContinueModal) return null;
-
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/85 backdrop-blur-sm animate-fade-in">
-        <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden relative liquid-glass animate-elastic-pop max-h-[92vh] overflow-y-auto">
-          
-          <button 
-            onClick={() => {
-              if (continueStep !== 'ordering') {
-                setShowContinueModal(false);
-              }
-            }}
-            disabled={continueStep === 'ordering'}
-            className="absolute top-4 right-4 p-1.5 rounded-full bg-white/40 dark:bg-gray-900/40 text-gray-500 hover:text-pink-600 dark:text-gray-300 dark:hover:text-pink-500 transition-colors z-10"
-          >
-            <X className="w-4 h-4" />
-          </button>
-
-          {continueStep === 'options' && (
-            <div className="p-6 md:p-8">
-              <h3 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white text-center mb-1 uppercase tracking-tight">
-                ¿Qué deseas hacer con tu diseño?
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm text-center mb-6">
-                Elige la opción que prefieras para tu creación de Inkfluencia.
-              </p>
-
-              <div className="space-y-4">
-                {/* Buy Option */}
-                <button
-                  onClick={async () => {
-                    setContinueStep('ordering');
-                    // Wait for the animated transition
-                    await new Promise(resolve => setTimeout(resolve, 2500));
-                    await handleBuyDesign();
-                    setShowContinueModal(false);
-                  }}
-                  className="w-full text-left p-4 rounded-xl border border-pink-100 dark:border-pink-900/30 bg-pink-50/30 dark:bg-pink-950/10 hover:border-pink-500 hover:bg-pink-50/50 dark:hover:bg-pink-950/20 transition-all group flex items-start gap-4"
-                >
-                  <div className="w-12 h-12 rounded-full bg-pink-100 dark:bg-pink-900/40 text-pink-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <ShoppingBag className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-gray-900 dark:text-white text-base">Comprar ahora</h4>
-                    <p className="text-xs text-gray-550 dark:text-gray-400 mt-0.5 leading-relaxed">
-                      Personaliza tu talla y gramaje de algodón peruano para recibir el pedido impreso con tecnología DTF en cualquier rincón del país.
-                    </p>
-                  </div>
-                </button>
-
-                {/* Save Option */}
-                <button
-                  onClick={() => {
-                    setContinueStep('save');
-                  }}
-                  className="w-full text-left p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/30 dark:bg-indigo-950/10 hover:border-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition-all group flex items-start gap-4"
-                >
-                  <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <Save className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-gray-900 dark:text-white text-base">Guardar en la Comunidad</h4>
-                    <p className="text-xs text-gray-550 dark:text-gray-400 mt-0.5 leading-relaxed">
-                      Comparte tu diseño en la galería pública de Inkfluencia para que otros puedan verlo, inspirarse o pedirlo usando tu plantilla.
-                    </p>
-                  </div>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {continueStep === 'save' && (
-            <div className="p-6 md:p-8">
-              <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tight text-left">
-                Publicar en la Galería
-              </h3>
-              
-              <div className="bg-amber-50 dark:bg-amber-950/20 p-3.5 rounded-xl border border-amber-200 dark:border-amber-900/35 flex gap-2.5 mb-5 select-none text-left">
-                <Info className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-                  Las imágenes que va a incluir en el diseño serán <strong>públicas</strong> para toda la comunidad. Evite compartir imágenes personales o sensibles. Su diseño será revisado por el admin y una vez aprobado estará disponible en la galería de la comunidad.
-                </p>
-              </div>
-
-              <div className="space-y-4 text-left">
-                <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wide text-gray-450 mb-1">Nombre del Diseño</label>
-                  <input 
-                    type="text" 
-                    value={designName}
-                    onChange={(e) => {
-                      setDesignName(e.target.value);
-                      setSaveError('');
-                    }}
-                    placeholder="Ej. Colección Vintage"
-                    className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all text-sm font-medium"
-                    disabled={isProcessing}
-                  />
-                  {saveError && (
-                    <div className="flex items-center gap-1.5 mt-2 text-red-500 text-xs bg-red-50 dark:bg-red-900/2 transition-all p-2.5 rounded-lg border border-red-100 dark:border-red-900/30">
-                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                      <p>{saveError}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <button
-                    onClick={() => setContinueStep('options')}
-                    disabled={isProcessing}
-                    className="flex-1 py-3 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-xl text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
-                  >
-                    Volver
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (!designName.trim()) {
-                        setSaveError('Por favor, ingresa un nombre para tu diseño.');
-                        return;
-                      }
-                      const success = await handleSaveToGalleryRef(designName);
-                      if (success) {
-                        setShowContinueModal(false);
-                      }
-                    }}
-                    disabled={isProcessing}
-                    className="flex-1.5 py-3 bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-500 hover:to-orange-400 text-white font-bold rounded-xl text-sm transition-all shadow-md active:scale-95"
-                  >
-                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Confirmar y Publicar'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {continueStep === 'ordering' && (
-            <div className="p-8 text-center flex flex-col items-center justify-center min-h-[300px]">
-              <div className="relative w-23 h-20 mb-6 flex items-center justify-center">
-                {/* 3D spinning / glowing effect */}
-                <div className="absolute w-20 h-20 rounded-full border-4 border-pink-500/10 border-t-pink-500 animate-spin" />
-                <div className="absolute w-16 h-16 rounded-full border-4 border-orange-500/10 border-b-orange-500 animate-spin-slow" />
-                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-pink-500 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
-                  <Shirt className="w-6 h-6 animate-pulse" />
-                </div>
-              </div>
-
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">
-                PROCESANDO TU DISEÑO...
-              </h3>
-              
-              <div className="space-y-1.5 max-w-sm w-full">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-mono tracking-wider animate-pulse mb-2">
-                  Generando render en alta definición...
-                </p>
-                <div className="w-full max-w-[200px] h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mx-auto">
-                  <div className="h-full bg-gradient-to-r from-pink-500 to-orange-500 animate-loading-bar rounded-full" />
-                </div>
-              </div>
-
-              <div className="mt-8 flex flex-col gap-1.5 items-center font-mono text-[10px] text-gray-400 select-none">
-                <span className="flex items-center gap-1.5 text-pink-500">✓ Optimizando archivos vectoriales DTF</span>
-                <span className="flex items-center gap-1.5 text-orange-500">✓ Ajustando capas 3D de alta definición</span>
-                <span className="flex items-center gap-1.5 text-yellow-500">✓ Preparando orden de algodón peruano</span>
-              </div>
-            </div>
-          )}
-
-        </div>
-      </div>
-    );
-  };
+  // Action / Continue Modal is inlined in the render tree to prevent focus loss during user typing.
 
   // Tutorial Modal Component
   const TutorialModal = () => (
@@ -763,18 +594,14 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   );
 
   return (
-    <div className={`relative w-full h-full overflow-hidden flex bg-gray-50 dark:bg-black ${
+    <div className={`relative w-full h-full overflow-hidden flex bg-transparent ${
       isLandscape ? 'flex-row' : 'flex-col lg:flex-row'
     }`}>
       
       {showTutorial && <TutorialModal />}
 
       {/* Left Column: 3D Scene Wrapper */}
-      <div className={`relative flex-1 min-h-0 transition-all duration-300 ${
-          isMobile 
-          ? 'absolute inset-0 w-full h-full' 
-          : (isPanelHidden ? 'w-full h-full' : 'w-[calc(100%-420px)] h-full lg:border-r lg:border-gray-200/50 lg:dark:border-gray-800/50')
-      }`}>
+      <div className="absolute inset-0 w-full h-full z-10 transition-all duration-300">
         {viewMode === 'single' ? (
           <Scene 
               config={config} 
@@ -998,14 +825,25 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
-                  setContinueStep('options');
-                  setShowContinueModal(true);
+                  if (isDesignerMode) {
+                    setContinueStep('save');
+                    setShowContinueModal(true);
+                  } else {
+                    setContinueStep('options');
+                    setShowContinueModal(true);
+                  }
                 }} 
                 disabled={config.layers.length === 0 || isProcessing} 
-                className={`flex items-center justify-center gap-1 shadow-sm px-2.5 py-1.5 rounded-xl transition-all cursor-pointer text-[9px] sm:text-[10px] font-extrabold shrink-0 whitespace-nowrap select-none ${config.layers.length === 0 ? 'bg-gray-150/20 dark:bg-gray-900/40 text-gray-400/50 cursor-not-allowed border border-gray-200/10' : 'bg-gradient-to-r from-pink-600 to-orange-500 text-white hover:scale-105 active:scale-95'}`}
+                className={`flex items-center justify-center gap-1 shadow-sm px-2.5 py-1.5 rounded-xl transition-all cursor-pointer text-[9px] sm:text-[10px] font-extrabold shrink-0 whitespace-nowrap select-none ${
+                  config.layers.length === 0 
+                  ? 'bg-gray-150/20 dark:bg-gray-900/40 text-gray-400/50 cursor-not-allowed border border-gray-200/10' 
+                  : isDesignerMode 
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-500 text-white hover:scale-105 active:scale-95 shadow-md shadow-purple-500/20'
+                  : 'bg-gradient-to-r from-pink-600 to-orange-500 text-white hover:scale-105 active:scale-95'
+                }`}
               >
-                  <ShoppingBag className="w-3 h-3 animate-pulse" />
-                  <span>Continuar</span>
+                  {isDesignerMode ? <Save className="w-3 h-3" /> : <ShoppingBag className="w-3 h-3 animate-pulse" />}
+                  <span>{isDesignerMode ? 'Guardar' : 'Continuar'}</span>
               </button>
             </div>
           )}
@@ -1118,7 +956,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
       </div>
 
       {/* Desktop Side Settings Panel */}
-      <div className={`hidden lg:flex w-[420px] h-[calc(100vh-104px-40px)] mt-[104px] mb-[40px] flex-col p-4 bg-white/95 dark:bg-gray-950/95 border-l border-gray-200/50 dark:border-gray-800/50 transition-all duration-300 shrink-0 ${isPanelHidden ? 'mr-[-420px] opacity-0 overflow-hidden pointer-events-none' : 'mr-0 opacity-100'}`}>
+      <div className={`hidden lg:flex absolute right-6 top-[104px] w-[420px] h-[calc(100vh-104px-40.5px)] z-20 flex-col p-4 bg-white/85 dark:bg-gray-950/85 backdrop-blur-md rounded-2xl border border-white/20 dark:border-gray-800/50 shadow-2xl transition-all duration-300 ${isPanelHidden ? 'translate-x-[110%] opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'}`}>
           <div className="flex flex-col gap-4 overflow-y-auto flex-1 custom-scrollbar pr-1">
              <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-2.5 shrink-0">
                  <div className="flex items-center gap-2">
@@ -1434,7 +1272,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 className={`w-full bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 text-white py-3 lg:py-4 rounded-xl font-bold text-sm lg:text-lg shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 transition-all flex items-center justify-center gap-2 ${config.layers.length === 0 || isProcessing ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
               >
                 {isProcessing ? <Loader2 className="w-5 h-5 animate-spin"/> : <Save className="w-5 h-5" />}
-                {isProcessing ? 'Guardando...' : 'GUARDAR EN GALERÍA'}
+                {isProcessing ? 'Guardando...' : 'GUARDAR CAMBIOS'}
               </button>
             </div>
           ) : (
@@ -1467,7 +1305,265 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
      </svg>
 
      {/* Continue Modal */}
-     {showContinueModal && <ContinueModal />}
+     {showContinueModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 dark:bg-black/85 backdrop-blur-sm animate-fade-in animate-clip-layer">
+          <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden relative liquid-glass animate-elastic-pop max-h-[92vh] overflow-y-auto">
+            
+            <button 
+              onClick={() => {
+                if (continueStep !== 'ordering') {
+                  setShowContinueModal(false);
+                }
+              }}
+              disabled={continueStep === 'ordering'}
+              className="absolute top-4 right-4 p-1.5 rounded-full bg-white/40 dark:bg-gray-900/40 text-gray-500 hover:text-pink-600 dark:text-gray-300 dark:hover:text-pink-500 transition-colors z-10"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {continueStep === 'options' && (
+              <div className="p-6 md:p-8">
+                <h3 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white text-center mb-1 uppercase tracking-tight">
+                  ¿Qué deseas hacer con tu diseño?
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm text-center mb-6">
+                  Elige la opción que prefieras para tu creación de Inkfluencia.
+                </p>
+
+                <div className="space-y-4 font-sans">
+                  {/* Buy Option */}
+                  <button
+                    onClick={async () => {
+                      setContinueStep('ordering');
+                      // Wait for the animated transition
+                      await new Promise(resolve => setTimeout(resolve, 2500));
+                      await handleBuyDesign();
+                      setShowContinueModal(false);
+                    }}
+                    className="w-full text-left p-4 rounded-xl border border-pink-100 dark:border-pink-900/30 bg-pink-50/30 dark:bg-pink-950/10 hover:border-pink-500 hover:bg-pink-50/50 dark:hover:bg-pink-950/20 transition-all group flex items-start gap-4 cursor-pointer"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-pink-100 dark:bg-pink-900/40 text-pink-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <ShoppingBag className="w-5 h-5 flex shrink-0" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-gray-900 dark:text-white text-base">Comprar ahora</h4>
+                      <p className="text-xs text-gray-550 dark:text-gray-400 mt-0.5 leading-relaxed">
+                        Personaliza tu talla y gramaje de algodón peruano para recibir el pedido impreso con tecnología DTF en cualquier rincón del país.
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Save Option */}
+                  <button
+                    onClick={() => {
+                      setContinueStep('save');
+                    }}
+                    className="w-full text-left p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/30 dark:bg-indigo-950/10 hover:border-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition-all group flex items-start gap-4 cursor-pointer"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <Save className="w-5 h-5 flex shrink-0" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-gray-900 dark:text-white text-base">Guardar en la Comunidad</h4>
+                      <p className="text-xs text-gray-550 dark:text-gray-400 mt-0.5 leading-relaxed">
+                        Comparte tu diseño en la galería pública de Inkfluencia para que otros puedan verlo, inspirarse o pedirlo usando tu plantilla.
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {continueStep === 'save' && (
+              <div className="p-6 md:p-8 font-sans">
+                <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tight text-left">
+                  {isDesignerMode ? 'Guardar Cambios del Diseño' : 'Publicar en la Galería'}
+                </h3>
+                
+                {!isDesignerMode ? (
+                  <div className="bg-amber-50 dark:bg-amber-950/20 p-3.5 rounded-xl border border-amber-200 dark:border-amber-900/35 flex gap-2.5 mb-5 select-none text-left">
+                    <Info className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                      Las imágenes que va a incluir en el diseño serán <strong>públicas</strong> para toda la comunidad. Evite compartir imágenes personales o sensibles. Su diseño será revisado por el admin y una vez aprobado estará disponible en la galería de la comunidad.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-purple-50 dark:bg-purple-950/20 p-3.5 rounded-xl border border-purple-200 dark:border-purple-900/35 flex gap-2.5 mb-5 select-none text-left">
+                    <Info className="w-5 h-5 text-purple-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-purple-800 dark:text-purple-300 leading-relaxed">
+                      Estás editando esta plantilla de la galería. Al guardar, los cambios se verán reflejados inmediatamente en la galería de la comunidad.
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-4 text-left">
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase tracking-wide text-gray-450 mb-1">Nombre del Diseño</label>
+                    <input 
+                      type="text" 
+                      value={designName}
+                      onChange={(e) => {
+                        setDesignName(e.target.value);
+                        setSaveError('');
+                      }}
+                      placeholder="Ej. Colección Vintage"
+                      className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-pink-500 outline-none transition-all text-sm font-medium text-gray-900 dark:text-white"
+                      disabled={isProcessing}
+                    />
+                    {saveError && (
+                      <div className="flex items-center gap-1.5 mt-2 text-red-500 text-xs bg-red-50 dark:bg-red-900/2 transition-all p-2.5 rounded-lg border border-red-100 dark:border-red-900/30">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                        <p>{saveError}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={() => {
+                        if (isDesignerMode) {
+                          setShowContinueModal(false);
+                        } else {
+                          setContinueStep('options');
+                        }
+                      }}
+                      disabled={isProcessing}
+                      className="flex-1 py-3 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-xl text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                    >
+                      {isDesignerMode ? 'Cancelar' : 'Volver'}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!designName.trim()) {
+                          setSaveError('Por favor, ingresa un nombre para tu diseño.');
+                          return;
+                        }
+                        const success = await handleSaveToGalleryRef(designName);
+                        if (success) {
+                          setContinueStep('success-saved');
+                        }
+                      }}
+                      disabled={isProcessing}
+                      className={`flex-1.5 py-3 text-white font-bold rounded-xl text-sm transition-all shadow-md active:scale-95 cursor-pointer ${
+                        isDesignerMode 
+                        ? 'bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 shadow-purple-500/20' 
+                        : 'bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-500 hover:to-orange-400 shadow-orange-500/20'
+                      }`}
+                    >
+                      {isProcessing ? (
+                        <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                      ) : isDesignerMode ? (
+                        'Guardar Cambios'
+                      ) : (
+                        'Confirmar y Publicar'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {continueStep === 'ordering' && (
+              <div className="p-8 text-center flex flex-col items-center justify-center min-h-[300px] font-sans">
+                <div className="relative w-23 h-20 mb-6 flex items-center justify-center">
+                  <div className="absolute w-20 h-20 rounded-full border-4 border-pink-500/10 border-t-pink-500 animate-spin" />
+                  <div className="absolute w-16 h-16 rounded-full border-4 border-orange-500/10 border-b-orange-500 animate-spin-slow" />
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-pink-500 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
+                    <Shirt className="w-6 h-6 animate-pulse" />
+                  </div>
+                </div>
+
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">
+                  PROCESANDO TU DISEÑO...
+                </h3>
+                
+                <div className="space-y-1.5 max-w-sm w-full">
+                  <p className="text-xs text-gray-550 dark:text-gray-450 font-mono tracking-wider animate-pulse mb-2">
+                    Generando render en alta definición...
+                  </p>
+                  <div className="w-full max-w-[200px] h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mx-auto">
+                    <div className="h-full bg-gradient-to-r from-pink-500 to-orange-500 animate-loading-bar rounded-full" />
+                  </div>
+                </div>
+
+                <div className="mt-8 flex flex-col gap-1.5 items-center font-mono text-[10px] text-gray-400 select-none text-left">
+                  <span className="flex items-center gap-1.5 text-pink-500">✓ Optimizando archivos vectoriales DTF</span>
+                  <span className="flex items-center gap-1.5 text-orange-500">✓ Ajustando capas 3D de alta definición</span>
+                  <span className="flex items-center gap-1.5 text-yellow-500">✓ Preparando orden de algodón peruano</span>
+                </div>
+              </div>
+            )}
+
+            {continueStep === 'success-saved' && (
+              <div className="p-8 text-center flex flex-col items-center justify-center font-sans animate-fade-in">
+                {/* Stunning animated icon Container */}
+                <div className="relative w-24 h-24 mb-6 flex items-center justify-center">
+                  {/* Outer pulse ripples */}
+                  <div className="absolute inset-0 rounded-full bg-emerald-500/20 dark:bg-emerald-500/10 animate-ping" />
+                  <div className="absolute -inset-2 rounded-full border-2 border-dashed border-emerald-500/30 animate-spin-slow" />
+                  
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-xl shadow-emerald-500/30 relative">
+                    <CheckCircle2 className="w-9 h-9 animate-bounce-short text-white" />
+                    <span className="absolute -top-1 -right-1 bg-amber-400 text-gray-950 p-1.5 rounded-full shadow border-2 border-white dark:border-gray-900 animate-pulse">
+                      <Sparkles className="w-3.5 h-3.5 text-yellow-950" />
+                    </span>
+                  </div>
+                </div>
+
+                <h3 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2 tracking-tight uppercase">
+                  {isDesignerMode ? '¡Diseño Guardado!' : '¡Diseño Enviado!'}
+                </h3>
+                
+                <p className="text-gray-600 dark:text-gray-350 text-sm max-w-sm mb-6 leading-relaxed">
+                  {isDesignerMode ? (
+                    <>El diseño <strong className="text-pink-600 dark:text-pink-400">"{designName}"</strong> ha sido actualizado correctamente en la base de datos de administración.</>
+                  ) : (
+                    <>Tu creación <strong className="text-pink-600 dark:text-pink-400">"{designName}"</strong> ha sido registrada y enviada para revisión del administrador.</>
+                  )}
+                </p>
+
+                {!isDesignerMode && (
+                  <div className="bg-emerald-50/55 dark:bg-emerald-950/15 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/30 text-left max-w-sm mb-8 flex gap-3">
+                    <span className="text-lg shrink-0 mt-0.5 select-none text-emerald-600 dark:text-emerald-400">🎯</span>
+                    <p className="text-xs text-emerald-800 dark:text-emerald-350 leading-relaxed">
+                      Una vez aprobado por el equipo de moderación de Inkfluencia, tu diseño estará visible en la <strong>Galería de la Comunidad</strong> para que todos puedan verlo, personalizarlo o comprarlo.
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+                  <button
+                    onClick={() => {
+                      setShowContinueModal(false);
+                      setContinueStep(isDesignerMode ? 'save' : 'options');
+                    }}
+                    className="flex-1 py-3 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-350 font-bold rounded-xl text-sm transition-all hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 cursor-pointer"
+                  >
+                    Seguir Editando
+                  </button>
+                  {onNavigateToGallery && (
+                    <button
+                      onClick={() => {
+                        setShowContinueModal(false);
+                        setContinueStep('options');
+                        onNavigateToGallery();
+                      }}
+                      className={`flex-1 py-3 text-white font-bold rounded-xl text-sm transition-all shadow-md active:scale-95 cursor-pointer ${
+                        isDesignerMode 
+                        ? 'bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 shadow-purple-500/20' 
+                        : 'bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-500 hover:to-orange-400 shadow-orange-500/20'
+                      }`}
+                    >
+                      {isDesignerMode ? 'Volver al Panel' : 'Ir a la Galería'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
 
      {/* Styles for beautiful processing state and liquid glass styling */}
      <style>{`
@@ -1481,6 +1577,13 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         }
         .animate-spin-slow {
           animation: spin 3s linear infinite;
+        }
+        @keyframes bounceShort {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
+        }
+        .animate-bounce-short {
+          animation: bounceShort 1.4s ease-in-out infinite;
         }
         @keyframes elasticPop {
           0% { transform: scale(0.9); opacity: 0; }

@@ -73,7 +73,7 @@ export const CommunityPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black">
+    <div className="min-h-screen bg-transparent">
       {/* Upload Modal */}
       {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">

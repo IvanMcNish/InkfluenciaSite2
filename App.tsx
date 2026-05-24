@@ -126,8 +126,6 @@ const App: React.FC = () => {
       setView("admin");
     } else {
       await saveDesignToCollection(name, designConfig);
-      setConfig(DEFAULT_CONFIG);
-      setView("gallery");
     }
   };
 
@@ -148,6 +146,11 @@ const App: React.FC = () => {
                 config={config}
                 setConfig={setConfig}
                 onCheckout={() => setView("checkout")}
+                onSaveToGallery={handleSaveDesign}
+                onNavigateToGallery={() => {
+                  setConfig(DEFAULT_CONFIG);
+                  setView("gallery");
+                }}
                 onEditImage={(index) => {
                   setEditImageLayerIndex(index);
                   setPreviousView("customizer");
@@ -166,18 +169,25 @@ const App: React.FC = () => {
         );
       case "designer":
         return (
-          <Customizer
-            key="designer-view"
-            config={config}
-            setConfig={setConfig}
-            onSaveToGallery={handleSaveDesign}
-            onEditImage={(index) => {
-              setEditImageLayerIndex(index);
-              setPreviousView(view);
-              setView("image-editor");
-            }}
-            isDesignerMode={true}
-          />
+          <div className="absolute inset-0 z-0 h-full w-full">
+            <Customizer
+              key="designer-view"
+              config={config}
+              setConfig={setConfig}
+              onSaveToGallery={handleSaveDesign}
+              onNavigateToGallery={() => {
+                setConfig(DEFAULT_CONFIG);
+                setView("admin");
+              }}
+              onEditImage={(index) => {
+                setEditImageLayerIndex(index);
+                setPreviousView(view);
+                setView("image-editor");
+              }}
+              isDesignerMode={true}
+              isActive={true}
+            />
+          </div>
         );
       case "image-editor":
         if (editImageLayerIndex === null || !config.layers[editImageLayerIndex]) {
@@ -260,6 +270,11 @@ const App: React.FC = () => {
                 config={config}
                 setConfig={setConfig}
                 onCheckout={() => setView("checkout")}
+                onSaveToGallery={handleSaveDesign}
+                onNavigateToGallery={() => {
+                  setConfig(DEFAULT_CONFIG);
+                  setView("gallery");
+                }}
                 onEditImage={(index) => {
                   setEditImageLayerIndex(index);
                   setPreviousView("customizer");
@@ -279,7 +294,11 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300 flex flex-col relative">
+    <div className="min-h-screen text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300 flex flex-col relative">
+      {/* Dynamic ambient background matching customizer / render viewport */}
+      <div className="fixed inset-0 bg-gray-50 dark:bg-zinc-950 -z-20 transition-colors duration-300" />
+      <div className="fixed inset-0 bg-[url('/light.jpeg')] dark:bg-[url('/dark.jpeg')] bg-cover bg-center blur-sm scale-110 opacity-80 -z-10 transition-all duration-300 pointer-events-none" />
+
       <Navbar
         darkMode={darkMode}
         toggleDarkMode={() => setDarkMode(!darkMode)}

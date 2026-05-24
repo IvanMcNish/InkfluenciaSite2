@@ -162,15 +162,15 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
            {collection.map((item) => (
              <div 
                 key={item.id} 
-                className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer relative"
+                className="group relative flex flex-col justify-between aspect-[3/4] rounded-3xl border border-white/60 dark:border-white/10 bg-white/40 dark:bg-gray-950/40 backdrop-blur-xl shadow-lg hover:shadow-2xl hover:shadow-purple-500/20 dark:hover:shadow-indigo-500/10 transition-all duration-500 hover:-translate-y-2 cursor-pointer overflow-hidden"
                 onClick={() => setSelectedItem(item)}
              >
-                <div className="aspect-square bg-gray-100 dark:bg-gray-800 relative overflow-hidden">
+                <div className="flex-grow w-full h-[76%] flex items-center justify-center p-6 relative bg-transparent overflow-hidden">
                     {item.config.snapshotUrl ? (
                         <img 
                             src={item.config.snapshotUrl} 
                             alt={item.name} 
-                            className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal transition-transform duration-700 group-hover:scale-110" 
+                            className="max-h-[85%] max-w-[85%] object-contain filter drop-shadow-[0_10px_15px_rgba(0,0,0,0.15)] group-hover:scale-102 transition-all duration-700" 
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-300">
@@ -179,21 +179,25 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
                     )}
                     
                     {/* Hover Overlay */}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                        <span className="bg-white text-black px-6 py-2 rounded-full font-bold flex items-center gap-2 transform scale-90 group-hover:scale-100 transition-transform shadow-lg">
+                    <div className="absolute inset-0 bg-black/10 dark:bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+                        <span className="bg-white/85 dark:bg-gray-950/85 backdrop-blur border border-white/20 dark:border-gray-800 text-gray-900 dark:text-white px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-2 transform scale-90 group-hover:scale-100 transition-all duration-300 shadow-xl">
                             <Eye className="w-4 h-4" /> Ver Diseño
                         </span>
                     </div>
                 </div>
                 
-                <div className="p-4">
-                    <h3 className="font-bold text-lg mb-1 truncate group-hover:text-pink-500 transition-colors">{item.name}</h3>
-                    <div className="flex justify-between items-center text-sm text-gray-500">
-                        <span>{new Date(item.createdAt).toLocaleDateString()}</span>
-                        <span className="capitalize px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs font-medium">
-                            {item.config.color === 'white' ? 'Blanca' : 'Negra'}
+                <div className="absolute bottom-3 left-3 right-3 z-10 p-3 h-[4.5rem] rounded-2xl bg-white/75 dark:bg-gray-950/75 backdrop-blur-lg border border-white/20 dark:border-gray-800/50 shadow-lg flex justify-between items-center transition-all duration-300 group-hover:bg-white/95 group-hover:dark:bg-gray-950/95 text-left">
+                    <div className="truncate pr-2 flex-grow min-w-0"><h3 className="font-extrabold text-gray-950 dark:text-white text-sm md:text-base leading-tight truncate">{item.name}</h3>
+                    <div className="flex items-center gap-1.5 mt-1 text-[10px] text-gray-700 dark:text-gray-300 font-medium">
+                        <span className="shrink-0 w-2 h-2 rounded-full" style={{ backgroundColor: item.config.color === 'white' ? '#fff' : '#000', border: '1px solid currentColor' }} />
+                        <span className="truncate">
+                            {item.config.color === 'white' ? 'Camiseta Blanca' : 'Camiseta Negra'}
                         </span>
                     </div>
+                    </div>
+                    <span className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-tr from-pink-600 to-orange-500 text-white shadow-md shadow-orange-500/20 group-hover:scale-110 transition-transform duration-300">
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                    </span>
                 </div>
              </div>
            ))}

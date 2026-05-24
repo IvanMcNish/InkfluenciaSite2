@@ -172,7 +172,7 @@ export const AdminGallery: React.FC<AdminGalleryProps> = ({ onEditDesign }) => {
             </div>
         </div>
       );
-  }
+  };
 
   const GalleryPreviewModal = () => {
       if (!previewDesign) return null;
@@ -181,9 +181,20 @@ export const AdminGallery: React.FC<AdminGalleryProps> = ({ onEditDesign }) => {
       const initialSide = previewDesign.config.layers.length > 0 ? previewDesign.config.layers[0].side : 'front';
 
       return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in overflow-y-auto">
-            <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl shadow-2xl p-0 overflow-hidden border border-gray-200 dark:border-gray-800 relative">
-                <button onClick={() => setPreviewDesign(null)} className="absolute top-4 right-4 z-10 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors backdrop-blur-md"><X className="w-5 h-5" /></button>
+        <div 
+          onClick={() => setPreviewDesign(null)} 
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in overflow-y-auto"
+        >
+            <div 
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl shadow-2xl p-0 overflow-hidden border border-gray-200 dark:border-gray-800 relative animate-elastic-pop"
+            >
+                <button 
+                  onClick={() => setPreviewDesign(null)} 
+                  className="absolute top-4 right-4 z-10 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors backdrop-blur-md cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
                 
                 {/* 3D Scene Viewport */}
                 <div className="bg-gray-100 dark:bg-gray-800 aspect-square relative overflow-hidden border-b border-gray-200 dark:border-gray-700">
@@ -204,25 +215,31 @@ export const AdminGallery: React.FC<AdminGalleryProps> = ({ onEditDesign }) => {
                     )}
                 </div>
 
-                <div className="p-6">
+                <div className="p-6 text-left">
                     <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{previewDesign.name}</h3>
                     <div className="flex gap-4 text-sm text-gray-500 mb-6">
                         <div className="flex items-center gap-1"><Calendar className="w-4 h-4" />{new Date(previewDesign.createdAt).toLocaleDateString()}</div>
                         <div className="flex items-center gap-1"><Layers className="w-4 h-4" />{previewDesign.config.layers.length} capas</div>
                     </div>
                     {!previewDesign.approved ? (
-                        <div className="flex gap-3">
-                            <button onClick={() => { handleApproveDesign(previewDesign.id); setPreviewDesign(null); }} disabled={approvingId === previewDesign.id} className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-green-500/20">{approvingId === previewDesign.id ? <Loader2 className="w-5 h-5 animate-spin"/> : <CheckCircle2 className="w-5 h-5"/>} Aprobar Diseño</button>
-                            <button onClick={() => { requestDeleteGalleryItem(previewDesign.id, previewDesign.name); setPreviewDesign(null); }} className="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-red-600 font-bold py-3 rounded-xl transition-colors">Rechazar / Eliminar</button>
+                        <div className="space-y-3">
+                            <div className="flex gap-3">
+                                <button onClick={() => { handleApproveDesign(previewDesign.id); setPreviewDesign(null); }} disabled={approvingId === previewDesign.id} className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-green-500/20 cursor-pointer">{approvingId === previewDesign.id ? <Loader2 className="w-5 h-5 animate-spin"/> : <CheckCircle2 className="w-5 h-5"/>} Aprobar Diseño</button>
+                                <button onClick={() => { requestDeleteGalleryItem(previewDesign.id, previewDesign.name); setPreviewDesign(null); }} className="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-red-650 font-bold py-3 rounded-xl transition-colors cursor-pointer">Rechazar / Eliminar</button>
+                            </div>
+                            <button onClick={() => setPreviewDesign(null)} className="w-full bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-300 py-2.5 rounded-xl text-sm font-semibold transition-colors cursor-pointer">Volver al Panel</button>
                         </div>
                     ) : (
-                        <div className="w-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 py-3 rounded-xl font-bold text-center border border-green-100 dark:border-green-900 flex items-center justify-center gap-2"><CheckCircle2 className="w-5 h-5" /> Este diseño está público</div>
+                        <div className="space-y-3">
+                            <div className="w-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 py-3 rounded-xl font-bold text-center border border-green-100 dark:border-green-900 flex items-center justify-center gap-2 select-none"><CheckCircle2 className="w-5 h-5" /> Este diseño está público</div>
+                            <button onClick={() => setPreviewDesign(null)} className="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 rounded-xl font-bold transition-colors cursor-pointer">Cerrar Vista Previa</button>
+                        </div>
                     )}
                 </div>
             </div>
         </div>
       );
-  }
+  };
 
   return (
     <div className="animate-fade-in">

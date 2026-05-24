@@ -29,7 +29,7 @@ export const ContactPage: React.FC = () => {
   const instagramLink = "https://www.instagram.com/inkfluencia_?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==";
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-gray-50 dark:bg-black p-6">
+    <div className="min-h-[calc(100vh-80px)] bg-transparent p-6">
       <div className="max-w-6xl mx-auto">
         
         {/* Header */}

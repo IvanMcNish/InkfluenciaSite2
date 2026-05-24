@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt, Ruler, Lock, Unlock, MousePointer2, HelpCircle, X, Hand, Video, Scissors, Columns, Palette, CheckCircle2, Sparkles } from 'lucide-react';
+import { Upload, Move, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutTemplate, RotateCcw, Trash2, Layers, Save, ShoppingBag, AlertTriangle, Loader2, Info, RefreshCw, Shirt, Ruler, Lock, Unlock, MousePointer2, HelpCircle, X, Hand, Video, Scissors, Columns, Palette, CheckCircle2, Sparkles, ArrowLeftRight } from 'lucide-react';
 import { TShirtConfig, CustomizerConstraints } from '../types';
 import { Scene } from './Scene';
 import { PRICES, formatCurrency, TSHIRT_GLB_MODELS } from '../constants';
@@ -224,6 +224,22 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
               ...newLayers[activeLayerIndex],
               side: currentSide === 'front' ? 'back' : 'front'
           };
+          return { ...prev, layers: newLayers };
+      });
+  };
+
+  const swapLayersData = () => {
+      setConfig(prev => {
+          const newLayers = [...prev.layers];
+          if (newLayers.length === 2) {
+              const temp = newLayers[0];
+              newLayers[0] = newLayers[1];
+              newLayers[1] = temp;
+          } else if (newLayers.length === 1) {
+              // Option A: Just reverse the positions, but if it's only 1 layer, swapping it with an empty slot
+              // might behave weirdly since we assume layers[0] is filled first. Usually if there's 1 layer we can just do nothing.
+              return prev;
+          }
           return { ...prev, layers: newLayers };
       });
   };
@@ -956,7 +972,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
       </div>
 
       {/* Desktop Side Settings Panel */}
-      <div className={`hidden lg:flex absolute right-6 top-[104px] w-[420px] h-[calc(100vh-104px-40.5px)] z-20 flex-col p-4 bg-white/85 dark:bg-gray-950/85 backdrop-blur-md rounded-2xl border border-white/20 dark:border-gray-800/50 shadow-2xl transition-all duration-300 ${isPanelHidden ? 'translate-x-[110%] opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'}`}>
+      <div className={`hidden lg:flex absolute right-6 top-[104px] w-[420px] h-[calc(100vh-104px-40.5px)] z-20 flex-col p-4 rounded-2xl shadow-2xl transition-all duration-300 liquid-glass border border-white/20 dark:border-white/5 ${isPanelHidden ? 'translate-x-[110%] opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'}`}>
           <div className="flex flex-col gap-4 overflow-y-auto flex-1 custom-scrollbar pr-1">
              <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-2.5 shrink-0">
                  <div className="flex items-center gap-2">
@@ -1069,20 +1085,28 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
             </div>
             
             {activeLayer && (
-                <div className="mt-2">
+                <div className="mt-2 flex gap-2">
                      <button
                         onClick={toggleLayerSide}
-                        className="w-full flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-pink-500 dark:hover:border-pink-500 transition-colors group"
+                        title="Cambiar ubicación de este diseño"
+                        className="flex-1 flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-pink-500 dark:hover:border-pink-500 transition-colors group"
                      >
                         <div className="flex items-center gap-2">
                             <Shirt className="w-4 h-4 text-gray-500 group-hover:text-pink-500 transition-colors" />
                             <span className="text-xs font-bold uppercase text-gray-600 dark:text-gray-300">Ubicación:</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded transition-all ${activeLayer.side === 'front' || !activeLayer.side ? 'bg-pink-500 text-white' : 'text-gray-400'}`}>Frente</span>
+                            <span className={`text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded transition-all ${activeLayer.side === 'front' || !activeLayer.side ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-400'}`}>Frente</span>
                             <RefreshCw className="w-3 h-3 text-gray-400" />
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded transition-all ${activeLayer.side === 'back' ? 'bg-pink-500 text-white' : 'text-gray-400'}`}>Espalda</span>
+                            <span className={`text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded transition-all ${activeLayer.side === 'back' ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-400'}`}>Espalda</span>
                         </div>
+                     </button>
+                     <button
+                        onClick={swapLayersData}
+                        title="Intercambiar diseño entre ranura 1 y 2"
+                        className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-pink-500 hover:text-pink-600 dark:hover:border-pink-500 transition-colors group flex items-center justify-center shrink-0 shadow-sm"
+                     >
+                        <ArrowLeftRight className="w-4 h-4 text-gray-500 group-hover:text-pink-500 transition-colors" />
                      </button>
                 </div>
             )}

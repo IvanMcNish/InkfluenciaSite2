@@ -218,7 +218,7 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
                   className="group relative flex flex-col justify-between aspect-[3/4] rounded-3xl border border-white/60 dark:border-white/10 bg-white/40 dark:bg-gray-950/40 backdrop-blur-xl shadow-lg hover:shadow-2xl hover:shadow-purple-500/20 dark:hover:shadow-indigo-500/10 transition-all duration-500 hover:-translate-y-2 cursor-pointer overflow-hidden"
                   onClick={() => setSelectedItem(item)}
                >
-                  <div className="flex-grow w-full h-full pt-8 flex items-center justify-center relative bg-transparent overflow-hidden">
+                  <div className="flex-grow w-full h-full pt-11 flex items-center justify-center relative bg-transparent overflow-hidden">
                       {item.config.snapshotUrl ? (
                           <img 
                               src={item.config.snapshotUrl} 

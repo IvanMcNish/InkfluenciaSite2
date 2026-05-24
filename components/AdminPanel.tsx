@@ -69,15 +69,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2">
               Panel Administrativo
             </h1>
-            <p className="text-gray-500 dark:text-gray-400">
-              Control de Pedidos y Base de Datos de Clientes
-            </p>
+            <div className="mt-2 text-left">
+              <p className="text-gray-800 dark:text-gray-200 text-xs md:text-sm leading-relaxed px-5 py-2.5 rounded-2xl bg-white/40 dark:bg-black/30 border border-white/20 dark:border-white/5 backdrop-blur-md shadow-lg inline-block">
+                Control de Pedidos y Base de Datos de Clientes
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors rounded-lg font-bold text-sm"
+              className="flex items-center gap-2 px-5 py-2.5 liquid-glass border border-white/20 dark:border-white/5 hover:scale-105 hover:text-red-500 text-gray-700 dark:text-gray-300 transition-all rounded-xl shadow-md font-bold text-sm"
               title="Cerrar Sesión"
             >
               <LogOut className="w-4 h-4" />
@@ -92,10 +94,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex flex-col items-center justify-center p-2 rounded-xl text-[10px] sm:text-xs font-bold transition-all ${
+              className={`flex flex-col items-center justify-center p-2 rounded-xl text-[10px] sm:text-xs font-bold transition-all border border-white/20 dark:border-white/5 shadow-md backdrop-blur-md ${
                 activeTab === tab.id
-                  ? "bg-pink-600 text-white shadow-lg shadow-pink-500/30"
-                  : "bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-800"
+                  ? "bg-gradient-to-r from-pink-600 to-orange-500 text-white shadow-lg"
+                  : "bg-white/40 dark:bg-black/30 text-gray-600 dark:text-gray-300 hover:text-pink-600 liquid-glass-accent"
               }`}
             >
               <tab.icon className="w-5 h-5 mb-1.5" />
@@ -105,12 +107,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
 
         {/* DESKTOP TABS */}
-        <div className="hidden lg:flex gap-4 mb-2 border-b border-gray-200 dark:border-gray-800 overflow-x-auto no-scrollbar">
+        <div className="hidden lg:flex gap-2 mb-6 overflow-x-auto no-scrollbar p-2 rounded-2xl liquid-glass border border-white/20 dark:border-white/5 shadow-md w-fit">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`shrink-0 pb-3 px-4 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === tab.id ? "border-pink-500 text-pink-600" : "border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-300"}`}
+              className={`shrink-0 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 uppercase tracking-wider ${
+                activeTab === tab.id
+                  ? "bg-gradient-to-r from-pink-600 to-orange-500 text-white shadow-lg"
+                  : "text-gray-600 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400"
+              }`}
             >
               <tab.icon className="w-4 h-4" />
               {tab.label}

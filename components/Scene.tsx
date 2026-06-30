@@ -312,7 +312,7 @@ const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cust
   const { scene } = useGLTF(objUrl);
   
   // Load fabric normal map texture
-  const normalMap = useTexture('/NormalFabric.png');
+  const normalMap = useTexture('/NormalFabric.jpg');
   useEffect(() => {
     if (normalMap) {
       normalMap.wrapS = THREE.RepeatWrapping;
@@ -570,7 +570,7 @@ const ToteBagMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cus
   const obj = useLoader(OBJLoader, objUrl);
   
   // Load fabric normal map texture
-  const normalMap = useTexture('/NormalFabric.png');
+  const normalMap = useTexture('/NormalFabric.jpg');
   useEffect(() => {
     if (normalMap) {
       normalMap.wrapS = THREE.RepeatWrapping;
@@ -679,7 +679,7 @@ const ToteBagMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cus
 TSHIRT_GLB_MODELS.forEach(url => {
   useGLTF.preload(url);
 });
-useTexture.preload('/NormalFabric.png');
+useTexture.preload('/NormalFabric.jpg');
 
 const ProductMesh: React.FC<ProductMeshProps> = (props) => {
     return props.config.productType === 'totebag' ? <ToteBagMesh {...props} /> : <TShirtMesh {...props} />;

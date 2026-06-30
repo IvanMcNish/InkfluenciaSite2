@@ -1,7 +1,7 @@
 
 export const TSHIRT_GLB_MODELS = [
   "/tshirt.glb",
-  "/tshirt-2.glb",
+ // "/tshirt-2.glb",
   "/Camiseta2.glb"
   // "/tshirt2.glb", // Puedes agregar más modelos .glb a la carpeta public y añadirlos aquí
 ];

@@ -311,6 +311,17 @@ const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cust
   const objUrl = TSHIRT_GLB_MODELS[modelIndex] || TSHIRT_GLB_MODELS[0];
   const { scene } = useGLTF(objUrl);
   
+  // Load fabric normal map texture
+  const normalMap = useTexture('/NormalFabric.png');
+  useEffect(() => {
+    if (normalMap) {
+      normalMap.wrapS = THREE.RepeatWrapping;
+      normalMap.wrapT = THREE.RepeatWrapping;
+      normalMap.repeat.set(16, 16); // Highly detailed repeat tiling for realistic micro-threads
+      normalMap.needsUpdate = true;
+    }
+  }, [normalMap]);
+  
   const { meshes, zFront, zBack } = useMemo(() => {
     scene.updateMatrixWorld(true);
 
@@ -443,6 +454,18 @@ const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cust
                 if ('color' in cloned && (cloned as any).color) {
                   (cloned as any).color.set(materialColor);
                 }
+                if ('normalMap' in cloned) {
+                  (cloned as any).normalMap = normalMap;
+                  if ('normalScale' in cloned) {
+                    (cloned as any).normalScale.set(0.18, 0.18);
+                  }
+                  if ('roughness' in cloned) {
+                    (cloned as any).roughness = 0.9;
+                  }
+                  if ('metalness' in cloned) {
+                    (cloned as any).metalness = 0.0;
+                  }
+                }
                 return <primitive key={idx} object={cloned} attach={`material-${idx}`} />;
               });
             } else if (meshData.material) {
@@ -450,13 +473,27 @@ const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cust
               if ('color' in cloned && (cloned as any).color) {
                 (cloned as any).color.set(materialColor);
               }
+              if ('normalMap' in cloned) {
+                (cloned as any).normalMap = normalMap;
+                if ('normalScale' in cloned) {
+                  (cloned as any).normalScale.set(0.18, 0.18);
+                }
+                if ('roughness' in cloned) {
+                  (cloned as any).roughness = 0.9;
+                }
+                if ('metalness' in cloned) {
+                  (cloned as any).metalness = 0.0;
+                }
+              }
               return <primitive object={cloned} attach="material" />;
             } else {
               return (
                 <MeshStandardMaterial 
                   color={materialColor} 
-                  roughness={0.8}
-                  metalness={0.1}
+                  roughness={0.9}
+                  metalness={0.0}
+                  normalMap={normalMap}
+                  normalScale={[0.18, 0.18]}
                 />
               );
             }
@@ -532,6 +569,17 @@ const ToteBagMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cus
   const objUrl = TOTEBAG_OBJ_URL;
   const obj = useLoader(OBJLoader, objUrl);
   
+  // Load fabric normal map texture
+  const normalMap = useTexture('/NormalFabric.png');
+  useEffect(() => {
+    if (normalMap) {
+      normalMap.wrapS = THREE.RepeatWrapping;
+      normalMap.wrapT = THREE.RepeatWrapping;
+      normalMap.repeat.set(12, 12); // Slightly larger canvas-style weave for tote bag
+      normalMap.needsUpdate = true;
+    }
+  }, [normalMap]);
+  
   const { geometry, zFront, zBack } = useMemo(() => {
     let foundGeom: THREE.BufferGeometry | null = null;
     obj.traverse((child) => {
@@ -592,9 +640,11 @@ const ToteBagMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cus
     >
       <MeshStandardMaterial 
         color={materialColor} 
-        roughness={0.9}
-        metalness={0.05}
+        roughness={0.95}
+        metalness={0.0}
         side={THREE.DoubleSide} 
+        normalMap={normalMap}
+        normalScale={[0.25, 0.25]} // Slightly higher strength for coarse tote bag fabric
       />
       {config.layers.map((layer, index) => {
           // For the front side, z moves from 0 to zFront. So the center is zFront / 2, depth is zFront + 0.1
@@ -629,6 +679,7 @@ const ToteBagMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cus
 TSHIRT_GLB_MODELS.forEach(url => {
   useGLTF.preload(url);
 });
+useTexture.preload('/NormalFabric.png');
 
 const ProductMesh: React.FC<ProductMeshProps> = (props) => {
     return props.config.productType === 'totebag' ? <ToteBagMesh {...props} /> : <TShirtMesh {...props} />;

@@ -292,8 +292,8 @@ export const AdminOrders: React.FC = () => {
                             </h3>
                             <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                                 <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                    <span className="block text-gray-500 text-xs uppercase">{selectedOrder.config.productType === 'totebag' ? 'Producto' : 'Género / Talla'}</span>
-                                    <span className="font-bold text-lg capitalize">{selectedOrder.config.productType === 'totebag' ? `Tote Bag - ${selectedOrder.size}` : `${selectedOrder.gender === 'male' ? 'H' : 'M'} - ${selectedOrder.size}`}</span>
+                                    <span className="block text-gray-500 text-xs uppercase">{selectedOrder.config.productType === 'totebag' ? 'Producto' : 'Producto / Talla'}</span>
+                                    <span className="font-bold text-lg capitalize">{selectedOrder.config.productType === 'totebag' ? `Tote Bag - ${selectedOrder.size}` : `${selectedOrder.config.productType === 'oversize' ? 'Oversize' : 'Básica'} (${selectedOrder.gender === 'male' ? 'H' : 'M'}) - ${selectedOrder.size}`}</span>
                                 </div>
                                 <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                                     <span className="block text-gray-500 text-xs uppercase">Color Base</span>
@@ -425,7 +425,11 @@ export const AdminOrders: React.FC = () => {
                                 </div>
                                 <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded">
                                     <span className="text-gray-400 block">{order.config.productType === 'totebag' ? 'Producto' : 'Gramaje'}</span>
-                                    <span className="font-bold text-gray-700 dark:text-gray-200">{order.config.productType === 'totebag' ? 'Tote Bag' : order.grammage}</span>
+                                    <span className="font-bold text-gray-700 dark:text-gray-200">
+                                        {order.config.productType === 'totebag' 
+                                            ? 'Tote Bag' 
+                                            : (order.config.productType === 'oversize' ? `Oversize (${order.grammage})` : `Básica (${order.grammage})`)}
+                                    </span>
                                 </div>
                                 <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded col-span-2">
                                     <span className="text-gray-400 block">Ciudad</span>

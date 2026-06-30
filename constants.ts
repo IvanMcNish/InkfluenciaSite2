@@ -1,15 +1,16 @@
 
 export const TSHIRT_GLB_MODELS = [
-  "/tshirt.glb",
- // "/tshirt-2.glb",
-  "/Camiseta2.glb"
+  //"/Basica.glb",
+  //"/tshirt.glb",
+  "/Basica2.glb",
+  "/Oversize.glb"
   // "/tshirt2.glb", // Puedes agregar más modelos .glb a la carpeta public y añadirlos aquí
 ];
 
 export const TOTEBAG_OBJ_URL = "/tote2.obj";
 
 export const DEFAULT_CONFIG = {
-  productType: 'tshirt' as const,
+  productType: 'basica' as const,
   tshirtModelIndex: 0,
   color: 'white' as const,
   layers: [], // Empty array for layers

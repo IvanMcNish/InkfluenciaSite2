@@ -188,7 +188,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack 
             )}
             
             <div className="space-y-2">
-                <h3 className="font-bold text-lg">{config.productType === 'totebag' ? 'Tote Bag Inkfluencia' : 'Camiseta Inkfluencia'}</h3>
+                <h3 className="font-bold text-lg">{config.productType === 'totebag' ? 'Tote Bag Inkfluencia' : (config.productType === 'oversize' ? 'Camiseta Oversize Inkfluencia' : 'Camiseta Básica Inkfluencia')}</h3>
                 <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                     <span>Diseños:</span>
                     <span className="font-medium text-gray-900 dark:text-white capitalize">{config.layers.length} imagen(es)</span>

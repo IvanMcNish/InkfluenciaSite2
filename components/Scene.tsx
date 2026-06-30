@@ -307,8 +307,9 @@ interface ProductMeshProps {
 }
 
 const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, customBlackColor, lockView, onPositionChange, onLayerSelect, activeLayerSide, isDraggingRef, designOpacity = 1 }) => {
-  const modelIndex = config.tshirtModelIndex || 0;
-  const objUrl = TSHIRT_GLB_MODELS[modelIndex] || TSHIRT_GLB_MODELS[0];
+  const objUrl = config.productType === 'oversize'
+    ? '/Oversize.glb'
+    : (config.productType === 'basica' ? '/Basica2.glb' : (TSHIRT_GLB_MODELS[config.tshirtModelIndex || 0] || '/Basica2.glb'));
   const { scene } = useGLTF(objUrl);
   
   // Load fabric normal map texture

@@ -14,6 +14,7 @@
     "@react-three/fiber": "^8.15.16",
     "@supabase/supabase-js": "^2.39.7",
     "framer-motion": "^12.40.0",
+    "jpeg-js": "^0.4.4",
     "lucide-react": "^0.344.0",
     "pngjs": "^7.0.0",
     "react": "^18.2.0",

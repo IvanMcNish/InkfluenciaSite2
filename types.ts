@@ -35,7 +35,7 @@ export interface DesignLayer {
 export interface TShirtConfig {
   id?: string; // Reference for editing existing designs
   designName?: string; // Temporary name storage for editing
-  productType?: 'tshirt' | 'totebag'; // New property for product type
+  productType?: 'basica' | 'oversize' | 'totebag' | 'tshirt'; // New property for product type
   tshirtModelIndex?: number;
   color: 'white' | 'black' | 'bone';
   designOpacity?: number; // Per-design opacity setting

@@ -244,7 +244,11 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ onUseDesign, onNavigat
                       <div className="flex items-center gap-1.5 mt-1 text-[10px] text-gray-700 dark:text-gray-300 font-medium">
                           <span className="shrink-0 w-2 h-2 rounded-full" style={{ backgroundColor: item.config.color === 'white' ? '#fff' : '#000', border: '1px solid currentColor' }} />
                           <span className="truncate text-xs">
-                              {item.config.productType === 'totebag' ? 'Tote Bag Natural' : item.config.color === 'white' ? 'Camiseta Blanca' : 'Camiseta Negra'}
+                              {item.config.productType === 'totebag' 
+                                ? 'Tote Bag Natural' 
+                                : (item.config.productType === 'oversize'
+                                    ? `Oversize ${item.config.color === 'white' ? 'Blanca' : 'Negra'}`
+                                    : `Básica ${item.config.color === 'white' ? 'Blanca' : 'Negra'}`)}
                           </span>
                       </div>
                       </div>

@@ -158,7 +158,11 @@ export const OrderSuccess: React.FC<OrderSuccessProps> = ({ order, onReset }) =>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="space-y-1">
                             <span className="text-xs text-gray-500 uppercase font-bold">Prenda</span>
-                            <div className="font-medium text-gray-900 dark:text-white">{order.config.productType === 'totebag' ? 'Tote Bag Inkfluencia' : 'Camiseta Inkfluencia'}</div>
+                            <div className="font-medium text-gray-900 dark:text-white">
+                                {order.config.productType === 'totebag' 
+                                    ? 'Tote Bag Inkfluencia' 
+                                    : (order.config.productType === 'oversize' ? 'Camiseta Oversize Inkfluencia' : 'Camiseta Básica Inkfluencia')}
+                            </div>
                             <div className="text-sm text-gray-600 dark:text-gray-400 capitalize">{order.gender === 'male' ? 'Hombre' : order.gender === 'female' ? 'Mujer' : 'Unisex'}</div>
                         </div>
                         <div className="space-y-1">

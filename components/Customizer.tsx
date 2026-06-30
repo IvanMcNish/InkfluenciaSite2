@@ -29,6 +29,70 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   const [saveError, setSaveError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showGuides, setShowGuides] = useState(true);
+
+  // Local cache for the 3 distinct configs to prevent sharing properties between them
+  const [productConfigs, setProductConfigs] = useState<Record<'basica' | 'oversize' | 'totebag', TShirtConfig>>(() => {
+    const defaultBasica: TShirtConfig = {
+      productType: 'basica',
+      color: 'white',
+      layers: []
+    };
+    const defaultOversize: TShirtConfig = {
+      productType: 'oversize',
+      color: 'white',
+      layers: []
+    };
+    const defaultTotebag: TShirtConfig = {
+      productType: 'totebag',
+      color: 'bone',
+      layers: []
+    };
+
+    const initialType = config.productType === 'totebag'
+      ? 'totebag'
+      : (config.productType === 'oversize' ? 'oversize' : 'basica');
+
+    return {
+      basica: initialType === 'basica' ? { ...config, productType: 'basica' } : defaultBasica,
+      oversize: initialType === 'oversize' ? { ...config, productType: 'oversize' } : defaultOversize,
+      totebag: initialType === 'totebag' ? { ...config, productType: 'totebag' } : defaultTotebag,
+    };
+  });
+
+  useEffect(() => {
+    if (!config) return;
+    const currentType = config.productType === 'totebag'
+      ? 'totebag'
+      : (config.productType === 'oversize' ? 'oversize' : 'basica');
+
+    setProductConfigs(prev => {
+      if (JSON.stringify(prev[currentType]) === JSON.stringify(config)) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [currentType]: { ...config, productType: currentType }
+      };
+    });
+  }, [config]);
+
+  const handleProductTypeChange = (newType: 'basica' | 'oversize' | 'totebag') => {
+    const currentType = config.productType === 'totebag'
+      ? 'totebag'
+      : (config.productType === 'oversize' ? 'oversize' : 'basica');
+
+    if (currentType === newType) return;
+
+    const updatedConfigs = {
+      ...productConfigs,
+      [currentType]: { ...config }
+    };
+    setProductConfigs(updatedConfigs);
+
+    const newConfig = { ...updatedConfigs[newType] };
+    setConfig(newConfig);
+    setActiveLayerIndex(0);
+  };
   
   // New States for UX improvements
   const [showTutorial, setShowTutorial] = useState(false);
@@ -884,14 +948,25 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
 
               {mobileActiveTab === 'product' && (
                   <div className="flex flex-col gap-2.5 shrink-0">
-                      <div className="flex p-0.5 bg-gray-100/60 dark:bg-gray-800/60 rounded-lg shrink-0">
-                          <button onClick={() => setConfig(prev => {
-                              if (!prev.productType || prev.productType === 'tshirt') {
-                                return { ...prev, productType: 'tshirt', tshirtModelIndex: ((prev.tshirtModelIndex || 0) + 1) % TSHIRT_GLB_MODELS.length };
-                              }
-                              return { ...prev, productType: 'tshirt', tshirtModelIndex: 0, color: prev.color === 'bone' ? 'white' : prev.color };
-                          })} className={`flex-1 py-1 text-[11px] font-bold rounded-md transition-all ${(!config.productType || config.productType === 'tshirt') ? 'bg-white/90 dark:bg-gray-700/90 shadow text-pink-500' : 'text-gray-400'}`}>👕 Camiseta {(config.tshirtModelIndex || 0) > 0 ? (config.tshirtModelIndex || 0) + 1 : ''}</button>
-                          <button onClick={() => setConfig(prev => ({ ...prev, productType: 'totebag', color: 'bone' }))} className={`flex-1 py-1 text-[11px] font-bold rounded-md transition-all ${config.productType === 'totebag' ? 'bg-white/90 dark:bg-gray-700/90 shadow text-pink-500' : 'text-gray-400'}`}>👜 Tote Bag</button>
+                      <div className="flex p-0.5 bg-gray-100/60 dark:bg-gray-800/60 rounded-lg shrink-0 gap-1">
+                           <button 
+                               onClick={() => handleProductTypeChange('basica')} 
+                               className={`flex-1 py-1 text-[11px] font-bold rounded-md transition-all flex items-center justify-center gap-1 ${config.productType === 'basica' || (!config.productType || config.productType === 'tshirt') && config.tshirtModelIndex === 0 ? 'bg-white/90 dark:bg-gray-700/90 shadow text-pink-500' : 'text-gray-400'}`}
+                           >
+                               👕 Básica
+                           </button>
+                           <button 
+                               onClick={() => handleProductTypeChange('oversize')} 
+                               className={`flex-1 py-1 text-[11px] font-bold rounded-md transition-all flex items-center justify-center gap-1 ${config.productType === 'oversize' || (!config.productType || config.productType === 'tshirt') && config.tshirtModelIndex === 1 ? 'bg-white/90 dark:bg-gray-700/90 shadow text-pink-500' : 'text-gray-400'}`}
+                           >
+                               👕 Oversize
+                           </button>
+                           <button 
+                               onClick={() => handleProductTypeChange('totebag')} 
+                               className={`flex-1 py-1 text-[11px] font-bold rounded-md transition-all flex items-center justify-center gap-1 ${config.productType === 'totebag' ? 'bg-white/90 dark:bg-gray-700/90 shadow text-pink-500' : 'text-gray-400'}`}
+                           >
+                               👜 Tote Bag
+                           </button>
                       </div>
                       <div className="flex justify-center gap-3 py-1 shrink-0">
                           {config.productType === 'totebag' ? (
@@ -1009,23 +1084,27 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                 )}
             </div>
 
-            <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-lg shrink-0 mt-2 mb-1">
+            <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-lg shrink-0 mt-2 mb-1 gap-1">
             <button
-                onClick={() => setConfig(prev => {
-                    if (!prev.productType || prev.productType === 'tshirt') {
-                        return { ...prev, productType: 'tshirt', tshirtModelIndex: ((prev.tshirtModelIndex || 0) + 1) % TSHIRT_GLB_MODELS.length };
-                    }
-                    return { ...prev, productType: 'tshirt', tshirtModelIndex: 0, color: prev.color === 'bone' ? 'white' : prev.color };
-                })}
-                className={`flex-1 py-1.5 text-xs lg:text-sm font-bold rounded-md transition-all ${(!config.productType || config.productType === 'tshirt') ? 'bg-white dark:bg-gray-700 shadow text-pink-500' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                onClick={() => handleProductTypeChange('basica')}
+                className={`flex-1 py-1.5 text-xs lg:text-sm font-bold rounded-md transition-all flex items-center justify-center gap-1.5 ${config.productType === 'basica' || (!config.productType || config.productType === 'tshirt') && config.tshirtModelIndex === 0 ? 'bg-white dark:bg-gray-700 shadow text-pink-500' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
             >
-                👕 Camiseta {(config.tshirtModelIndex || 0) > 0 ? (config.tshirtModelIndex || 0) + 1 : ''}
+                <Shirt className="w-3.5 h-3.5" />
+                Básica
             </button>
             <button
-                onClick={() => setConfig(prev => ({ ...prev, productType: 'totebag', color: 'bone' }))}
-                className={`flex-1 py-1.5 text-xs lg:text-sm font-bold rounded-md transition-all ${config.productType === 'totebag' ? 'bg-white dark:bg-gray-700 shadow text-pink-500' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                onClick={() => handleProductTypeChange('oversize')}
+                className={`flex-1 py-1.5 text-xs lg:text-sm font-bold rounded-md transition-all flex items-center justify-center gap-1.5 ${config.productType === 'oversize' || (!config.productType || config.productType === 'tshirt') && config.tshirtModelIndex === 1 ? 'bg-white dark:bg-gray-700 shadow text-pink-500' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
             >
-                👜 Tote Bag
+                <Shirt className="w-3.5 h-3.5" />
+                Oversize
+            </button>
+            <button
+                onClick={() => handleProductTypeChange('totebag')}
+                className={`flex-1 py-1.5 text-xs lg:text-sm font-bold rounded-md transition-all flex items-center justify-center gap-1.5 ${config.productType === 'totebag' ? 'bg-white dark:bg-gray-700 shadow text-pink-500' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+            >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                Tote Bag
             </button>
         </div>
 

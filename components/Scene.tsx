@@ -317,7 +317,7 @@ const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cust
     if (normalMap) {
       normalMap.wrapS = THREE.RepeatWrapping;
       normalMap.wrapT = THREE.RepeatWrapping;
-      normalMap.repeat.set(4, 4); // Highly detailed repeat tiling for realistic micro-threads
+      normalMap.repeat.set(16, 16); // Highly detailed repeat tiling for realistic micro-threads
       normalMap.needsUpdate = true;
     }
   }, [normalMap]);

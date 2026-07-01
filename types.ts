@@ -12,6 +12,8 @@ export interface DesignLayer {
   position: Position;
   side: 'front' | 'back';
   opacity?: number;
+  rotation?: number; // New rotation in degrees (0-360)
+  targetMesh?: 'basica_pecho' | 'basica_espalda' | 'basica_mangiz' | 'basica_mangder'; // Target submesh for basica
   filters?: {
     brightness: number;
     contrast: number;

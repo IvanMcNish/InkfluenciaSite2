@@ -205,62 +205,42 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
     if (file) {
       if (file.size > maxFileSizeMB * 1024 * 1024) {
         alert(`La imagen es demasiado grande. Por favor usa una imagen menor a ${maxFileSizeMB}MB.`);
+        e.target.value = '';
         return;
       }
 
+      // Reset input value so the same file can be uploaded again
+      e.target.value = '';
+
       const reader = new FileReader();
       reader.onload = (event) => {
+        const url = event.target?.result as string;
         const img = new Image();
         img.onload = () => {
-           const canvas = document.createElement('canvas');
-           const MAX_WIDTH = 600; 
-           let width = img.width;
-           let height = img.height;
-
-           if (width > MAX_WIDTH) {
-             height = Math.round((height * MAX_WIDTH) / width);
-             width = MAX_WIDTH;
-           }
-
-           canvas.width = width;
-           canvas.height = height;
-           
-           const ctx = canvas.getContext('2d');
-           if (ctx) {
-             ctx.clearRect(0, 0, width, height);
-             ctx.drawImage(img, 0, 0, width, height);
+          setConfig(prev => {
+             const newLayers = [...prev.layers];
+             const newLayer = {
+                 id: `layer-${Date.now()}`,
+                 textureUrl: url,
+                 originalUrl: url,
+                 side: 'front' as const, 
+                 position: { x: 0, y: 0.0, scale: 0.25 }, rotation: 0, targetMesh: prev.productType === 'basica' ? (slotIndex === 1 ? 'basica_espalda' : 'basica_pecho') : undefined, side: slotIndex === 1 ? 'back' : 'front'
+             };
              
-             let url = canvas.toDataURL('image/webp', 0.8);
-             
-             if (url.indexOf('image/webp') === -1) {
-                 url = canvas.toDataURL('image/png');
+             if (newLayers[slotIndex]) {
+                 newLayers[slotIndex] = { ...newLayers[slotIndex], textureUrl: url, originalUrl: url, filters: undefined, chromaKey: undefined, targetMesh: prev.productType === 'basica' ? (newLayers[slotIndex]?.targetMesh || (slotIndex === 1 ? 'basica_espalda' : 'basica_pecho')) : undefined };
+             } else {
+                 if (slotIndex === 1 && !newLayers[0]) return prev; 
+                 newLayers[slotIndex] = newLayer;
              }
              
-             setConfig(prev => {
-                const newLayers = [...prev.layers];
-                const newLayer = {
-                    id: `layer-${Date.now()}`,
-                    textureUrl: url,
-                    originalUrl: url,
-                    side: 'front' as const, 
-                    position: { x: 0, y: 0.1, scale: 0.25 }
-                };
-                
-                if (newLayers[slotIndex]) {
-                    newLayers[slotIndex] = { ...newLayers[slotIndex], textureUrl: url, originalUrl: url, filters: undefined, chromaKey: undefined };
-                } else {
-                    if (slotIndex === 1 && !newLayers[0]) return prev; 
-                    newLayers[slotIndex] = newLayer;
-                }
-                
-                return { ...prev, layers: newLayers };
-             });
-             setActiveLayerIndex(slotIndex);
-             // Auto-lock view to help user position immediately
-             setIsViewLocked(true);
-           }
+             return { ...prev, layers: newLayers };
+          });
+          setActiveLayerIndex(slotIndex);
+          // Auto-lock view to help user position immediately
+          setIsViewLocked(true);
         }
-        img.src = event.target?.result as string;
+        img.src = url;
       };
       reader.readAsDataURL(file);
     }
@@ -309,10 +289,8 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
   };
 
   const getDynamicBounds = (scale: number, axis: 'x' | 'y') => {
-      const halfSize = scale / 2;
-      const min = activeConstraints[axis].min + halfSize;
-      const max = activeConstraints[axis].max - halfSize;
-      if (min > max) return { min: 0, max: 0 };
+      const min = activeConstraints[axis].min;
+      const max = activeConstraints[axis].max;
       return { min, max };
   };
 
@@ -690,9 +668,11 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
               showMeasurements={showGuides}
               lockView={isViewLocked}
               onPositionChange={handleDragPosition}
+              onScaleChange={setScaleValue}
               onLayerSelect={setActiveLayerIndex}
               cameraOffset={cameraOffset}
               hideHelpText={!!mobileActiveTab || (!isMobile && !isPanelHidden)}
+              activeLayerIndex={activeLayerIndex}
           />
         ) : (
           <div className={`w-full h-full flex gap-4 p-4 overflow-auto bg-gray-100/50 dark:bg-zinc-950/20 ${isLandscape ? 'flex-row' : 'flex-col md:flex-row'}`}>
@@ -708,9 +688,11 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                     showMeasurements={showGuides}
                     lockView={isViewLocked}
                     onPositionChange={handleDragPosition}
+                    onScaleChange={setScaleValue}
                     onLayerSelect={setActiveLayerIndex}
                     cameraOffset={cameraOffset}
                     hideHelpText={true}
+                    activeLayerIndex={activeLayerIndex}
                 />
               </div>
             </div>
@@ -725,9 +707,11 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                     showMeasurements={showGuides}
                     lockView={isViewLocked}
                     onPositionChange={handleDragPosition}
+                    onScaleChange={setScaleValue}
                     onLayerSelect={setActiveLayerIndex}
                     cameraOffset={cameraOffset}
                     hideHelpText={true}
+                    activeLayerIndex={activeLayerIndex}
                 />
               </div>
             </div>
@@ -1020,25 +1004,78 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                   </div>
               )}
 
-              {mobileActiveTab === 'adjust' && activeLayer && (
-                  <div className="flex flex-col gap-2 shrink-0">
-                      <div className="space-y-0.5">
-                          <span className="text-[8px] font-extrabold text-gray-400 uppercase">TAMAÑO</span>
-                          <div className="flex items-center gap-2 bg-gray-50/40 dark:bg-gray-800/40 p-1 rounded-lg">
-                              <ZoomOut className="w-3.5 h-3.5 text-gray-500" />
-                              <input type="range" min={activeConstraints.scale.min} max={activeConstraints.scale.max} step="0.01" value={activeLayer.position.scale} onChange={(e) => setScaleValue(parseFloat(e.target.value))} className="w-full accent-pink-500 h-1 bg-gray-200 dark:bg-gray-750 rounded appearance-none cursor-pointer" />
-                              <ZoomIn className="w-3.5 h-3.5 text-gray-500" />
-                          </div>
-                      </div>
-                      <div className="space-y-0.5">
-                          <span className="text-[8px] font-extrabold text-gray-400 uppercase">TRANSPARENCIA ({Math.round((config.designOpacity ?? appearance.designOpacity) * 100)}%)</span>
-                          <div className="flex items-center gap-2 bg-gray-50/40 dark:bg-gray-800/40 p-1 rounded-lg">
-                              <span className="text-[8px] font-extrabold text-gray-400 uppercase flex items-center gap-1"><Hand className="w-3.5 h-3.5" /></span>
-                              <input type="range" min="0.1" max="1" step="0.01" value={config.designOpacity ?? appearance.designOpacity} onChange={(e) => setConfig(prev => ({ ...prev, designOpacity: parseFloat(e.target.value) }))} className="w-full accent-pink-500 h-1 bg-gray-200 dark:bg-gray-750 rounded appearance-none cursor-pointer" />
-                          </div>
-                      </div>
-                  </div>
-              )}
+               {mobileActiveTab === 'adjust' && activeLayer && (
+                   <div className="flex flex-col gap-2 shrink-0">
+                       <div className="space-y-0.5">
+                           <span className="text-[8px] font-extrabold text-gray-400 uppercase">TAMAÑO</span>
+                           <div className="flex items-center gap-2 bg-gray-50/40 dark:bg-gray-800/40 p-1 rounded-lg">
+                               <ZoomOut className="w-3.5 h-3.5 text-gray-500" />
+                               <input type="range" min={activeConstraints.scale.min} max={activeConstraints.scale.max} step="0.01" value={activeLayer.position.scale} onChange={(e) => setScaleValue(parseFloat(e.target.value))} className="w-full accent-pink-500 h-1 bg-gray-200 dark:bg-gray-750 rounded appearance-none cursor-pointer" />
+                               <ZoomIn className="w-3.5 h-3.5 text-gray-500" />
+                           </div>
+                       </div>
+                       {config.productType === 'basica' && (
+                           <>
+                               <div className="space-y-0.5">
+                                   <span className="text-[8px] font-extrabold text-gray-400 uppercase">SECCIÓN</span>
+                                   <select
+                                       value={activeLayer.targetMesh || 'basica_pecho'}
+                                       onChange={(e) => {
+                                           const val = e.target.value as any;
+                                           setConfig(prev => {
+                                               const newLayers = [...prev.layers];
+                                               newLayers[activeLayerIndex] = {
+                                                   ...newLayers[activeLayerIndex],
+                                                   targetMesh: val,
+                                                   side: val === 'basica_espalda' ? 'back' : 'front'
+                                               };
+                                               return { ...prev, layers: newLayers };
+                                           });
+                                       }}
+                                       className="w-full text-[10px] font-bold p-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:outline-none"
+                                   >
+                                       <option value="basica_pecho">Pecho / Frente</option>
+                                       <option value="basica_espalda">Espalda</option>
+                                       <option value="basica_mangiz">Manga Izquierda</option>
+                                       <option value="basica_mangder">Manga Derecha</option>
+                                   </select>
+                               </div>
+                               <div className="space-y-0.5">
+                                   <span className="text-[8px] font-extrabold text-gray-400 uppercase">ROTACIÓN ({activeLayer.rotation || 0}°)</span>
+                                   <div className="flex items-center gap-2 bg-gray-50/40 dark:bg-gray-800/40 p-1 rounded-lg">
+                                       <RotateCcw className="w-3.5 h-3.5 text-gray-500" />
+                                       <input 
+                                           type="range" 
+                                           min="0" 
+                                           max="360" 
+                                           step="1" 
+                                           value={activeLayer.rotation || 0} 
+                                           onChange={(e) => {
+                                               const val = parseInt(e.target.value, 10);
+                                               setConfig(prev => {
+                                                   const newLayers = [...prev.layers];
+                                                   newLayers[activeLayerIndex] = {
+                                                       ...newLayers[activeLayerIndex],
+                                                       rotation: val
+                                                   };
+                                                   return { ...prev, layers: newLayers };
+                                               });
+                                           }} 
+                                           className="w-full accent-pink-500 h-1 bg-gray-200 dark:bg-gray-750 rounded appearance-none cursor-pointer" 
+                                       />
+                                   </div>
+                               </div>
+                           </>
+                       )}
+                       <div className="space-y-0.5">
+                           <span className="text-[8px] font-extrabold text-gray-400 uppercase">TRANSPARENCIA ({Math.round((config.designOpacity ?? appearance.designOpacity) * 100)}%)</span>
+                           <div className="flex items-center gap-2 bg-gray-50/40 dark:bg-gray-800/40 p-1 rounded-lg">
+                               <span className="text-[8px] font-extrabold text-gray-400 uppercase flex items-center gap-1"><Hand className="w-3.5 h-3.5" /></span>
+                               <input type="range" min="0.1" max="1" step="0.01" value={config.designOpacity ?? appearance.designOpacity} onChange={(e) => setConfig(prev => ({ ...prev, designOpacity: parseFloat(e.target.value) }))} className="w-full accent-pink-500 h-1 bg-gray-200 dark:bg-gray-750 rounded appearance-none cursor-pointer" />
+                           </div>
+                       </div>
+                   </div>
+               )}
 
               {mobileActiveTab === 'adjust' && !activeLayer && (
                   <p className="text-[10px] font-bold text-yellow-650 dark:text-yellow-400 text-center py-2 shrink-0">⚠️ Selecciona una imagen primero en "Diseño".</p>
@@ -1256,34 +1293,106 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2 uppercase tracking-wide">
-                <ZoomIn className="w-4 h-4" /> Tamaño {constraintsLoaded && <span className="text-[10px] normal-case text-gray-300">(Mín: {activeConstraints.scale.min.toFixed(2)}, Máx: {activeConstraints.scale.max.toFixed(2)})</span>}
-              </label>
-              <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
-                <button 
-                  onClick={() => adjustScale(-0.05)}
-                  className="p-1 text-gray-500 hover:text-pink-500 active:scale-95 transition-transform"
-                >
-                  <ZoomOut className="w-4 h-4" />
-                </button>
-                <input 
-                  type="range" 
-                  min={activeConstraints.scale.min} 
-                  max={activeConstraints.scale.max} 
-                  step="0.01" 
-                  value={activeLayer.position.scale}
-                  onChange={(e) => setScaleValue(parseFloat(e.target.value))}
-                  className="w-full accent-pink-500 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
-                />
-                <button 
-                  onClick={() => adjustScale(0.05)}
-                  className="p-1 text-gray-500 hover:text-pink-500 active:scale-95 transition-transform"
-                >
-                  <ZoomIn className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+            {config.productType === 'basica' && (
+              <>
+                <div className="space-y-2 animate-fade-in">
+                  <label className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2 uppercase tracking-wide">
+                    <Shirt className="w-4 h-4" /> Sección de la Prenda
+                  </label>
+                  <select
+                    value={activeLayer.targetMesh || 'basica_pecho'}
+                    onChange={(e) => {
+                      const val = e.target.value as any;
+                      setConfig(prev => {
+                        const newLayers = [...prev.layers];
+                        newLayers[activeLayerIndex] = {
+                          ...newLayers[activeLayerIndex],
+                          targetMesh: val,
+                          side: val === 'basica_espalda' ? 'back' : 'front'
+                        };
+                        return { ...prev, layers: newLayers };
+                      });
+                    }}
+                    className="w-full text-xs lg:text-sm font-semibold p-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-pink-500"
+                  >
+                    <option value="basica_pecho">Pecho / Frente</option>
+                    <option value="basica_espalda">Espalda</option>
+                    <option value="basica_mangiz">Manga Izquierda</option>
+                    <option value="basica_mangder">Manga Derecha</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2 animate-fade-in">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2 uppercase tracking-wide">
+                      <LayoutTemplate className="w-4 h-4" /> Vista 2D y Tamaño
+                    </label>
+                  </div>
+                  <div className="flex gap-3 bg-gray-50 dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700 items-center">
+                     <div className="w-16 h-16 shrink-0 bg-white dark:bg-gray-700 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 flex items-center justify-center">
+                        <img 
+                            src={activeLayer.textureUrl} 
+                            style={{ 
+                                transform: `rotate(${activeLayer.rotation || 0}deg) scale(${activeLayer.position.scale})`,
+                                transition: 'transform 0.1s ease-out'
+                            }} 
+                            className="max-w-full max-h-full object-contain" 
+                            alt="Preview 2D" 
+                        />
+                     </div>
+                     <div className="flex-1 space-y-3">
+                         <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400">ESCALA</span>
+                            <span className="text-[10px] font-bold text-pink-500">{activeLayer.position.scale.toFixed(2)}</span>
+                         </div>
+                         <div className="flex items-center gap-2">
+                             <ZoomOut className="w-3.5 h-3.5 text-gray-400" />
+                             <input 
+                               type="range" 
+                               min={activeConstraints.scale.min} 
+                               max={activeConstraints.scale.max} 
+                               step="0.01" 
+                               value={activeLayer.position.scale}
+                               onChange={(e) => setScaleValue(parseFloat(e.target.value))}
+                               className="w-full accent-pink-500 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                             />
+                             <ZoomIn className="w-3.5 h-3.5 text-gray-400" />
+                         </div>
+                     </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 animate-fade-in">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2 uppercase tracking-wide">
+                      <RotateCcw className="w-4 h-4" /> Rotación de Imagen
+                    </label>
+                    <span className="text-[10px] font-bold text-pink-500">{activeLayer.rotation || 0}°</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="360" 
+                      step="1" 
+                      value={activeLayer.rotation || 0}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        setConfig(prev => {
+                          const newLayers = [...prev.layers];
+                          newLayers[activeLayerIndex] = {
+                            ...newLayers[activeLayerIndex],
+                            rotation: val
+                          };
+                          return { ...prev, layers: newLayers };
+                        });
+                      }}
+                      className="w-full accent-pink-500 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="space-y-2">
               <div className="flex justify-between items-center">

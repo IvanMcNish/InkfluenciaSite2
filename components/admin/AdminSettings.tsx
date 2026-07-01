@@ -124,8 +124,13 @@ export const AdminSettings: React.FC = () => {
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
-      if (!file.type.startsWith('image/')) { alert('Por favor selecciona un archivo de imagen válido.'); return; }
+      if (!file.type.startsWith('image/')) {
+          alert('Por favor selecciona un archivo de imagen válido.');
+          e.target.value = '';
+          return;
+      }
 
+      e.target.value = '';
       setIsUploadingLogo(true);
       const newLogoUrl = await uploadAppLogo(file, 'mobile');
       setIsUploadingLogo(false);
@@ -136,8 +141,13 @@ export const AdminSettings: React.FC = () => {
   const handleDesktopLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
-      if (!file.type.startsWith('image/')) { alert('Por favor selecciona un archivo de imagen válido.'); return; }
+      if (!file.type.startsWith('image/')) {
+          alert('Por favor selecciona un archivo de imagen válido.');
+          e.target.value = '';
+          return;
+      }
 
+      e.target.value = '';
       setIsUploadingDesktopLogo(true);
       const newLogoUrl = await uploadAppLogo(file, 'desktop');
       setIsUploadingDesktopLogo(false);
@@ -148,8 +158,13 @@ export const AdminSettings: React.FC = () => {
   const handleLandingLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
-      if (!file.type.startsWith('image/')) { alert('Por favor selecciona un archivo de imagen válido.'); return; }
+      if (!file.type.startsWith('image/')) {
+          alert('Por favor selecciona un archivo de imagen válido.');
+          e.target.value = '';
+          return;
+      }
 
+      e.target.value = '';
       setIsUploadingLandingLogo(true);
       const newLogoUrl = await uploadAppLogo(file, 'landing');
       setIsUploadingLandingLogo(false);

@@ -30,8 +30,12 @@ export const CommunityPage: React.FC = () => {
       if (file) {
           if (file.size > 5 * 1024 * 1024) {
               alert("La imagen es muy pesada. Máximo 5MB.");
+              e.target.value = '';
               return;
           }
+
+          e.target.value = '';
+
           const reader = new FileReader();
           reader.onload = () => {
               setNewPost({ ...newPost, image: reader.result as string });

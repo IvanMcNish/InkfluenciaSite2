@@ -726,9 +726,9 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
           </div>
 
           {chromaKey.enabled && (
-            <div className="absolute top-24 lg:bottom-8 left-1/2 -translate-x-1/2 px-4 lg:px-6 py-2 lg:py-3 bg-pink-600 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-2xl animate-bounce z-20">
-              SELECCIONA EL COLOR EN LA IMAGEN
-            </div>
+            <span className="absolute top-24 lg:bottom-8 left-1/2 -translate-x-1/2 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-[0.2em] z-20">
+  SELECCIONA EL COLOR EN LA IMAGEN
+</span>
           )}
           
           {/* Invoke Panel Button (Desktop) & Mobile Trigger */}

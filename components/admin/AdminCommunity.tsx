@@ -39,6 +39,7 @@ export const AdminCommunity: React.FC = () => {
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            e.target.value = '';
             const reader = new FileReader();
             reader.onloadend = () => {
                 setNewPost({ ...newPost, image: reader.result as string });

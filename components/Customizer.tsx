@@ -205,7 +205,7 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
         return {
           x: { min: -0.40, max: 0.40 },
           y: { min: -0.60, max: 0.50 },
-          scale: { min: 3, max: 50 }
+          scale: { min: 0.50, max: 50 }
         };
       }
       return constraints;
@@ -249,8 +249,12 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
               side: (slotIndex === 1 ? 'back' : 'front') as TShirtSide,
               position: is2DProj
                 ? (slotIndex === 1
-                  ? { x: 0.100, y: -0.100, scale: 1.200 }
-                  : { x: 0.000, y: -0.100, scale: 1.200 })
+                  ? (prev.productType === 'oversize'
+                    ? { x: 0.000, y: 0.000, scale: 1.200 }
+                    : { x: 0.100, y: -0.100, scale: 1.200 })
+                  : (prev.productType === 'oversize'
+                    ? { x: 0.000, y: 0.000, scale: 1.200 }
+                    : { x: 0.000, y: -0.100, scale: 1.200 }))
                 : { x: 0, y: 0.0, scale: 1.200 },
               rotation: 0,
               targetMesh: defaultTargetMesh,
@@ -1068,23 +1072,39 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                                  let newX = newLayers[activeLayerIndex].position.x;
                                  let newY = newLayers[activeLayerIndex].position.y;
                                  
-                                 if (val === 'basica_mangder' || val === 'oversize_mangder') {
-                                   newScale = 0.340;
-                                   newX = -0.020;
-                                   newY = -0.110;
-                                 } else if (val === 'basica_mangiz' || val === 'oversize_mangiz') {
-                                   newScale = 0.340;
-                                   newX = 0.007;
-                                   newY = -0.448;
-                                 } else if (val === 'basica_pecho' || val === 'oversize_pecho') {
-                                   newScale = 1.200;
-                                   newX = 0.000;
-                                   newY = -0.100;
-                                 } else if (val === 'basica_espalda' || val === 'oversize_espalda') {
-                                   newScale = 1.200;
-                                   newX = 0.100;
-                                   newY = -0.100;
-                                 }
+                                 if (val === 'basica_mangder') {
+                                    newScale = 0.340;
+                                    newX = -0.020;
+                                    newY = -0.110;
+                                  } else if (val === 'oversize_mangder') {
+                                    newScale = 1.000;
+                                    newX = 0.180;
+                                    newY = -0.160;
+                                  } else if (val === 'basica_mangiz') {
+                                    newScale = 0.340;
+                                    newX = 0.007;
+                                    newY = -0.448;
+                                  } else if (val === 'oversize_mangiz') {
+                                    newScale = 1.000;
+                                    newX = -0.193;
+                                    newY = -0.148;
+                                  } else if (val === 'basica_pecho') {
+                                    newScale = 1.200;
+                                    newX = 0.000;
+                                    newY = -0.100;
+                                  } else if (val === 'oversize_pecho') {
+                                    newScale = 1.200;
+                                    newX = 0.000;
+                                    newY = 0.000;
+                                  } else if (val === 'basica_espalda') {
+                                    newScale = 1.200;
+                                    newX = 0.100;
+                                    newY = -0.100;
+                                  } else if (val === 'oversize_espalda') {
+                                    newScale = 1.200;
+                                    newX = 0.000;
+                                    newY = 0.000;
+                                  }
 
                                  newLayers[activeLayerIndex] = {
                                    ...newLayers[activeLayerIndex],
@@ -1265,22 +1285,38 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                           let newX = newLayers[activeLayerIndex].position.x;
                           let newY = newLayers[activeLayerIndex].position.y;
 
-                          if (val === 'basica_mangder' || val === 'oversize_mangder') {
+                          if (val === 'basica_mangder') {
                             newScale = 0.340;
                             newX = -0.020;
                             newY = -0.110;
-                          } else if (val === 'basica_mangiz' || val === 'oversize_mangiz') {
+                          } else if (val === 'oversize_mangder') {
+                            newScale = 1.000;
+                            newX = 0.180;
+                            newY = -0.160;
+                          } else if (val === 'basica_mangiz') {
                             newScale = 0.340;
                             newX = 0.007;
                             newY = -0.448;
-                          } else if (val === 'basica_pecho' || val === 'oversize_pecho') {
+                          } else if (val === 'oversize_mangiz') {
+                            newScale = 1.000;
+                            newX = -0.193;
+                            newY = -0.148;
+                          } else if (val === 'basica_pecho') {
                             newScale = 1.200;
                             newX = 0.000;
                             newY = -0.100;
-                          } else if (val === 'basica_espalda' || val === 'oversize_espalda') {
+                          } else if (val === 'oversize_pecho') {
+                            newScale = 1.200;
+                            newX = 0.000;
+                            newY = 0.000;
+                          } else if (val === 'basica_espalda') {
                             newScale = 1.200;
                             newX = 0.100;
                             newY = -0.100;
+                          } else if (val === 'oversize_espalda') {
+                            newScale = 1.200;
+                            newX = 0.000;
+                            newY = 0.000;
                           }
 
                           newLayers[activeLayerIndex] = {
@@ -1493,22 +1529,38 @@ export const Customizer: React.FC<CustomizerProps> = ({ config, setConfig, onChe
                           let newX = newLayers[activeLayerIndex].position.x;
                           let newY = newLayers[activeLayerIndex].position.y;
 
-                          if (val === 'basica_mangder' || val === 'oversize_mangder') {
+                          if (val === 'basica_mangder') {
                             newScale = 0.340;
                             newX = -0.020;
                             newY = -0.110;
-                          } else if (val === 'basica_mangiz' || val === 'oversize_mangiz') {
+                          } else if (val === 'oversize_mangder') {
+                            newScale = 1.000;
+                            newX = 0.180;
+                            newY = -0.160;
+                          } else if (val === 'basica_mangiz') {
                             newScale = 0.340;
                             newX = 0.007;
                             newY = -0.448;
-                          } else if (val === 'basica_pecho' || val === 'oversize_pecho') {
+                          } else if (val === 'oversize_mangiz') {
+                            newScale = 1.000;
+                            newX = -0.193;
+                            newY = -0.148;
+                          } else if (val === 'basica_pecho') {
                             newScale = 1.200;
                             newX = 0.000;
                             newY = -0.100;
-                          } else if (val === 'basica_espalda' || val === 'oversize_espalda') {
+                          } else if (val === 'oversize_pecho') {
+                            newScale = 1.200;
+                            newX = 0.000;
+                            newY = 0.000;
+                          } else if (val === 'basica_espalda') {
                             newScale = 1.200;
                             newX = 0.100;
                             newY = -0.100;
+                          } else if (val === 'oversize_espalda') {
+                            newScale = 1.200;
+                            newX = 0.000;
+                            newY = 0.000;
                           }
 
                           newLayers[activeLayerIndex] = {

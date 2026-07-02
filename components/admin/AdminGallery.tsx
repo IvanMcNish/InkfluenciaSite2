@@ -1,0 +1,335 @@
+
+import React, { useEffect, useState } from 'react';
+import { Grid, Search, Eye, Check, Trash2, CheckCircle2, AlertCircle, Loader2, Calendar, Layers, X, Rotate3d, Pencil, Save } from 'lucide-react';
+import { getAdminCollection, deleteDesignFromCollection, approveDesign, updateGalleryItem } from '../../services/galleryService';
+import { CollectionItem } from '../../types';
+import { Scene } from '../Scene';
+
+interface AdminGalleryProps {
+  onEditDesign: (design: CollectionItem) => void;
+}
+
+export const AdminGallery: React.FC<AdminGalleryProps> = ({ onEditDesign }) => {
+  const [galleryItems, setGalleryItems] = useState<CollectionItem[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{id: string, name: string} | null>(null);
+  const [previewDesign, setPreviewDesign] = useState<CollectionItem | null>(null);
+  const [editingItem, setEditingItem] = useState<CollectionItem | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const loadGallery = async () => {
+    setIsLoading(true);
+    const data = await getAdminCollection();
+    setGalleryItems(data);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadGallery();
+  }, []);
+
+  const requestDeleteGalleryItem = (id: string, name: string) => {
+      setItemToDelete({ id, name });
+  };
+
+  const confirmDeleteGalleryItem = async () => {
+      if (!itemToDelete) return;
+      const { id } = itemToDelete;
+      setItemToDelete(null); 
+      setDeletingId(id); 
+      
+      try {
+        const result = await deleteDesignFromCollection(id);
+        if (result.success) {
+            setGalleryItems(prev => prev.filter(item => item.id !== id));
+        } else {
+            alert(`NO SE PUDO ELIMINAR:\n${result.error}\n\nSolución: Ve a la pestaña 'Configuración' > copia el SQL de Galería > Ejecútalo en Supabase.`);
+        }
+      } catch (e) {
+          alert("Error inesperado al intentar eliminar.");
+      } finally {
+          setDeletingId(null);
+      }
+  };
+
+  const handleApproveDesign = async (id: string) => {
+      setApprovingId(id);
+      const success = await approveDesign(id);
+      if (success) {
+          setGalleryItems(prev => prev.map(item => item.id === id ? { ...item, approved: true } : item));
+      } else {
+          alert("Error al aprobar el diseño. Revisa la conexión.");
+      }
+      setApprovingId(null);
+  };
+
+  const handleUpdateItem = async (id: string, name: string, approved: boolean) => {
+      if (!editingItem) return;
+      setIsSaving(true);
+      const success = await updateGalleryItem(id, name, approved, editingItem.config);
+      if (success) {
+          setGalleryItems(prev => prev.map(item => item.id === id ? { ...item, name, approved } : item));
+          setEditingItem(null);
+      } else {
+          alert("Error al actualizar el diseño.");
+      }
+      setIsSaving(false);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-CO', {
+      day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+  };
+
+  const DeleteConfirmationModal = () => {
+      if (!itemToDelete) return null;
+      return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="w-full max-w-md rounded-2xl shadow-2xl p-6 liquid-glass border border-red-500/20 shadow-red-550/5 animate-scale-up">
+                <div className="flex items-center gap-3 text-red-600 mb-4">
+                    <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-full">
+                        <Trash2 className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-xl font-bold">Confirmar Eliminación</h3>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                    ¿Estás seguro que deseas eliminar el diseño <span className="font-bold text-gray-900 dark:text-white">"{itemToDelete.name}"</span>?
+                    <br/><br/>
+                    Esta acción no se puede deshacer.
+                </p>
+                <div className="flex justify-end gap-3">
+                    <button onClick={() => setItemToDelete(null)} className="px-4 py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors">Cancelar</button>
+                    <button onClick={confirmDeleteGalleryItem} className="px-4 py-2 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20">Sí, Eliminar</button>
+                </div>
+            </div>
+        </div>
+      );
+  }
+
+  const EditDesignModal = () => {
+      if (!editingItem) return null;
+      
+      const [editName, setEditName] = useState(editingItem.name);
+      const [editApproved, setEditApproved] = useState(editingItem.approved);
+
+      return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="w-full max-w-md rounded-2xl shadow-2xl p-6 liquid-glass-accent animate-scale-up">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3 text-cyan-600 font-bold text-xl">
+                        <Pencil className="w-6 h-6" />
+                        <h3>Editar Diseño</h3>
+                    </div>
+                    <button onClick={() => setEditingItem(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"><X className="w-5 h-5"/></button>
+                </div>
+
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Nombre del Diseño</label>
+                        <input 
+                            type="text" 
+                            value={editName} 
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-white/10 bg-white/40 dark:bg-black/30 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-pink-500 outline-none font-medium glass-input"
+                            placeholder="Nombre del diseño..."
+                        />
+                    </div>
+
+                    <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                        <input 
+                            type="checkbox" 
+                            id="approved-check"
+                            checked={editApproved}
+                            onChange={(e) => setEditApproved(e.target.checked)}
+                            className="w-5 h-5 rounded text-cyan-600 focus:ring-cyan-500 cursor-pointer"
+                        />
+                        <label htmlFor="approved-check" className="text-sm font-bold text-gray-700 dark:text-gray-300 cursor-pointer flex-1">
+                            Aprobado (Público en Galería)
+                        </label>
+                    </div>
+
+                    <div className="pt-4 flex gap-3">
+                        <button 
+                            onClick={() => setEditingItem(null)} 
+                            className="flex-1 px-4 py-3 rounded-xl font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button 
+                            onClick={() => handleUpdateItem(editingItem.id, editName, editApproved)}
+                            disabled={isSaving || !editName.trim()}
+                            className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/20"
+                        >
+                            {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+      );
+  };
+
+  const GalleryPreviewModal = () => {
+      if (!previewDesign) return null;
+      
+      // Determine initial side based on first layer to orient camera correctly
+      const initialSide = previewDesign.config.layers.length > 0 ? previewDesign.config.layers[0].side : 'front';
+
+      return (
+        <div 
+          onClick={() => setPreviewDesign(null)} 
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in overflow-y-auto"
+        >
+            <div 
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl shadow-2xl p-0 overflow-hidden border border-gray-200 dark:border-gray-800 relative animate-elastic-pop"
+            >
+                <button 
+                  onClick={() => setPreviewDesign(null)} 
+                  className="absolute top-4 right-4 z-10 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors backdrop-blur-md cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                
+                {/* 3D Scene Viewport */}
+                <div className="bg-gray-100 dark:bg-gray-800 aspect-square relative overflow-hidden border-b border-gray-200 dark:border-gray-700">
+                     <Scene 
+                        config={previewDesign.config} 
+                        activeLayerSide={initialSide || 'front'}
+                     />
+                     
+                     <div className="absolute top-4 left-4 z-10 bg-white/80 dark:bg-black/80 backdrop-blur px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm flex items-center gap-1">
+                        <Rotate3d className="w-3 h-3" />
+                        Vista 3D Interactiva
+                     </div>
+
+                    {!previewDesign.approved && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold uppercase shadow-lg">
+                            Pendiente de Aprobación
+                        </div>
+                    )}
+                </div>
+
+                <div className="p-6 text-left">
+                    <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{previewDesign.name}</h3>
+                    <div className="flex gap-4 text-sm text-gray-500 mb-6">
+                        <div className="flex items-center gap-1"><Calendar className="w-4 h-4" />{new Date(previewDesign.createdAt).toLocaleDateString()}</div>
+                        <div className="flex items-center gap-1"><Layers className="w-4 h-4" />{previewDesign.config.layers.length} capas</div>
+                    </div>
+                    {!previewDesign.approved ? (
+                        <div className="space-y-3">
+                            <div className="flex gap-3">
+                                <button onClick={() => { handleApproveDesign(previewDesign.id); setPreviewDesign(null); }} disabled={approvingId === previewDesign.id} className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-green-500/20 cursor-pointer">{approvingId === previewDesign.id ? <Loader2 className="w-5 h-5 animate-spin"/> : <CheckCircle2 className="w-5 h-5"/>} Aprobar Diseño</button>
+                                <button onClick={() => { requestDeleteGalleryItem(previewDesign.id, previewDesign.name); setPreviewDesign(null); }} className="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-red-650 font-bold py-3 rounded-xl transition-colors cursor-pointer">Rechazar / Eliminar</button>
+                            </div>
+                            <button onClick={() => setPreviewDesign(null)} className="w-full bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-300 py-2.5 rounded-xl text-sm font-semibold transition-colors cursor-pointer">Volver al Panel</button>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            <div className="w-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 py-3 rounded-xl font-bold text-center border border-green-100 dark:border-green-900 flex items-center justify-center gap-2 select-none"><CheckCircle2 className="w-5 h-5" /> Este diseño está público</div>
+                            <button onClick={() => setPreviewDesign(null)} className="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 rounded-xl font-bold transition-colors cursor-pointer">Cerrar Vista Previa</button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+      );
+  };
+
+  return (
+    <div className="animate-fade-in">
+        <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+            <input type="text" placeholder="Buscar diseño..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 w-full md:w-64 rounded-xl text-sm outline-none transition-all glass-input" />
+        </div>
+
+        {itemToDelete && <DeleteConfirmationModal />}
+        {previewDesign && <GalleryPreviewModal />}
+        {editingItem && <EditDesignModal />}
+
+        {galleryItems.length === 0 && !isLoading ? (
+            <div className="text-center py-20 rounded-2xl border border-dashed border-gray-300/30 dark:border-gray-700/50 liquid-glass">
+                <Grid className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-medium text-gray-600 dark:text-gray-400">No hay diseños en la galería</h3>
+            </div>
+        ) : (
+            <>
+                {/* Mobile Card View */}
+                <div className="grid grid-cols-1 gap-4 md:hidden">
+                    {galleryItems.filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
+                        <div key={item.id} className="p-4 rounded-xl flex gap-4 liquid-glass">
+                            <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden shrink-0 border border-gray-200 dark:border-gray-700 relative">
+                                {item.config.snapshotUrl ? <img src={item.config.snapshotUrl} alt={item.name} className="w-full h-full object-cover" loading="lazy" decoding="async" /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">Sin img</div>}
+                                {!item.approved && <div className="absolute top-0 left-0 bg-yellow-400 text-[8px] font-bold px-1.5 py-0.5 text-yellow-900 uppercase">Pendiente</div>}
+                            </div>
+                            <div className="flex flex-col justify-between flex-1">
+                                <div>
+                                    <div className="font-bold text-gray-900 dark:text-white line-clamp-2 leading-tight">{item.name}</div>
+                                    <div className="text-xs text-gray-500 mt-1 flex flex-col"><span>{formatDate(item.createdAt)}</span></div>
+                                </div>
+                                <div className="flex justify-end gap-2 mt-2">
+                                    <button onClick={() => setPreviewDesign(item)} className="p-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200" title="Vista Previa"><Eye className="w-4 h-4" /></button>
+                                    <button onClick={() => onEditDesign(item)} className="p-2 text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100" title="Editar en Diseñador 3D"><Rotate3d className="w-4 h-4" /></button>
+                                    <button onClick={() => setEditingItem(item)} className="p-2 text-cyan-600 bg-cyan-50 rounded-lg hover:bg-cyan-100" title="Editar Info"><Pencil className="w-4 h-4" /></button>
+                                    {!item.approved && <button onClick={() => handleApproveDesign(item.id)} className="p-2 text-white bg-green-500 rounded-lg hover:bg-green-600">{approvingId === item.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4" />}</button>}
+                                    <button onClick={() => requestDeleteGalleryItem(item.id, item.name)} className="p-2 text-white bg-red-500 rounded-lg hover:bg-red-600"><Trash2 className="w-4 h-4" /></button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block rounded-xl overflow-hidden animate-fade-in liquid-glass">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                                    <th className="p-4">Vista Previa</th>
+                                    <th className="p-4">Nombre / Detalles</th>
+                                    <th className="p-4">Estado</th>
+                                    <th className="p-4">Fecha Creación</th>
+                                    <th className="p-4 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                {galleryItems.filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
+                                    <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                                        <td className="p-4">
+                                            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                                                {item.config.snapshotUrl ? <img src={item.config.snapshotUrl} alt={item.name} className="w-full h-full object-cover" loading="lazy" decoding="async" /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">Sin img</div>}
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="font-bold text-gray-900 dark:text-white mb-1">{item.name}</div>
+                                            <div className="text-xs text-gray-500 flex flex-col gap-1"><span>Color: <span className="capitalize">{item.config.color === 'white' ? 'Blanca' : 'Negra'}</span></span><span>Capas: {item.config.layers.length}</span></div>
+                                        </td>
+                                        <td className="p-4">
+                                            {item.approved ? <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"><CheckCircle2 className="w-3 h-3" /> Aprobado</span> : <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"><AlertCircle className="w-3 h-3" /> Pendiente</span>}
+                                        </td>
+                                        <td className="p-4 text-sm text-gray-600 dark:text-gray-300">{formatDate(item.createdAt)}</td>
+                                        <td className="p-4 text-center">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button onClick={() => setPreviewDesign(item)} className="p-1.5 text-gray-500 hover:text-blue-500 bg-gray-100 hover:bg-blue-50 dark:bg-gray-800 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title="Vista Previa"><Eye className="w-4 h-4" /></button>
+                                                <button onClick={() => onEditDesign(item)} className="p-1.5 text-indigo-500 hover:text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 rounded-lg transition-colors" title="Editar en Diseñador 3D"><Rotate3d className="w-4 h-4" /></button>
+                                                <button onClick={() => setEditingItem(item)} className="p-1.5 text-cyan-500 hover:text-cyan-600 bg-cyan-50 hover:bg-cyan-100 dark:bg-cyan-900/20 dark:hover:bg-cyan-900/40 rounded-lg transition-colors" title="Editar Info"><Pencil className="w-4 h-4" /></button>
+                                                {!item.approved && <button onClick={() => handleApproveDesign(item.id)} disabled={approvingId === item.id} className="p-1.5 text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40 rounded-lg transition-colors" title="Aprobar Diseño">{approvingId === item.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4" />}</button>}
+                                                <button onClick={() => requestDeleteGalleryItem(item.id, item.name)} disabled={deletingId === item.id} className="p-1.5 text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded-lg transition-colors" title="Eliminar">{deletingId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </>
+        )}
+    </div>
+  );
+};

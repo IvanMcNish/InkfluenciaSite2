@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <script>
+      // Safe guard fetch property against read-only getter override environments (such as sandboxes or extensions)
+      (function() {
+        try {
+          var originalFetch = window.fetch;
+          var currentFetch = originalFetch;
+          Object.defineProperty(window, 'fetch', {
+            configurable: true,
+            enumerable: true,
+            get: function() {
+              return currentFetch;
+            },
+            set: function(val) {
+              currentFetch = val;
+            }
+          });
+        } catch (e) {
+          console.warn('Unable to patch fetch safety descriptor:', e);
+        }
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inkfluencia | Camisetas Personalizadas DTF en Bucaramanga.</title>
+    <meta name="description" content="Camisetas personalizadas con algodón peruano y tecnología DTF. Diseño propio, producción en casa. Desde 1 unidad. Envíos a todo Colombia." />
+    <meta name="keywords" content="camisetas personalizadas Bucaramanga, estampado de camisetas Bucaramanga, camisetas DTF Bucaramanga, ropa personalizada Bucaramanga, camisetas algodón peruano Bucaramanga, camisetas personalizadas desde 1 unidad Bucaramanga, diseño e impresión camisetas Bucaramanga, inkfluencia camisetas, camisetas para eventos Bucaramanga, camisetas corporativas Bucaramanga, camisetas para grupos Bucaramanga" />
+    <link rel="icon" type="image/svg+xml" href="/LogoInkApp.svg" />
+    <link rel="apple-touch-icon" href="/LogoInkApp.svg" />
+    <!-- Preload del logo SVG: es LCP crítico visible en Navbar desde el primer render -->
+    <link rel="preload" href="/LogoInkApp.svg" as="image" type="image/svg+xml" />
+    <meta name="theme-color" content="#ec4899" />
+    <style>
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.05);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(236, 72, 153, 0.5); /* pink-500 with opacity */
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(236, 72, 153, 0.8); /* pink-500 */
+      }
+      
+      .dark ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .dark ::-webkit-scrollbar-thumb {
+        background: rgba(236, 72, 153, 0.5); /* pink-500 with opacity */
+      }
+      .dark ::-webkit-scrollbar-thumb:hover {
+        background: rgba(236, 72, 153, 0.8); /* pink-500 */
+      }
+      
+      /* Ensure HTML block scroll works well */
+      html {
+        scrollbar-color: rgba(236, 72, 153, 0.5) transparent;
+        scrollbar-width: thin;
+      }
+
+      /* Hide scrollbar for elements with .no-scrollbar */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(236, 72, 153, 0.3);
+        border-radius: 10px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(236, 72, 153, 0.5);
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300 font-sans">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

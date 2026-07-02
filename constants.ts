@@ -1,0 +1,86 @@
+
+export const TSHIRT_GLB_MODELS = [
+  //"/Basica.glb",
+  //"/tshirt.glb",
+  "/Basica2.glb",
+  "/Oversize.glb"
+  // "/tshirt2.glb", // Puedes agregar más modelos .glb a la carpeta public y añadirlos aquí
+];
+
+export const TOTEBAG_OBJ_URL = "/tote2.obj";
+
+export const DEFAULT_CONFIG = {
+  productType: 'basica' as const,
+  tshirtModelIndex: 0,
+  color: 'white' as const,
+  layers: [], // Empty array for layers
+  snapshotUrl: null
+};
+
+export const PRICES = {
+  '150g': 50000,
+  '200g': 65000
+};
+
+export const TOTEBAG_PRICES = {
+  'pequeño': 22000,
+  'grande': 40000,
+  'combo': 60000
+};
+
+export const TOTEBAG_SIZES = ['pequeño', 'grande', 'combo'];
+export const TOTEBAG_INVENTORY_SIZES = ['pequeño', 'grande'];
+
+// Número de WhatsApp oficial para notificaciones (Colombia: +57)
+export const WHATSAPP_PHONE = '573203191152';
+
+// Costos de producción para valoración de inventario
+export const INVENTORY_COSTS = {
+  XS_ALL: 15000, // Precio único para cualquier camiseta XS
+  male: {
+    '150g': 18000,
+    '200g': 24000
+  },
+  female: {
+    '150g': 17000,
+    '200g': 22000
+  },
+  unisex: {
+    'pequeño': 10000,
+    'grande': 15000,
+    'combo': 25000
+  }
+};
+
+// Helper para calcular costo de una unidad específica
+export const getItemCost = (gender: string, size: string, grammage: string) => {
+  if (gender === 'unisex') {
+      return INVENTORY_COSTS.unisex[size as keyof typeof INVENTORY_COSTS.unisex] || 10000;
+  }
+
+  // Rule 1: XS Size override (regardless of gender or grammage)
+  if (size === 'XS') {
+    return INVENTORY_COSTS.XS_ALL;
+  } 
+  
+  // Rule 2: Gender & Grammage logic
+  // Safe check for gender (default to male if missing/invalid)
+  const genderKey = gender === 'female' ? 'female' : 'male';
+  // Safe check for grammage
+  const grammageKey = grammage === '200g' ? '200g' : '150g';
+  
+  return INVENTORY_COSTS[genderKey][grammageKey];
+};
+
+export const SHIPPING = 10000; // COP
+
+export const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
+export const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(value);
+};

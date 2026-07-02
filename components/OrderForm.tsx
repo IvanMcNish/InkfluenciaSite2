@@ -1,0 +1,465 @@
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { SIZES, PRICES, SHIPPING, formatCurrency, TOTEBAG_PRICES, TOTEBAG_SIZES } from '../constants';
+import { TShirtConfig, Order, InventoryItem, Gender } from '../types';
+import { submitOrder } from '../services/orderService';
+import { getInventory } from '../services/inventoryService';
+import { CheckCircle2, Loader2, AlertCircle, Weight, Phone, MapPin, User } from 'lucide-react';
+
+interface OrderFormProps {
+  config: TShirtConfig;
+  onSuccess: (order: Order) => void;
+  onBack: () => void;
+}
+
+export const OrderForm: React.FC<OrderFormProps> = ({ config, onSuccess, onBack }) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [inventoryLoaded, setInventoryLoaded] = useState(false);
+
+  // Address sub-state for structured input
+  const [addressParts, setAddressParts] = useState({
+    type: 'Calle',
+    n1: '',
+    n2: '',
+    n3: '',
+    city: '',
+    details: ''
+  });
+
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    size: '', 
+    gender: 'male' as Gender,
+    grammage: '200g' as '150g' | '200g'
+  });
+
+  // 1. Fetch Inventory on Mount
+  useEffect(() => {
+    const loadInventory = async () => {
+        const data = await getInventory();
+        setInventory(data);
+        setInventoryLoaded(true);
+    };
+    loadInventory();
+  }, []);
+
+  // 2. Calculate Available Sizes
+  const availableSizes = useMemo(() => {
+    if (!inventoryLoaded) return [];
+
+    if (config.productType === 'totebag') {
+        const getToteQty = (size: string) => {
+            const item = inventory.find(i => i.gender === 'unisex' && i.size === size);
+            return item ? item.quantity : 0;
+        };
+
+        const qtyPequeño = getToteQty('pequeño');
+        const qtyGrande = getToteQty('grande');
+
+        const available = [];
+        if (qtyPequeño > 0) available.push('pequeño');
+        if (qtyGrande > 0) available.push('grande');
+        if (qtyPequeño > 0 && qtyGrande > 0) available.push('combo');
+
+        return available;
+    }
+
+    return SIZES.filter(size => {
+        const item = inventory.find(i => 
+            i.gender === formData.gender &&
+            i.color === config.color && 
+            i.size === size && 
+            i.grammage === formData.grammage
+        );
+        return item ? item.quantity > 0 : false;
+    });
+  }, [inventory, inventoryLoaded, config.color, formData.grammage, formData.gender, config.productType]);
+
+  // 3. Auto-select logic
+  useEffect(() => {
+    if (inventoryLoaded) {
+        if (availableSizes.length > 0) {
+            if (!availableSizes.includes(formData.size)) {
+                setFormData(prev => ({ ...prev, size: availableSizes[0] }));
+            }
+        } else {
+            setFormData(prev => ({ ...prev, size: '' }));
+        }
+    }
+  }, [availableSizes, formData.size, inventoryLoaded, config.productType]);
+
+  // 4. Update Full Address String
+  useEffect(() => {
+    const { type, n1, n2, n3, city, details } = addressParts;
+    const mainAddress = `${type} ${n1} # ${n2} - ${n3}`.trim();
+    const fullAddress = `${mainAddress}${details ? `, ${details}` : ''}${city ? `, ${city}` : ''}`;
+    setFormData(prev => ({ ...prev, address: fullAddress }));
+  }, [addressParts]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+  
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      setAddressParts({ ...addressParts, [e.target.name]: e.target.value });
+  };
+
+  const handleGrammageSelect = (g: '150g' | '200g') => {
+    setFormData(prev => ({ ...prev, grammage: g }));
+  };
+  
+  const handleGenderSelect = (g: Gender) => {
+    setFormData(prev => ({ ...prev, gender: g }));
+  };
+
+  const basePrice = config.productType === 'totebag' 
+    ? (TOTEBAG_PRICES[formData.size as keyof typeof TOTEBAG_PRICES] || TOTEBAG_PRICES['grande'])
+    : PRICES[formData.grammage];
+  const shippingCost = SHIPPING;
+  const shippingDiscount = SHIPPING; 
+  const total = basePrice + shippingCost - shippingDiscount;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (config.productType !== 'totebag' && !formData.size) {
+        setError("Por favor selecciona una talla disponible.");
+        return;
+    }
+
+    if (!addressParts.n1 || !addressParts.n2 || !addressParts.city) {
+        setError("Por favor completa los campos obligatorios de la dirección.");
+        return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const finalSize = formData.size;
+      const finalGender = config.productType === 'totebag' ? ('unisex' as Gender) : formData.gender;
+      const finalGrammage = config.productType === 'totebag' ? 'tote' : formData.grammage;
+      
+      const newOrder = await submitOrder({
+        customerName: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        size: finalSize,
+        gender: finalGender,
+        grammage: finalGrammage as any,
+        config: config,
+        total: total
+      });
+      onSuccess(newOrder);
+    } catch (err) {
+      setError('Hubo un error al procesar el pedido. Intenta nuevamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const displayImage = config.snapshotUrl || (config.layers.length > 0 ? config.layers[0].textureUrl : null);
+
+  return (
+    <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 md:p-8 rounded-2xl shadow-xl lg:shadow-2xl mt-4 flex flex-col lg:flex-row gap-8 overflow-hidden liquid-glass-accent">
+      
+      {/* Left Column: Summary */}
+      <div className="lg:w-1/3 space-y-6">
+        <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+          <CheckCircle2 className="text-pink-500" />
+          Resumen
+        </h2>
+
+        <div className="p-4 rounded-xl lg:sticky lg:top-24 liquid-glass border border-white/25 dark:border-white/5">
+            {displayImage ? (
+            <img 
+                src={displayImage} 
+                alt="Preview" 
+                className="w-full aspect-square object-contain rounded-lg bg-white/40 dark:bg-black/30 shadow-sm border border-white/20 mb-4"
+                decoding="async"
+            />
+            ) : (
+            <div className={`w-full aspect-square rounded-lg border border-gray-200 mb-4 ${config.productType === 'totebag' ? 'bg-[#f3eddf]' : (config.color === 'white' ? 'bg-white' : 'bg-black')}`} />
+            )}
+            
+            <div className="space-y-2">
+                <h3 className="font-bold text-lg">{config.productType === 'totebag' ? 'Tote Bag Inkfluencia' : (config.productType === 'oversize' ? 'Camiseta Oversize Inkfluencia' : 'Camiseta Básica Inkfluencia')}</h3>
+                <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                    <span>Diseños:</span>
+                    <span className="font-medium text-gray-900 dark:text-white capitalize">{config.layers.length} imagen(es)</span>
+                </div>
+                {config.productType !== 'totebag' && (
+                    <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                        <span>Género:</span>
+                        <span className="font-medium text-gray-900 dark:text-white capitalize">{formData.gender === 'male' ? 'Hombre' : 'Mujer'}</span>
+                    </div>
+                )}
+                <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                    <span>Color Base:</span>
+                    <span className="font-medium text-gray-900 dark:text-white capitalize">{config.productType === 'totebag' ? 'Natural' : (config.color === 'white' ? 'Blanca' : 'Negra')}</span>
+                </div>
+                {config.productType === 'totebag' ? (
+                    <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                        <span>Tamaño/Combo:</span>
+                        <span className="font-medium text-gray-900 dark:text-white capitalize">{formData.size}</span>
+                    </div>
+                ) : (
+                    <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                        <span>Talla:</span>
+                        <span className="font-medium text-gray-900 dark:text-white font-mono">
+                            {formData.size || <span className="text-red-500 italic">Sin Stock</span>}
+                        </span>
+                    </div>
+                )}
+                {config.productType !== 'totebag' && (
+                    <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                        <span>Gramaje:</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{formData.grammage}</span>
+                    </div>
+                )}
+            </div>
+
+            <div className="border-t border-gray-200/40 dark:border-white/10 pt-4 mt-4 space-y-2">
+                <div className="flex justify-between text-xl font-black text-pink-600 pt-2 border-t border-dashed border-gray-200/40 dark:border-white/10 mt-2">
+                    <span>Total</span>
+                    <span>{formatCurrency(total)}</span>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      {/* Right Column: Form */}
+      <div className="lg:w-2/3">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            
+            {/* Step 1 */}
+            <div className="space-y-4">
+                <h3 className="text-lg font-bold border-b border-gray-100 dark:border-gray-800 pb-2 flex items-center gap-2">
+                    <span className="bg-gray-100 dark:bg-gray-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span> 
+                    Detalles del Producto
+                </h3>
+                
+                {config.productType === 'totebag' ? (
+                    <div>
+                        <label className="block text-sm font-medium mb-3 flex items-center gap-2">
+                            <Weight className="w-4 h-4" /> Tamaño / Combo
+                        </label>
+                        {availableSizes.length === 0 && inventoryLoaded ? (
+                             <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl border border-red-200 dark:border-red-800 text-center flex flex-col items-center gap-2">
+                                 <AlertCircle className="w-6 h-6" />
+                                 <div>
+                                     <h4 className="font-bold">Totalmente Agotado</h4>
+                                     <p className="text-sm">En este momento no contamos con stock disponible para Tote Bags.</p>
+                                 </div>
+                             </div>
+                        ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {TOTEBAG_SIZES.map(s => {
+                                const isAvailable = availableSizes.includes(s);
+                                return (
+                                <div 
+                                    key={s}
+                                    onClick={() => isAvailable && setFormData(prev => ({ ...prev, size: s }))}
+                                    className={`relative p-4 rounded-xl border-2 transition-all flex flex-col justify-center items-center ${
+                                        !isAvailable
+                                        ? 'border-gray-100 bg-gray-50/50 text-gray-400 dark:border-gray-800 dark:bg-gray-800/20 cursor-not-allowed opacity-60'
+                                        : formData.size === s 
+                                            ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600 cursor-pointer' 
+                                            : 'border-gray-200 dark:border-gray-700 hover:border-pink-300 cursor-pointer'
+                                    }`}
+                                >
+                                    {!isAvailable && (
+                                        <div className="absolute top-2 right-2 flex space-x-1">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>
+                                        </div>
+                                    )}
+                                    {isAvailable && formData.size === s && (
+                                         <div className="absolute top-2 right-2">
+                                             <CheckCircle2 className="w-4 h-4" />
+                                         </div>
+                                    )}
+                                    <span className="font-bold capitalize">{s}</span>
+                                    <span className="text-sm mt-1">{formatCurrency(TOTEBAG_PRICES[s as keyof typeof TOTEBAG_PRICES])}</span>
+                                    {!isAvailable && <span className="text-[10px] uppercase font-bold tracking-wider mt-1 text-red-400">Agotado</span>}
+                                </div>
+                                );
+                            })}
+                        </div>
+                        )}
+                    </div>
+                ) : (
+                <>
+                {/* Gender Selector */}
+                <div>
+                     <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+                        <User className="w-4 h-4" /> Género
+                    </label>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div 
+                            onClick={() => handleGenderSelect('male')}
+                            className={`cursor-pointer p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
+                                formData.gender === 'male' 
+                                ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600' 
+                                : 'border-gray-200 dark:border-gray-700 hover:border-pink-300'
+                            }`}
+                        >
+                            <span className="font-bold">Hombre</span>
+                        </div>
+                        <div 
+                            onClick={() => handleGenderSelect('female')}
+                            className={`cursor-pointer p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
+                                formData.gender === 'female' 
+                                ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600' 
+                                : 'border-gray-200 dark:border-gray-700 hover:border-pink-300'
+                            }`}
+                        >
+                            <span className="font-bold">Mujer</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Grammage Selector */}
+                <div>
+                    <label className="block text-sm font-medium mb-3 flex items-center gap-2">
+                        <Weight className="w-4 h-4" /> Gramaje de la Tela
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div 
+                            onClick={() => handleGrammageSelect('150g')}
+                            className={`cursor-pointer p-4 rounded-xl border-2 transition-all relative ${
+                                formData.grammage === '150g' 
+                                ? 'border-pink-500 bg-pink-50/50 dark:bg-pink-900/20' 
+                                : 'border-gray-200 dark:border-gray-700 hover:border-pink-300'
+                            }`}
+                        >
+                            <div className="font-bold flex justify-between">
+                                <span>Estándar (150g)</span>
+                                <span className="text-pink-600">{formatCurrency(PRICES['150g'])}</span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">Fresca y ligera.</p>
+                        </div>
+
+                        <div 
+                            onClick={() => handleGrammageSelect('200g')}
+                            className={`cursor-pointer p-4 rounded-xl border-2 transition-all relative ${
+                                formData.grammage === '200g' 
+                                ? 'border-pink-500 bg-pink-50/50 dark:bg-pink-900/20' 
+                                : 'border-gray-200 dark:border-gray-700 hover:border-pink-300'
+                            }`}
+                        >
+                            {formData.grammage === '200g' && (
+                                <span className="absolute -top-3 right-4 bg-pink-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Recomendado</span>
+                            )}
+                            <div className="font-bold flex justify-between">
+                                <span>Premium (200g)</span>
+                                <span className="text-pink-600">{formatCurrency(PRICES['200g'])}</span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">Mayor espesor y calidad.</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Size Selector */}
+                <div>
+                     <label className="block text-sm font-medium mb-2">
+                        Talla {availableSizes.length === 0 && inventoryLoaded && <span className="text-red-500 text-xs ml-2">(Agotado en esta combinación)</span>}
+                    </label>
+                    <select
+                        name="size"
+                        value={formData.size}
+                        onChange={handleChange}
+                        disabled={availableSizes.length === 0}
+                        className={`w-full p-3 rounded-xl outline-none transition-all glass-input text-gray-950 dark:text-gray-100 ${availableSizes.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        {availableSizes.length > 0 ? (
+                            availableSizes.map(s => <option key={s} value={s}>{s}</option>)
+                        ) : (
+                            <option value="">Sin Stock</option>
+                        )}
+                    </select>
+                </div>
+                </>
+                )}
+            </div>
+
+            {/* Step 2 */}
+            <div className="space-y-4">
+                <h3 className="text-lg font-bold border-b border-gray-100 dark:border-gray-800 pb-2 flex items-center gap-2">
+                    <span className="bg-gray-100 dark:bg-gray-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+                    Datos de Envío
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium mb-1">Nombre Completo</label>
+                        <input required name="name" type="text" value={formData.name} onChange={handleChange} className="w-full p-3 rounded-xl outline-none glass-input text-gray-950 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="Juan Pérez" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-1">Email</label>
+                        <input required name="email" type="email" value={formData.email} onChange={handleChange} className="w-full p-3 rounded-xl outline-none glass-input text-gray-955 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="juan@ejemplo.com" />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium mb-1">Teléfono</label>
+                        <div className="relative">
+                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+                            <input required name="phone" type="tel" value={formData.phone} onChange={handleChange} className="w-full pl-12 pr-3 py-3 rounded-xl outline-none glass-input text-gray-955 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="300 123 4567" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Structured Address Fields */}
+                <div className="p-4 rounded-xl border border-white/10 dark:border-white/5 bg-white/20 dark:bg-black/10 space-y-3 shadow-inner">
+                    <label className="block text-sm font-bold flex items-center gap-2 text-gray-700 dark:text-gray-200"><MapPin className="w-4 h-4 text-pink-500" /> Dirección de Entrega</label>
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full">
+                        <div className="flex items-center gap-2 w-full md:w-1/2">
+                            <select name="type" value={addressParts.type} onChange={handleAddressChange} className="w-[40%] md:w-1/3 p-2 rounded-lg outline-none text-sm glass-input text-gray-955 dark:text-gray-100">
+                                <option value="Calle">Calle</option>
+                                <option value="Carrera">Carrera</option>
+                                <option value="Diagonal">Diag.</option>
+                                <option value="Transversal">Transv.</option>
+                                <option value="Avenida">Av.</option>
+                                <option value="Circular">Circ.</option>
+                            </select>
+                            <input type="text" name="n1" value={addressParts.n1} onChange={handleAddressChange} placeholder="12A" className="flex-1 min-w-0 p-2 rounded-lg outline-none text-sm text-center font-bold glass-input text-gray-955 dark:text-gray-100" />
+                        </div>
+                        <div className="flex items-center gap-2 w-full md:w-1/2 mt-1 md:mt-0">
+                            <span className="font-bold text-gray-400 text-sm shrink-0 pl-1 md:pl-0 w-4 text-center">#</span>
+                            <input type="text" name="n2" value={addressParts.n2} onChange={handleAddressChange} placeholder="45" className="flex-1 min-w-0 p-2 rounded-lg outline-none text-sm text-center font-bold glass-input text-gray-955 dark:text-gray-100" />
+                            <span className="font-bold text-gray-400 text-sm shrink-0 w-4 text-center">-</span>
+                            <input type="text" name="n3" value={addressParts.n3} onChange={handleAddressChange} placeholder="67" className="flex-1 min-w-0 p-2 rounded-lg outline-none text-sm text-center font-bold glass-input text-gray-955 dark:text-gray-100" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                         <input type="text" name="city" value={addressParts.city} onChange={handleAddressChange} placeholder="Ciudad (ej. Bucaramanga, Santander)" className="w-full p-2.5 rounded-lg outline-none text-sm glass-input text-gray-955 dark:text-gray-100" />
+                         <input type="text" name="details" value={addressParts.details} onChange={handleAddressChange} placeholder="Torre 1 Apto 502, Barrio Centro..." className="w-full p-2.5 rounded-lg outline-none text-sm glass-input text-gray-955 dark:text-gray-100" />
+                    </div>
+                    <div className="text-xs text-gray-500 pt-1 px-1">Dirección Generada: <span className="font-medium text-pink-600 dark:text-pink-400">{formData.address || '...'}</span></div>
+                </div>
+            </div>
+
+            {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative flex items-center gap-2 text-sm"><AlertCircle className="w-4 h-4" /><span>{error}</span></div>}
+
+            <div className="flex gap-3 sm:gap-4 pt-4">
+                <button type="button" onClick={onBack} disabled={loading} className="flex-1 py-3.5 md:py-4 px-4 border border-gray-200 dark:border-gray-700 rounded-xl font-bold text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50">Volver</button>
+                <button 
+                    type="submit" 
+                    disabled={loading || availableSizes.length === 0} 
+                    className="flex-[2] py-3.5 md:py-4 px-4 bg-gradient-to-r from-pink-600 to-orange-500 text-white rounded-xl font-bold text-sm md:text-base hover:shadow-lg hover:from-pink-500 hover:to-orange-400 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (availableSizes.length === 0) ? 'Sin Stock' : 'Confirmar Pedido'}
+                </button>
+            </div>
+            
+          </form>
+      </div>
+    </div>
+  );
+};

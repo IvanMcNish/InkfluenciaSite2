@@ -1,0 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+@config "./tailwind.config.js";
+
+@layer utilities {
+  .clip-path-torn {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 95% 95%, 90% 100%, 85% 95%, 80% 100%, 75% 95%, 70% 100%, 65% 95%, 60% 100%, 55% 95%, 50% 100%, 45% 95%, 40% 100%, 35% 95%, 30% 100%, 25% 95%, 20% 100%, 15% 95%, 10% 100%, 5% 95%, 0% 100%);
+  }
+
+  /* Ultra-polished glassmorphic panels mimicking fluid, glowing liquid glass */
+  .liquid-glass {
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1.5px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08), 
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+  }
+  
+  .dark .liquid-glass {
+    background: rgba(12, 12, 16, 0.55);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.5), 
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* Deeper glass highlighting for popups or highlighted elements */
+  .liquid-glass-accent {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border: 1.5px solid rgba(255, 255, 255, 0.55);
+    box-shadow: 0 20px 50px -12px rgba(236, 72, 153, 0.1), 
+                0 4px 12px -2px rgba(0, 0, 0, 0.04),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+  }
+
+  .dark .liquid-glass-accent {
+    background: rgba(18, 18, 24, 0.75);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.65), 
+                0 0 2px 1px rgba(255, 255, 255, 0.03),
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Glass inputs */
+  .glass-input {
+    background: rgba(255, 255, 255, 0.3);
+    border: 1.5px solid rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(8px);
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .dark .glass-input {
+    background: rgba(20, 20, 25, 0.4);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .glass-input:focus {
+    background: rgba(255, 255, 255, 0.55);
+    border-color: rgba(236, 72, 153, 0.6);
+    box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.15);
+  }
+  
+  .dark .glass-input:focus {
+    background: rgba(20, 20, 25, 0.6);
+    border-color: rgba(236, 72, 153, 0.6);
+    box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.2);
+  }
+}

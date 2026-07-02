@@ -1314,6 +1314,20 @@ const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cust
     }
   }, [normalMap]);
 
+  // Load oversize custom normal map
+  const oversizeNormalMap = useTexture('/oversizedetails.jpg');
+  useEffect(() => {
+    if (oversizeNormalMap) {
+      oversizeNormalMap.wrapS = THREE.ClampToEdgeWrapping;
+      oversizeNormalMap.wrapT = THREE.ClampToEdgeWrapping;
+      oversizeNormalMap.repeat.set(1, 1);
+      oversizeNormalMap.flipY = false;
+      oversizeNormalMap.anisotropy = 16;
+      oversizeNormalMap.generateMipmaps = true;
+      oversizeNormalMap.needsUpdate = true;
+    }
+  }, [oversizeNormalMap]);
+
   const { meshes, zFront, zBack } = useMemo(() => {
     scene.updateMatrixWorld(true);
 
@@ -1516,7 +1530,7 @@ const TShirtMesh: React.FC<ProductMeshProps> = ({ config, showMeasurements, cust
               meshData={meshData}
               matchingLayers={matchingLayers}
               materialColor={materialColor}
-              normalMap={normalMap}
+              normalMap={oversizeNormalMap}
               onPointerMove={handlePointerMove}
               onPointerDown={handlePointerDown}
             />
@@ -1785,6 +1799,7 @@ TSHIRT_GLB_MODELS.forEach(url => {
   useGLTF.preload(url);
 });
 useTexture.preload('/NormalFabric.jpg');
+useTexture.preload('/oversizedetails.jpg');
 
 const CameraController: React.FC<{
   targetPos: [number, number, number];
